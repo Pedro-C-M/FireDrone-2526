@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "DroneController": {
+      "commandName": "Project",
+      "commandLineArgs": "124af46 DroneSimulator"
+    }
+  }
+}
