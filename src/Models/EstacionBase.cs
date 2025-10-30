@@ -1,5 +1,5 @@
-public class EstacionBase
+public class EstacionBase //Este fichero mirarlo tambien(pongo esto para que salga en la PR)
 {
 	public int Id { get; set; }
-	public ICollection? Drones { get; set; }
+	public int? DronId { get; set; }
 }
