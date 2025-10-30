@@ -5,4 +5,5 @@ public class Incidencia
     public string? Tipo { get; set; }
     public DateTime? Time { get; set; }
     public int? PlanVueloActualId { get; set; }
+    public PlanVuelo? Actual { get; set; }
 }

@@ -6,4 +6,5 @@ public class PuntoRuta
     public float? Altitud { get; set; }
     public float? Velocidad { get; set; }
     public int? RutaId { get; set; }
+    public Ruta? Ruta { get; set; }
 }

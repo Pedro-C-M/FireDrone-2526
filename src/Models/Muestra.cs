@@ -6,4 +6,5 @@ public class Muestra
     public float? Lon { get; set; }
     public DateTime? Time { get; set; }
     public int? DronId { get; set; }
+    public Dron? Dron { get; set; }
 }
