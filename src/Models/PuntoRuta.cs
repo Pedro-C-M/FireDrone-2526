@@ -7,4 +7,6 @@ public class PuntoRuta
     public float? Velocidad { get; set; }
     public int? RutaId { get; set; }
     public Ruta? Ruta { get; set; }
+    public DateTime? Time { get; set; }
+
 }

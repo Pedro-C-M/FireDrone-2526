@@ -1,3 +1,5 @@
+using System.Collections;
+
 public class CaracteristicasDron
 {
     public int Id { get; set; }

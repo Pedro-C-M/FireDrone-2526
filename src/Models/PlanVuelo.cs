@@ -1,3 +1,5 @@
+using System.Collections;
+
 public class PlanVuelo
 {
     public int Id { get; set; }
@@ -16,6 +18,9 @@ public class PlanVuelo
     public EstadoPlanVuelo Estado { get; set; }
 
     public List<CambioModo> HistorialCambiosModo { get; set; } = new List<CambioModo>();
+
+    public ICollection? PuntoRuta { get; set; }
+
 }
 
 public enum EstadoPlanVuelo

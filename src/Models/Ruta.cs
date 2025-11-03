@@ -1,3 +1,5 @@
+using System.Collections;
+
 public class Ruta
 {
     public int Id { get; set; }
@@ -11,5 +13,5 @@ public class Ruta
 public enum TipoRuta 
 {
     Simple,
-    Periódica
+    Periodica
 }
