@@ -1,3 +1,5 @@
+using System;
+
 public class Sample
 {
     public int Id { get; set; }

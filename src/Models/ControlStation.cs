@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 public class ControlStation
 {
     public int Id { get; set; }

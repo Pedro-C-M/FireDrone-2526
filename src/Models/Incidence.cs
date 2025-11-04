@@ -1,3 +1,5 @@
+using System;
+
 public class Incidence
 {
     public int Id { get; set; }
