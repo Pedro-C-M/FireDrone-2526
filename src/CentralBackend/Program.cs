@@ -1,10 +1,14 @@
 
 namespace CentralBackend;
 
+using Models;
+
 public class Program
 {
     public static void Main(string[] args)
     {
+        ProbarBaseDeDatos();
+
         var builder = WebApplication.CreateBuilder(args);
 
         // Add services to the container.
@@ -46,5 +50,37 @@ public class Program
         .WithOpenApi();
 
         app.Run();
+
+    }
+
+    private static void ProbarBaseDeDatos()
+    {
+        using (var db = new FireDrone())
+        {
+            db.Database.EnsureCreated();
+            if (!db.Sensors.Any())
+            {
+                Console.WriteLine("Creando sensores iniciales...");
+
+                var sensor1 = new Sensor { Model = "SensorModelX" };
+                var sensor2 = new Sensor { Model = "SensorModelY" };
+
+                db.Sensors.AddRange(sensor1, sensor2);
+                db.SaveChanges();
+            }
+
+            Console.WriteLine("\nInserting a new sensor...");
+            var newSensor = new Sensor { Model = "SensorModelZ" };
+            db.Sensors.Add(newSensor);
+            db.SaveChanges();
+
+            Console.WriteLine("\nQuerying for a sensor...");
+            var sensor = db.Sensors
+                .OrderBy(s => s.Id)
+                .First();
+            Console.WriteLine($"Sensor encontrado: ID={sensor.Id}, Model={sensor.Model}");
+
+            db.SaveChanges();
+        }
     }
 }
