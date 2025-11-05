@@ -15,7 +15,7 @@ public class FireDrone : DbContext
     public DbSet<Sensor> Sensors { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
-     => options.UseSqlite("Data Source=FireDrone.db");
+     => options.UseSqlite("Data Source=../FireDrone.db");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
