@@ -64,3 +64,8 @@ nunit-*.xml
 **/CopilotIndex.db
 **/CopilotIndices/
 **/fileContent.index
+
+# Databases
+*.db
+*.db-shm
+*db-wal
