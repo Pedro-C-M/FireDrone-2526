@@ -1,4 +1,4 @@
-const uri = '/api/flightplans';
+const uri = 'http://localhost:5178/api/FlightPlan'; //cambio para conexión con controller
 let flightplans = [];
 
 function getFlightPlans() {
