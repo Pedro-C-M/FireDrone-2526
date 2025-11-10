@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Flight Plans - FireDrone</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="site.css" />
+</head>
+<body>
+    <div class="container">
+        <h1>Flight Plans Management</h1>
+
+        <h3>Add New Flight Plan</h3>
+        <form action="javascript:void(0);" method="POST" onsubmit="addFlightPlan()">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="add-dronId" class="form-label">Drone ID</label>
+                    <input type="number" class="form-control" id="add-dronId" placeholder="Drone ID" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="add-rutaId" class="form-label">Route ID</label>
+                    <input type="number" class="form-control" id="add-rutaId" placeholder="Route ID" required>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="add-estControlId" class="form-label">Control Station ID</label>
+                    <input type="number" class="form-control" id="add-estControlId" placeholder="Control Station ID">
+                </div>
+                <div class="col-md-6">
+                    <label for="add-startingPointId" class="form-label">Starting Point ID</label>
+                    <input type="number" class="form-control" id="add-startingPointId" placeholder="Starting Point ID">
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="add-startingTime" class="form-label">Starting Time</label>
+                    <input type="datetime-local" class="form-control" id="add-startingTime" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="add-state" class="form-label">Status</label>
+                    <select class="form-control" id="add-state" required>
+                        <option value="0">On Course</option>
+                        <option value="1">Completed</option>
+                        <option value="2">Cancelled</option>
+                    </select>
+                </div>
+            </div>
+            <input type="submit" value="Add Flight Plan" class="btn btn-primary">
+        </form>
+
+        <div id="editForm" style="display:none;">
+            <h3>Edit Flight Plan</h3>
+            <form action="javascript:void(0);" onsubmit="updateFlightPlan()">
+                <input type="hidden" id="edit-id">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="edit-dronId" class="form-label">Drone ID</label>
+                        <input type="number" class="form-control" id="edit-dronId" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="edit-rutaId" class="form-label">Route ID</label>
+                        <input type="number" class="form-control" id="edit-rutaId" required>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="edit-estControlId" class="form-label">Control Station ID</label>
+                        <input type="number" class="form-control" id="edit-estControlId">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="edit-startingPointId" class="form-label">Starting Point ID</label>
+                        <input type="number" class="form-control" id="edit-startingPointId">
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="edit-startingTime" class="form-label">Starting Time</label>
+                        <input type="datetime-local" class="form-control" id="edit-startingTime" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="edit-endingTime" class="form-label">Ending Time</label>
+                        <input type="datetime-local" class="form-control" id="edit-endingTime">
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="edit-state" class="form-label">Status</label>
+                        <select class="form-control" id="edit-state" required>
+                            <option value="0">On Course</option>
+                            <option value="1">Completed</option>
+                            <option value="2">Cancelled</option>
+                        </select>
+                    </div>
+                </div>
+                <input type="submit" value="Save" class="btn btn-primary">
+                <a onclick="closeInput()" class="btn btn-secondary" aria-label="Close">Cancel</a>
+            </form>
+        </div>
+
+        <p id="counter"></p>
+
+        <table id="flightplans_table" class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Drone ID</th>
+                    <th>Route ID</th>
+                    <th>Control Station</th>
+                    <th>Starting Time</th>
+                    <th>Ending Time</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="flightplans_tbody">
+                <!-- existing data will be loaded here -->
+            </tbody>
+        </table>
+
+        <template id="flightplan_row">
+            <tr>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td>
+                    <button class="btn btn-sm btn-warning">Edit</button>
+                    <button class="btn btn-sm btn-danger">Delete</button>
+                </td>
+            </tr>
+        </template>
+
+    </div>
+
+    <script type="text/javascript" src="api.js"></script>
+    <script type="text/javascript" src="site.js"></script>
+
+    <script type="text/javascript">
+        if (!document.createElement("template").content) {
+        alert("This browser does not support templates");
+        }
+        getFlightPlans();
+    </script>
+</body>
+</html>
