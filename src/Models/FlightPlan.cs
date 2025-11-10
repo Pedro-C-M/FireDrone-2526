@@ -40,6 +40,8 @@ public enum FlightMode
 
 public class ChangeMode
 {
+    public int Id { get; set; } // clave primaria
+
     public DateTime Moment { get; set; } //Instante de tiempo en el que se realiza el cambio de modo
     public FlightMode Mode { get; set; } //Modo de vuelo al que se cambia
 }

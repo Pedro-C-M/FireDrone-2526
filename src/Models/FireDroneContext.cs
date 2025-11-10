@@ -13,6 +13,8 @@ public class FireDrone : DbContext
     public DbSet<RoutePoint> RoutePoints { get; set; }
     public DbSet<Sample> Samples { get; set; }
     public DbSet<Sensor> Sensors { get; set; }
+    public DbSet<ChangeMode> ChangeModes { get; set; }
+
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
      => options.UseSqlite("Data Source=../FireDrone.db");
@@ -26,11 +28,14 @@ public class FireDrone : DbContext
             .HasForeignKey<FlightPlan>(fp => fp.DronId);
 
         // Configure ChangeMode as owned entity type (part of FlightPlan)
-        modelBuilder.Entity<FlightPlan>()
-            .OwnsMany(fp => fp.ModeChangeHistoric);
+        modelBuilder.Entity<ChangeMode>()
+            .HasOne<FlightPlan>()
+            .WithMany(fp => fp.ModeChangeHistoric)
+            .HasForeignKey("FlightPlanId");
 
-        // Configure Coordinate as owned entity type (part of Perimeter)
-        modelBuilder.Entity<Perimeter>()
-            .OwnsMany(p => p.Coords);
+        modelBuilder.Entity<Coordinate>()
+            .HasOne(c => c.Perimeter)
+            .WithMany(p => p.Coords)
+            .HasForeignKey(c => c.PerimeterId);
     }
 }

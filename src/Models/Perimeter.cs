@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -10,8 +11,13 @@ public class Perimeter
     public ICollection<Route>? Routes { get; set; }
 }
 
-public class Coordinate//Preguntar si se pueden guardar clases
+public class Coordinate
 {
+    public int Id { get; set; } // clave primaria obligatoria
     public double Latitude { get; set; }
     public double Longitude { get; set; }
+
+    // FK opcional a Perimeter
+    public int? PerimeterId { get; set; }
+    public Perimeter? Perimeter { get; set; }
 }
