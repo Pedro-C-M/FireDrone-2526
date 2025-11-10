@@ -59,20 +59,20 @@ namespace Models.Migrations
                 name: "Coordinate",
                 columns: table => new
                 {
-                    PerimeterId = table.Column<int>(type: "INTEGER", nullable: false),
-                    Id = table.Column<int>(type: "INTEGER", nullable: false),
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
                     Latitude = table.Column<double>(type: "REAL", nullable: false),
-                    Longitude = table.Column<double>(type: "REAL", nullable: false)
+                    Longitude = table.Column<double>(type: "REAL", nullable: false),
+                    PerimeterId = table.Column<int>(type: "INTEGER", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Coordinate", x => new { x.PerimeterId, x.Id });
+                    table.PrimaryKey("PK_Coordinate", x => x.Id);
                     table.ForeignKey(
                         name: "FK_Coordinate_Perimeters_PerimeterId",
                         column: x => x.PerimeterId,
                         principalTable: "Perimeters",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -184,17 +184,18 @@ namespace Models.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "ChangeMode",
+                name: "ChangeModes",
                 columns: table => new
                 {
-                    FlightPlanId = table.Column<int>(type: "INTEGER", nullable: false),
-                    Id = table.Column<int>(type: "INTEGER", nullable: false),
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
                     Moment = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    Mode = table.Column<int>(type: "INTEGER", nullable: false)
+                    Mode = table.Column<int>(type: "INTEGER", nullable: false),
+                    FlightPlanId = table.Column<int>(type: "INTEGER", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ChangeMode", x => new { x.FlightPlanId, x.Id });
+                    table.PrimaryKey("PK_ChangeModes", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -293,6 +294,16 @@ namespace Models.Migrations
                 column: "ControlStationId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ChangeModes_FlightPlanId",
+                table: "ChangeModes",
+                column: "FlightPlanId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Coordinate_PerimeterId",
+                table: "Coordinate",
+                column: "PerimeterId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_DronCharacteristics_DronId",
                 table: "DronCharacteristics",
                 column: "DronId",
@@ -365,12 +376,11 @@ namespace Models.Migrations
                 column: "DronCharacteristicsId");
 
             migrationBuilder.AddForeignKey(
-                name: "FK_ChangeMode_FlightPlans_FlightPlanId",
-                table: "ChangeMode",
+                name: "FK_ChangeModes_FlightPlans_FlightPlanId",
+                table: "ChangeModes",
                 column: "FlightPlanId",
                 principalTable: "FlightPlans",
-                principalColumn: "Id",
-                onDelete: ReferentialAction.Cascade);
+                principalColumn: "Id");
 
             migrationBuilder.AddForeignKey(
                 name: "FK_FlightPlans_RoutePoints_EndPointId",
@@ -407,7 +417,7 @@ namespace Models.Migrations
                 table: "RoutePoints");
 
             migrationBuilder.DropTable(
-                name: "ChangeMode");
+                name: "ChangeModes");
 
             migrationBuilder.DropTable(
                 name: "Coordinate");

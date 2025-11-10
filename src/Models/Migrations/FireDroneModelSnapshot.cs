@@ -32,6 +32,28 @@ namespace Models.Migrations
                     b.ToTable("BaseStations");
                 });
 
+            modelBuilder.Entity("ChangeMode", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("FlightPlanId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Mode")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("Moment")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FlightPlanId");
+
+                    b.ToTable("ChangeModes");
+                });
+
             modelBuilder.Entity("ControlStation", b =>
                 {
                     b.Property<int>("Id")
@@ -47,6 +69,28 @@ namespace Models.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("ControlStations");
+                });
+
+            modelBuilder.Entity("Coordinate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double>("Latitude")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("Longitude")
+                        .HasColumnType("REAL");
+
+                    b.Property<int?>("PerimeterId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PerimeterId");
+
+                    b.ToTable("Coordinate");
                 });
 
             modelBuilder.Entity("Dron", b =>
@@ -305,6 +349,22 @@ namespace Models.Migrations
                         .HasForeignKey("ControlStationId");
                 });
 
+            modelBuilder.Entity("ChangeMode", b =>
+                {
+                    b.HasOne("FlightPlan", null)
+                        .WithMany("ModeChangeHistoric")
+                        .HasForeignKey("FlightPlanId");
+                });
+
+            modelBuilder.Entity("Coordinate", b =>
+                {
+                    b.HasOne("Perimeter", "Perimeter")
+                        .WithMany("Coords")
+                        .HasForeignKey("PerimeterId");
+
+                    b.Navigation("Perimeter");
+                });
+
             modelBuilder.Entity("Dron", b =>
                 {
                     b.HasOne("BaseStation", "Base")
@@ -355,36 +415,11 @@ namespace Models.Migrations
                         .WithMany()
                         .HasForeignKey("StartPointId");
 
-                    b.OwnsMany("ChangeMode", "ModeChangeHistoric", b1 =>
-                        {
-                            b1.Property<int>("FlightPlanId")
-                                .HasColumnType("INTEGER");
-
-                            b1.Property<int>("Id")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("INTEGER");
-
-                            b1.Property<int>("Mode")
-                                .HasColumnType("INTEGER");
-
-                            b1.Property<DateTime>("Moment")
-                                .HasColumnType("TEXT");
-
-                            b1.HasKey("FlightPlanId", "Id");
-
-                            b1.ToTable("ChangeMode");
-
-                            b1.WithOwner()
-                                .HasForeignKey("FlightPlanId");
-                        });
-
                     b.Navigation("Ctrl");
 
                     b.Navigation("Dron");
 
                     b.Navigation("EndPoint");
-
-                    b.Navigation("ModeChangeHistoric");
 
                     b.Navigation("Ruta");
 
@@ -398,34 +433,6 @@ namespace Models.Migrations
                         .HasForeignKey("FlightPlanId");
 
                     b.Navigation("Actual");
-                });
-
-            modelBuilder.Entity("Perimeter", b =>
-                {
-                    b.OwnsMany("Coordinate", "Coords", b1 =>
-                        {
-                            b1.Property<int>("PerimeterId")
-                                .HasColumnType("INTEGER");
-
-                            b1.Property<int>("Id")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("INTEGER");
-
-                            b1.Property<double>("Latitude")
-                                .HasColumnType("REAL");
-
-                            b1.Property<double>("Longitude")
-                                .HasColumnType("REAL");
-
-                            b1.HasKey("PerimeterId", "Id");
-
-                            b1.ToTable("Coordinate");
-
-                            b1.WithOwner()
-                                .HasForeignKey("PerimeterId");
-                        });
-
-                    b.Navigation("Coords");
                 });
 
             modelBuilder.Entity("Route", b =>
@@ -494,11 +501,15 @@ namespace Models.Migrations
 
             modelBuilder.Entity("FlightPlan", b =>
                 {
+                    b.Navigation("ModeChangeHistoric");
+
                     b.Navigation("RoutePoints");
                 });
 
             modelBuilder.Entity("Perimeter", b =>
                 {
+                    b.Navigation("Coords");
+
                     b.Navigation("Routes");
                 });
 
