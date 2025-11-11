@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Models;
 
 namespace CentralBackend
 {
@@ -8,9 +9,8 @@ namespace CentralBackend
         {
             using (var db = new FireDrone())
             {
-                db.Database.EnsureDeleted();  // borra la BD
-                // Crea la BD si no existe
-                db.Database.EnsureCreated();
+                // Use migrations instead of EnsureCreated
+                db.Database.Migrate();
 
                 // ---------- Sensores ----------
                 if (!db.Sensors.Any())
@@ -22,6 +22,15 @@ namespace CentralBackend
                     db.Sensors.AddRange(sensor1, sensor2, sensor3);
                     db.SaveChanges();
                 }
+
+                // Only seed if database is empty
+                if (db.Drones.Any())
+                {
+                    Console.WriteLine("La base de datos ya contiene datos.");
+                    return;
+                }
+
+                Console.WriteLine("Sembrando datos iniciales...");
 
                 // ---------- BaseStation y ControlStation ----------
                 var baseStation = new BaseStation();
@@ -36,7 +45,7 @@ namespace CentralBackend
                 db.ControlStations.Add(controlStation);
 
                 // ---------- Route y RoutePoint ----------
-                var route = new Route
+                var route = new Models.Route
                 {
                     Type = RouteType.Simple,
                     Perimeter = new Perimeter(),

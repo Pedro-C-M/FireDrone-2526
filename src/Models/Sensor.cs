@@ -1,7 +1,10 @@
-public class Sensor
+namespace Models
 {
-    public int Id { get; set; }
+    public class Sensor
+    {
+        public int Id { get; set; }
 
-    //--------- Atributos de la entidad ---------
-    public string? Model { get; set; }
+        //--------- Atributos de la entidad ---------
+        public string? Model { get; set; }
+    }
 }
