@@ -166,3 +166,32 @@ function formatDateTimeLocal(dateTimeString) {
     const minutes = String(date.getMinutes()).padStart(2, '0');
     return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
+
+
+function assignDronToPlan() {
+    const planId = document.getElementById('assign-planId').value;
+    const droneId = document.getElementById('assign-droneId').value;
+
+    if (!planId || !droneId) {
+        alert("Please enter both a flight plan ID and a drone ID.");
+        return;
+    }
+
+    fetch(`${uri}/${planId}/assign`, {
+        method: 'PUT',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ DronId: parseInt(droneId) })
+    })
+        .then(response => {
+            if (!response.ok) throw new Error('Assignment failed');
+            return response.json();
+        })
+        .then(data => {
+            alert(`Drone ${data.dronId} assigned to plan ${data.id}`);
+            getFlightPlans(); // refrescar tabla
+        })
+        .catch(error => console.error('Unable to assign drone.', error));
+}

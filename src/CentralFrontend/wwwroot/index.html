@@ -11,6 +11,24 @@
     <div class="container">
         <h1>Flight Plans Management</h1>
 
+        <h3>Assign Drone to Flight Plan</h3>
+        <form onsubmit="assignDronToPlan(); return false;">
+            <div class="row mb-3">
+                <div class="col-md-5">
+                    <label for="assign-planId" class="form-label">Flight Plan ID</label>
+                    <input type="number" class="form-control" id="assign-planId" placeholder="Enter plan ID" required>
+                </div>
+                <div class="col-md-5">
+                    <label for="assign-droneId" class="form-label">Drone ID</label>
+                    <input type="number" class="form-control" id="assign-droneId" placeholder="Enter drone ID" required>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-success w-100">Assign</button>
+                </div>
+            </div>
+        </form>
+
+
         <h3>Add New Flight Plan</h3>
         <form action="javascript:void(0);" method="POST" onsubmit="addFlightPlan()">
             <div class="row mb-3">

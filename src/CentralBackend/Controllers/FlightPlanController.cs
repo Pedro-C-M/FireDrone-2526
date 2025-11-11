@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Models;
 
 namespace CentralBackend.Controllers
 {
@@ -41,6 +42,18 @@ namespace CentralBackend.Controllers
             return Ok(existing);
         }
 
+        [HttpPut("{id}/assign")]
+        public IActionResult AssignDron(int id, [FromBody] AssignDronDto dto)
+        {
+            var existing = _plans.Find(p => p.Id == id);
+            if (existing == null)
+                return NotFound($"Flight Plan with ID {id} not found");
+
+            existing.DronId = dto.DronId;
+            return Ok(existing);
+        }
+
+
         [HttpDelete("{id}")]
         public IActionResult Delete(int id)
         {
@@ -50,6 +63,11 @@ namespace CentralBackend.Controllers
 
             _plans.Remove(plan);
             return Ok();
+        }
+
+        public class AssignDronDto
+        {
+            public int DronId { get; set; }
         }
     }
 }
