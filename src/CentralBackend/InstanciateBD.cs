@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Models;
 
 namespace CentralBackend
 {
@@ -36,7 +37,7 @@ namespace CentralBackend
                 db.ControlStations.Add(controlStation);
 
                 // ---------- Route y RoutePoint ----------
-                var route = new Route
+                var route = new Models.Route
                 {
                     Type = RouteType.Simple,
                     Perimeter = new Perimeter(),

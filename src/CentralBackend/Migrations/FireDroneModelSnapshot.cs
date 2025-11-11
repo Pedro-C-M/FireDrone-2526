@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace Models.Migrations
+namespace CentralBackend.Migrations
 {
     [DbContext(typeof(FireDrone))]
     partial class FireDroneModelSnapshot : ModelSnapshot
@@ -14,9 +14,9 @@ namespace Models.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "8.0.0");
+            modelBuilder.HasAnnotation("ProductVersion", "9.0.10");
 
-            modelBuilder.Entity("BaseStation", b =>
+            modelBuilder.Entity("Models.BaseStation", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -32,7 +32,7 @@ namespace Models.Migrations
                     b.ToTable("BaseStations");
                 });
 
-            modelBuilder.Entity("ChangeMode", b =>
+            modelBuilder.Entity("Models.ChangeMode", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -54,7 +54,7 @@ namespace Models.Migrations
                     b.ToTable("ChangeModes");
                 });
 
-            modelBuilder.Entity("ControlStation", b =>
+            modelBuilder.Entity("Models.ControlStation", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -71,7 +71,7 @@ namespace Models.Migrations
                     b.ToTable("ControlStations");
                 });
 
-            modelBuilder.Entity("Coordinate", b =>
+            modelBuilder.Entity("Models.Coordinate", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -93,7 +93,7 @@ namespace Models.Migrations
                     b.ToTable("Coordinate");
                 });
 
-            modelBuilder.Entity("Dron", b =>
+            modelBuilder.Entity("Models.Dron", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -129,7 +129,7 @@ namespace Models.Migrations
                     b.ToTable("Drones");
                 });
 
-            modelBuilder.Entity("DronCharacteristics", b =>
+            modelBuilder.Entity("Models.DronCharacteristics", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -149,7 +149,7 @@ namespace Models.Migrations
                     b.ToTable("DronCharacteristics");
                 });
 
-            modelBuilder.Entity("FlightPlan", b =>
+            modelBuilder.Entity("Models.FlightPlan", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -204,7 +204,7 @@ namespace Models.Migrations
                     b.ToTable("FlightPlans");
                 });
 
-            modelBuilder.Entity("Incidence", b =>
+            modelBuilder.Entity("Models.Incidence", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -229,7 +229,7 @@ namespace Models.Migrations
                     b.ToTable("Incidences");
                 });
 
-            modelBuilder.Entity("Perimeter", b =>
+            modelBuilder.Entity("Models.Perimeter", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -240,7 +240,7 @@ namespace Models.Migrations
                     b.ToTable("Perimeters");
                 });
 
-            modelBuilder.Entity("Route", b =>
+            modelBuilder.Entity("Models.Route", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -259,7 +259,7 @@ namespace Models.Migrations
                     b.ToTable("Routes");
                 });
 
-            modelBuilder.Entity("RoutePoint", b =>
+            modelBuilder.Entity("Models.RoutePoint", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -295,7 +295,7 @@ namespace Models.Migrations
                     b.ToTable("RoutePoints");
                 });
 
-            modelBuilder.Entity("Sample", b =>
+            modelBuilder.Entity("Models.Sample", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -323,7 +323,7 @@ namespace Models.Migrations
                     b.ToTable("Samples");
                 });
 
-            modelBuilder.Entity("Sensor", b =>
+            modelBuilder.Entity("Models.Sensor", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -342,36 +342,36 @@ namespace Models.Migrations
                     b.ToTable("Sensors");
                 });
 
-            modelBuilder.Entity("BaseStation", b =>
+            modelBuilder.Entity("Models.BaseStation", b =>
                 {
-                    b.HasOne("ControlStation", null)
+                    b.HasOne("Models.ControlStation", null)
                         .WithMany("BaseStations")
                         .HasForeignKey("ControlStationId");
                 });
 
-            modelBuilder.Entity("ChangeMode", b =>
+            modelBuilder.Entity("Models.ChangeMode", b =>
                 {
-                    b.HasOne("FlightPlan", null)
+                    b.HasOne("Models.FlightPlan", null)
                         .WithMany("ModeChangeHistoric")
                         .HasForeignKey("FlightPlanId");
                 });
 
-            modelBuilder.Entity("Coordinate", b =>
+            modelBuilder.Entity("Models.Coordinate", b =>
                 {
-                    b.HasOne("Perimeter", "Perimeter")
+                    b.HasOne("Models.Perimeter", "Perimeter")
                         .WithMany("Coords")
                         .HasForeignKey("PerimeterId");
 
                     b.Navigation("Perimeter");
                 });
 
-            modelBuilder.Entity("Dron", b =>
+            modelBuilder.Entity("Models.Dron", b =>
                 {
-                    b.HasOne("BaseStation", "Base")
+                    b.HasOne("Models.BaseStation", "Base")
                         .WithMany("Drones")
                         .HasForeignKey("BaseStationId");
 
-                    b.HasOne("ControlStation", "ControlStation")
+                    b.HasOne("Models.ControlStation", "ControlStation")
                         .WithMany("Drones")
                         .HasForeignKey("ControlStationId");
 
@@ -380,38 +380,38 @@ namespace Models.Migrations
                     b.Navigation("ControlStation");
                 });
 
-            modelBuilder.Entity("DronCharacteristics", b =>
+            modelBuilder.Entity("Models.DronCharacteristics", b =>
                 {
-                    b.HasOne("Dron", "Dron")
+                    b.HasOne("Models.Dron", "Dron")
                         .WithOne("DronCharacteristics")
-                        .HasForeignKey("DronCharacteristics", "DronId");
+                        .HasForeignKey("Models.DronCharacteristics", "DronId");
 
                     b.Navigation("Dron");
                 });
 
-            modelBuilder.Entity("FlightPlan", b =>
+            modelBuilder.Entity("Models.FlightPlan", b =>
                 {
-                    b.HasOne("ControlStation", "Ctrl")
+                    b.HasOne("Models.ControlStation", "Ctrl")
                         .WithMany()
                         .HasForeignKey("CtrlId");
 
-                    b.HasOne("Dron", "Dron")
+                    b.HasOne("Models.Dron", "Dron")
                         .WithOne("Actual")
-                        .HasForeignKey("FlightPlan", "DronId")
+                        .HasForeignKey("Models.FlightPlan", "DronId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("RoutePoint", "EndPoint")
+                    b.HasOne("Models.RoutePoint", "EndPoint")
                         .WithMany()
                         .HasForeignKey("EndPointId");
 
-                    b.HasOne("Route", "Ruta")
+                    b.HasOne("Models.Route", "Ruta")
                         .WithMany("Plans")
                         .HasForeignKey("RutaId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("RoutePoint", "StartPoint")
+                    b.HasOne("Models.RoutePoint", "StartPoint")
                         .WithMany()
                         .HasForeignKey("StartPointId");
 
@@ -426,66 +426,66 @@ namespace Models.Migrations
                     b.Navigation("StartPoint");
                 });
 
-            modelBuilder.Entity("Incidence", b =>
+            modelBuilder.Entity("Models.Incidence", b =>
                 {
-                    b.HasOne("FlightPlan", "Actual")
+                    b.HasOne("Models.FlightPlan", "Actual")
                         .WithMany()
                         .HasForeignKey("FlightPlanId");
 
                     b.Navigation("Actual");
                 });
 
-            modelBuilder.Entity("Route", b =>
+            modelBuilder.Entity("Models.Route", b =>
                 {
-                    b.HasOne("Perimeter", "Perimeter")
+                    b.HasOne("Models.Perimeter", "Perimeter")
                         .WithMany("Routes")
                         .HasForeignKey("PerimeterId");
 
                     b.Navigation("Perimeter");
                 });
 
-            modelBuilder.Entity("RoutePoint", b =>
+            modelBuilder.Entity("Models.RoutePoint", b =>
                 {
-                    b.HasOne("FlightPlan", null)
+                    b.HasOne("Models.FlightPlan", null)
                         .WithMany("RoutePoints")
                         .HasForeignKey("FlightPlanId");
 
-                    b.HasOne("Route", "Route")
+                    b.HasOne("Models.Route", "Route")
                         .WithMany("Coords")
                         .HasForeignKey("RouteId");
 
                     b.Navigation("Route");
                 });
 
-            modelBuilder.Entity("Sample", b =>
+            modelBuilder.Entity("Models.Sample", b =>
                 {
-                    b.HasOne("Dron", "Dron")
+                    b.HasOne("Models.Dron", "Dron")
                         .WithMany("Muestras")
                         .HasForeignKey("DronId");
 
                     b.Navigation("Dron");
                 });
 
-            modelBuilder.Entity("Sensor", b =>
+            modelBuilder.Entity("Models.Sensor", b =>
                 {
-                    b.HasOne("DronCharacteristics", null)
+                    b.HasOne("Models.DronCharacteristics", null)
                         .WithMany("Sensors")
                         .HasForeignKey("DronCharacteristicsId");
                 });
 
-            modelBuilder.Entity("BaseStation", b =>
+            modelBuilder.Entity("Models.BaseStation", b =>
                 {
                     b.Navigation("Drones");
                 });
 
-            modelBuilder.Entity("ControlStation", b =>
+            modelBuilder.Entity("Models.ControlStation", b =>
                 {
                     b.Navigation("BaseStations");
 
                     b.Navigation("Drones");
                 });
 
-            modelBuilder.Entity("Dron", b =>
+            modelBuilder.Entity("Models.Dron", b =>
                 {
                     b.Navigation("Actual");
 
@@ -494,26 +494,26 @@ namespace Models.Migrations
                     b.Navigation("Muestras");
                 });
 
-            modelBuilder.Entity("DronCharacteristics", b =>
+            modelBuilder.Entity("Models.DronCharacteristics", b =>
                 {
                     b.Navigation("Sensors");
                 });
 
-            modelBuilder.Entity("FlightPlan", b =>
+            modelBuilder.Entity("Models.FlightPlan", b =>
                 {
                     b.Navigation("ModeChangeHistoric");
 
                     b.Navigation("RoutePoints");
                 });
 
-            modelBuilder.Entity("Perimeter", b =>
+            modelBuilder.Entity("Models.Perimeter", b =>
                 {
                     b.Navigation("Coords");
 
                     b.Navigation("Routes");
                 });
 
-            modelBuilder.Entity("Route", b =>
+            modelBuilder.Entity("Models.Route", b =>
                 {
                     b.Navigation("Coords");
 

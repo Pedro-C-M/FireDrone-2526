@@ -1,4 +1,17 @@
 using Microsoft.EntityFrameworkCore;
+using Models;
+
+/**INICIAR BD
+ * 
+dotnet restore
+dotnet build
+dotnet tool install --global dotnet-ef
+dotnet ef migrations add InitialCreate
+dotnet ef database update
+ * 
+ * Solo necesario una vez:
+dotnet tool install --global dotnet-ef
+ */
 
 public class FireDrone : DbContext
 {
@@ -9,7 +22,7 @@ public class FireDrone : DbContext
     public DbSet<FlightPlan> FlightPlans { get; set; }
     public DbSet<Incidence> Incidences { get; set; }
     public DbSet<Perimeter> Perimeters { get; set; }
-    public DbSet<Route> Routes { get; set; }
+    public DbSet<Models.Route> Routes { get; set; }
     public DbSet<RoutePoint> RoutePoints { get; set; }
     public DbSet<Sample> Samples { get; set; }
     public DbSet<Sensor> Sensors { get; set; }
@@ -17,7 +30,10 @@ public class FireDrone : DbContext
 
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
-     => options.UseSqlite("Data Source=../FireDrone.db");
+     //=> options.UseSqlite("Data Source=../FireDrone.db");
+    
+        => options.UseSqlite("Data Source=C:\\Users\\Pedro\\Source\\Repos\\FireDrone-2526-3\\src\\FireDrone.db");
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

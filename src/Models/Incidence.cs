@@ -1,13 +1,16 @@
 using System;
 
-public class Incidence
+namespace Models
 {
-    public int Id { get; set; }
-    public int? FlightPlanId { get; set; }
+    public class Incidence
+    {
+        public int Id { get; set; }
+        public int? FlightPlanId { get; set; }
 
-    //--------- Atributos de la entidad ---------
-    public string? Msg { get; set; }
-    public string? Type { get; set; }
-    public DateTime? Time { get; set; }
-    public FlightPlan? Actual { get; set; }
+        //--------- Atributos de la entidad ---------
+        public string? Msg { get; set; }
+        public string? Type { get; set; }
+        public DateTime? Time { get; set; }
+        public FlightPlan? Actual { get; set; }
+    }
 }
