@@ -1,0 +1,162 @@
+﻿using Newtonsoft.Json;
+using System;
+using RabbitMQ.Client;
+using Microsoft.Extensions.Hosting;
+using ControlBackend;
+using System.Threading.Tasks;
+using RabbitMQ.Client.Events;
+using System.Text;
+using System.Diagnostics;
+using System.Threading;
+
+
+namespace DroneController.Drone
+{
+	public class DroneController: BackgroundService
+    {
+        string _droneID;
+		string _droneDriver;
+
+		IDroneDriver _drone;
+
+        private readonly IConnection _connection;
+        private readonly RabbitMqOptions _options;
+        private IChannel _channel = null!;
+
+        public DroneController(string droneID, string droneDriver, IConnection connection, RabbitMqOptions options)
+		{
+			_droneID = droneID;
+			_droneDriver = droneDriver;
+            _connection = connection;
+            _options = options;
+
+            Log.Debug($"Drone controller {_droneID}-{_droneDriver} starting");
+
+
+			// Instanciar driver de forma dinámica
+			_drone = CreateDroneDriver(_droneDriver);
+		}
+
+		// Esperar a recibir mensajes del backend a través de la cola
+		// Se procesaran en HandleDroneCommand
+		public void Run()
+		{
+			/*
+			 * FALTA POR COMPLETAR
+			 * *
+			 */ 
+		}
+
+		public async void Stop()
+		{
+            if (_channel != null)
+            {
+                await _channel.CloseAsync();
+                _channel.Dispose();
+            }
+
+            Log.Debug("Drone controller stopped.");
+        }
+
+		// Se instancia el driver de forma dinámica. 
+		// Debe haber una clase que implemente la interfaz IDroneDriver y cuyo nombre coincida con el driver
+		// en el namespace del controlador
+		private IDroneDriver CreateDroneDriver(string DroneDriver)
+		{
+			Type type = Type.GetType(GetType().Namespace + "." + DroneDriver);
+			if (type == null)
+			{
+				throw new ArgumentException($"Error unable to find drone driver {DroneDriver}");
+			}
+			IDroneDriver drone = (IDroneDriver)Activator.CreateInstance(type);
+
+			// Sería necesario publicar la información
+			drone.SetUpdateCallback(new ConsoleDroneUpdate());
+
+			return drone;
+		}
+
+		// Crear una cola para recibir comandos del backend control
+		private async Task CreateMessageQueue(string queueName, CancellationToken cancellationToken)
+		{
+            /*
+			 * FALTA POR COMPLETAR
+			 * *
+			 */
+        }
+        public override async Task StartAsync(CancellationToken cancellationToken)
+        {
+            string queueName = $"drone.{_droneID}.command"; // por ejemplo
+            _channel = await _connection.CreateChannelAsync();
+
+            await _channel.QueueDeclareAsync(queue: queueName, durable: true, exclusive: false, autoDelete: false, arguments: null);
+
+            await _channel.QueueBindAsync(queue: queueName, exchange: _options.Exchange, routingKey: _options.Topic);
+
+            // Set up a consumer to listen for messages on the queue.
+            var consumer = new AsyncEventingBasicConsumer(_channel);
+            consumer.ReceivedAsync += (model, ea) =>
+            {
+                var message = Encoding.UTF8.GetString(ea.Body.ToArray());
+                var routingKey = ea.RoutingKey;
+
+                // Consuming example: just log the received message.
+                // In the real application, you process the message as needed.
+                Debug.WriteLine($"[x] Received '{routingKey}':'{message}'");
+                return Task.CompletedTask;
+            };
+
+            await _channel.BasicConsumeAsync(queueName, autoAck: true, consumer: consumer);
+
+            await base.StartAsync(cancellationToken);
+        }
+
+        public override async Task StopAsync(CancellationToken cancellationToken)
+        {
+            await _channel.CloseAsync();
+            await base.StopAsync(cancellationToken);
+        }
+        // This method is intentionally left empty because the consumer runs via event handlers.
+        protected override Task ExecuteAsync(CancellationToken stoppingToken) => Task.CompletedTask;
+
+
+        // Enviar el estado a través de la cola para recibir al backend control
+        private void SendStatus(string message)
+		{
+			/*
+			 * FALTA POR COMPLETAR
+			 * *
+			 */
+		}
+
+		// Gestión de los mensajes de comandos recibidos por el controlador
+		// Si se añaden más mensajes se debería gestionar con una tabla
+		private void HandleDroneCommand(string commandtext)
+		{
+			// Decodificar el mensaje
+			DroneCommand command = JsonConvert.DeserializeObject<DroneCommand>(commandtext);
+
+			Log.Debug($"Executing drone command {command.Command}");
+
+			if (command.Command == DroneCommand.START_FLIGHT_PLAN_CMD)
+			{
+				// Decodificar los argumentos
+				Waypoint[] waypoints = JsonConvert.DeserializeObject<Waypoint[]>(command.Arguments);
+				_drone.StartFlightPlan(waypoints);
+			}
+			else if (command.Command == DroneCommand.STOP_FLIGHT_PLAN_CMD)
+			{
+				_drone.StopFlightPlan();
+			}
+			else if (command.Command == DroneCommand.STATUS_CMD)
+			{
+				DroneStatus status = _drone.GetStatus();
+
+				// Codificar el estado como JSON
+				var statusStr = JsonConvert.SerializeObject(status);
+
+				SendStatus(statusStr);
+			}
+		}
+	}
+}

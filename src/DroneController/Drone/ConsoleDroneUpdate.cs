@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace DroneController
+namespace DroneController.Drone
 {
 	public class ConsoleDroneUpdate: IDroneCallback
 	{
@@ -13,7 +13,7 @@ namespace DroneController
 		{
 			// Almacenar las coordenadas para visualizarlas en modo depuración
 			// https://www.gpsvisualizer.com
-			String coordinate = String.Format(System.Globalization.CultureInfo.InvariantCulture, $"{status.Latitude},{status.Longitude}" + Environment.NewLine);
+			string coordinate = string.Format(System.Globalization.CultureInfo.InvariantCulture, $"{status.Latitude},{status.Longitude}" + Environment.NewLine);
 			System.IO.File.AppendAllText(@"gps_coordinates.csv", coordinate);
 
 			// Se impreme, pero se podría usar para publicar

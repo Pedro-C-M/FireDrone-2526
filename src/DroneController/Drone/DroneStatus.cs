@@ -1,4 +1,4 @@
-﻿namespace DroneController
+﻿namespace DroneController.Drone
 {
 	public enum DroneState
 	{

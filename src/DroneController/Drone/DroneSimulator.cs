@@ -4,7 +4,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace DroneController
+namespace DroneController.Drone
 {
 	/*
 	 * La clase DroneSimulator simula el movimiento de un dron implementando la interfaz IDroneDriver.
@@ -30,7 +30,7 @@ namespace DroneController
 
 		private FlightSimulator _flightSimulator;
 
-		private Object _statusLock = new System.Object();
+		private object _statusLock = new object();
 		private DroneStatus _status;
 
 		public DroneSimulator()
