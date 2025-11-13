@@ -1,5 +1,9 @@
-﻿using System;
+﻿using ControlBackend;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using System;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace DroneController
 {
@@ -21,7 +25,7 @@ namespace DroneController
 			_closing.Set();
 		}
 
-		static void Main(string[] args)
+		static async Task Main(string[] args)
 		{
 			if (args.Length != 2)
 				throw new ArgumentException("Invalid number of arguments");
@@ -32,17 +36,28 @@ namespace DroneController
 			// Ejemplo: DroneSimulator
 			string DroneDriver = args[1];
 
-			DroneController controller = new DroneController(DroneID, DroneDriver);
+            var options = new RabbitMqOptions();
 
-			// El controlador contiene un bucle de procesamiento de mensajes
-			controller.Run();
+            // Crear la conexión
+            var factory = new RabbitMQ.Client.ConnectionFactory
+            {
+                HostName = options.Hostname,
+                UserName = options.Username,
+                Password = options.Password
+            };
+            var connection = await factory.CreateConnectionAsync();
 
-			// Esperar a Control-C para terminar la aplicación
-			Log.Debug("Executing DroneController. Press Control-C to exit");
-			Console.CancelKeyPress += new ConsoleCancelEventHandler(OnExit);
-			_closing.WaitOne();
+            var host = Host.CreateDefaultBuilder()
+                            .ConfigureServices(services =>
+                            {
+                                services.AddSingleton(options);           // Configuración
+                                services.AddSingleton(connection);        // Conexión singleton
+                                services.AddHostedService(provider =>     // Registrar dron como BackgroundService
+                                    new Drone.DroneController(DroneID, DroneDriver, connection, options));
+                            })
+                            .Build();
 
-			controller.Stop();
+            await host.RunAsync();
 		}
 	}
 }
