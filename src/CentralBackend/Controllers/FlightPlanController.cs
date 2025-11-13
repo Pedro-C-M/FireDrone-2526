@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Models;
 
 namespace CentralBackend.Controllers
@@ -8,28 +9,34 @@ namespace CentralBackend.Controllers
     [ApiController]
     public class FlightPlanController : ControllerBase
     {
-        private static List<FlightPlan> _plans = new();
+        //private static List<FlightPlan> _plans = new();
+        private FireDrone _context;
+
+        public FlightPlanController(FireDrone context)
+        {
+            _context = context;
+        }
 
         [HttpGet]
-        public ActionResult<IEnumerable<FlightPlan>> GetAll()
+        public async Task<ActionResult<IEnumerable<FlightPlan>>> GetAll()
         {
-            return Ok(_plans);
+            var plans = await _context.FlightPlans.ToListAsync();
+            return Ok(plans);
         }
 
         [HttpPost]
-        public ActionResult<FlightPlan> Create([FromBody] FlightPlan plan)
+        public async Task<ActionResult<FlightPlan>> Create([FromBody] FlightPlan plan)
         {
-            plan.Id = _plans.Count + 1;
-            _plans.Add(plan);
+            _context.FlightPlans.Add(plan);
+            await _context.SaveChangesAsync();
             return Ok(plan);
         }
 
         [HttpPut("{id}")]
-        public IActionResult Update(int id, [FromBody] FlightPlan plan)
+        public async Task<IActionResult> Update(int id, [FromBody] FlightPlan plan)
         {
-            var existing = _plans.Find(p => p.Id == id);
-            if (existing == null)
-                return NotFound();
+            var existing = await _context.FlightPlans.FindAsync(id);
+            if (existing == null) return NotFound();
 
             existing.DronId = plan.DronId;
             existing.RutaId = plan.RutaId;
@@ -39,29 +46,30 @@ namespace CentralBackend.Controllers
             existing.EndingTime = plan.EndingTime;
             existing.State = plan.State;
 
+            await _context.SaveChangesAsync();
             return Ok(existing);
         }
 
         [HttpPut("{id}/assign")]
-        public IActionResult AssignDron(int id, [FromBody] AssignDronDto dto)
+        public async Task<IActionResult> AssignDron(int id, [FromBody] AssignDronDto dto)
         {
-            var existing = _plans.Find(p => p.Id == id);
-            if (existing == null)
-                return NotFound($"Flight Plan with ID {id} not found");
+            var existing = await _context.FlightPlans.FindAsync(id);
+            if (existing == null) return NotFound($"Flight Plan with ID {id} not found");
 
             existing.DronId = dto.DronId;
+            await _context.SaveChangesAsync();
             return Ok(existing);
         }
 
 
         [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var plan = _plans.Find(p => p.Id == id);
-            if (plan == null)
-                return NotFound();
+            var plan = await _context.FlightPlans.FindAsync(id);
+            if (plan == null) return NotFound();
 
-            _plans.Remove(plan);
+            _context.FlightPlans.Remove(plan);
+            await _context.SaveChangesAsync();
             return Ok();
         }
 

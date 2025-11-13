@@ -1,6 +1,7 @@
 
 namespace CentralBackend;
 
+using Microsoft.Data.Sqlite;
 using Models;
 
 public class Program
@@ -10,6 +11,8 @@ public class Program
         ProbarBaseDeDatos();
 
         var builder = WebApplication.CreateBuilder(args);
+
+        builder.Services.AddDbContext<FireDrone>();
 
         // Add services to the container.
         builder.Services.AddAuthorization();
@@ -48,7 +51,7 @@ public class Program
 
         app.MapGet("/weatherforecast", (HttpContext httpContext) =>
         {
-            var forecast =  Enumerable.Range(1, 5).Select(index =>
+            var forecast = Enumerable.Range(1, 5).Select(index =>
                 new WeatherForecast
                 {
                     Date = DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
