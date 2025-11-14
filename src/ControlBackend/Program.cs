@@ -37,6 +37,7 @@ public class Program
         var builder = WebApplication.CreateBuilder(args);
 
         // Add services to the container.
+        builder.Services.AddControllers();
         builder.Services.AddAuthorization();
 
         //Esto inyecta en el programa el publisher de RabbitMQ 
@@ -65,6 +66,8 @@ public class Program
         {
             "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
         };
+
+        app.MapControllers();
 
         app.MapGet("/weatherforecast", (HttpContext httpContext) =>
         {
