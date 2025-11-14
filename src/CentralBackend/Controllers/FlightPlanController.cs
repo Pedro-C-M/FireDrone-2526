@@ -1,6 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using CentralBackend.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Models;
 
 namespace CentralBackend.Controllers
@@ -9,27 +8,25 @@ namespace CentralBackend.Controllers
     [ApiController]
     public class FlightPlanController : ControllerBase
     {
-        //private static List<FlightPlan> _plans = new();
-        private FireDrone _context;
+        private readonly FlightPlanService _service;
 
-        public FlightPlanController(FireDrone context)
+        public FlightPlanController(FlightPlanService service)
         {
-            _context = context;
+            _service = service;
         }
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<FlightPlan>>> GetAll()
         {
-            var plans = await _context.FlightPlans.ToListAsync();
-            return Ok(plans);
+            var result = await _service.GetAllAsync();
+            return Ok(result);
         }
 
         [HttpPost]
         public async Task<ActionResult<FlightPlan>> Create([FromBody] FlightPlan plan)
         {
-            _context.FlightPlans.Add(plan);
-            await _context.SaveChangesAsync();
-            return Ok(plan);
+            var result = await _service.CreateAsync(plan);
+            return Ok(result);
         }
 
         [HttpPut("{id}")]
@@ -53,23 +50,14 @@ namespace CentralBackend.Controllers
         [HttpPut("{id}/assign")]
         public async Task<IActionResult> AssignDron(int id, [FromBody] AssignDronDto dto)
         {
-            var existing = await _context.FlightPlans.FindAsync(id);
-            if (existing == null) return NotFound($"Flight Plan with ID {id} not found");
-
-            existing.DronId = dto.DronId;
-            await _context.SaveChangesAsync();
-            return Ok(existing);
+            var result = await _service.AssignDronAsync(id, dto.DronId);
+            return Ok(result);
         }
-
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var plan = await _context.FlightPlans.FindAsync(id);
-            if (plan == null) return NotFound();
-
-            _context.FlightPlans.Remove(plan);
-            await _context.SaveChangesAsync();
+            await _service.DeleteAsync(id);
             return Ok();
         }
 
