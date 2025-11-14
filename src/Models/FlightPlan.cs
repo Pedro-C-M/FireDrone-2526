@@ -10,14 +10,17 @@ namespace Models
         public int RutaId { get; set; }
         public int DronId { get; set; }
         public int? EstControlId { get; set; }
-        public int? StartingPointId { get; set; }
-        public int? EndingPointId { get; set; }
+        
         //--------- Atributos de la entidad ---------
         public Route? Ruta { get; set; }
         public Dron? Dron { get; set; }
         public ControlStation? Ctrl { get; set; }
-        public RoutePoint? StartPoint { get; set; }
-        public RoutePoint? EndPoint { get; set; }
+
+        //Puntos de inicio y fin
+        public float? InitLong { get; set; }
+        public float? InitLat { get; set; }
+        public float? EndLong { get; set; }
+        public float? EndLat { get; set; }
 
         public DateTime StartingTime { get; set; }
         public DateTime? EndingTime { get; set; } //Puede ser null si aún no ha terminado
