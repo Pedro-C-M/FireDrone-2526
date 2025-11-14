@@ -10,14 +10,14 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CentralBackend.Migrations
 {
     [DbContext(typeof(FireDrone))]
-    [Migration("20251113105320_InitialCreate")]
+    [Migration("20251114113727_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "8.0.0");
+            modelBuilder.HasAnnotation("ProductVersion", "8.0.10");
 
             modelBuilder.Entity("Models.BaseStation", b =>
                 {

@@ -15,7 +15,7 @@ dotnet tool install --global dotnet-ef
 
 public class FireDrone : DbContext
 {
-  public DbSet<BaseStation> BaseStations { get; set; }
+    public DbSet<BaseStation> BaseStations { get; set; }
     public DbSet<ControlStation> ControlStations { get; set; }
     public DbSet<Dron> Drones { get; set; }
     public DbSet<DronCharacteristics> DronCharacteristics { get; set; }

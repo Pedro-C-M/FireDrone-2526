@@ -90,8 +90,28 @@ namespace CentralBackend
                 };
                 dron.DronCharacteristics = dronChar;
 
+                var dron2 = new Dron
+                {
+                    Base = baseStation,
+                    ControlStation = controlStation,
+                    Actual = flightPlan,
+                    Lat = 43.36f,
+                    Lon = -5.84f,
+                    State = "Idle"
+                };
+
+                var dronChar2 = new DronCharacteristics
+                {
+                    Model = "DronX1",
+                    Dron = dron2,
+                    Sensors = db.Sensors.ToList()
+                };
+                dron2.DronCharacteristics = dronChar2;
+
                 db.Drones.Add(dron);
                 db.DronCharacteristics.Add(dronChar);
+                db.Drones.Add(dron2);
+                db.DronCharacteristics.Add(dronChar2);
 
                 // ---------- Sample ----------
                 var sample = new Sample
