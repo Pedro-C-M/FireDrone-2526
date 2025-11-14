@@ -34,7 +34,7 @@ namespace CentralBackend.Services
             existing.DronId = plan.DronId;
             existing.RutaId = plan.RutaId;
             existing.EstControlId = plan.EstControlId;
-            existing.StartingPointId = plan.StartingPointId;
+            //existing.StartingPointId = plan.StartingPointId;
             existing.StartingTime = plan.StartingTime;
             existing.EndingTime = plan.EndingTime;
             existing.State = plan.State;

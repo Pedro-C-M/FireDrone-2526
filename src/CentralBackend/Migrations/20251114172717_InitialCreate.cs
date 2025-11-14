@@ -143,6 +143,46 @@ namespace CentralBackend.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "FlightPlans",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    RutaId = table.Column<int>(type: "INTEGER", nullable: false),
+                    DronId = table.Column<int>(type: "INTEGER", nullable: false),
+                    EstControlId = table.Column<int>(type: "INTEGER", nullable: true),
+                    CtrlId = table.Column<int>(type: "INTEGER", nullable: true),
+                    InitLong = table.Column<float>(type: "REAL", nullable: true),
+                    InitLat = table.Column<float>(type: "REAL", nullable: true),
+                    EndLong = table.Column<float>(type: "REAL", nullable: true),
+                    EndLat = table.Column<float>(type: "REAL", nullable: true),
+                    StartingTime = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    EndingTime = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    State = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_FlightPlans", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_FlightPlans_ControlStations_CtrlId",
+                        column: x => x.CtrlId,
+                        principalTable: "ControlStations",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_FlightPlans_Drones_DronId",
+                        column: x => x.DronId,
+                        principalTable: "Drones",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_FlightPlans_Routes_RutaId",
+                        column: x => x.RutaId,
+                        principalTable: "Routes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Samples",
                 columns: table => new
                 {
@@ -196,46 +236,11 @@ namespace CentralBackend.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_ChangeModes", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "FlightPlans",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    RutaId = table.Column<int>(type: "INTEGER", nullable: false),
-                    DronId = table.Column<int>(type: "INTEGER", nullable: false),
-                    EstControlId = table.Column<int>(type: "INTEGER", nullable: true),
-                    StartingPointId = table.Column<int>(type: "INTEGER", nullable: true),
-                    EndingPointId = table.Column<int>(type: "INTEGER", nullable: true),
-                    CtrlId = table.Column<int>(type: "INTEGER", nullable: true),
-                    StartPointId = table.Column<int>(type: "INTEGER", nullable: true),
-                    EndPointId = table.Column<int>(type: "INTEGER", nullable: true),
-                    StartingTime = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    EndingTime = table.Column<DateTime>(type: "TEXT", nullable: true),
-                    State = table.Column<int>(type: "INTEGER", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_FlightPlans", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_FlightPlans_ControlStations_CtrlId",
-                        column: x => x.CtrlId,
-                        principalTable: "ControlStations",
+                        name: "FK_ChangeModes_FlightPlans_FlightPlanId",
+                        column: x => x.FlightPlanId,
+                        principalTable: "FlightPlans",
                         principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_FlightPlans_Drones_DronId",
-                        column: x => x.DronId,
-                        principalTable: "Drones",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_FlightPlans_Routes_RutaId",
-                        column: x => x.RutaId,
-                        principalTable: "Routes",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -331,19 +336,9 @@ namespace CentralBackend.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_FlightPlans_EndPointId",
-                table: "FlightPlans",
-                column: "EndPointId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_FlightPlans_RutaId",
                 table: "FlightPlans",
                 column: "RutaId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_FlightPlans_StartPointId",
-                table: "FlightPlans",
-                column: "StartPointId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Incidences_FlightPlanId",
@@ -374,48 +369,11 @@ namespace CentralBackend.Migrations
                 name: "IX_Sensors_DronCharacteristicsId",
                 table: "Sensors",
                 column: "DronCharacteristicsId");
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_ChangeModes_FlightPlans_FlightPlanId",
-                table: "ChangeModes",
-                column: "FlightPlanId",
-                principalTable: "FlightPlans",
-                principalColumn: "Id");
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_FlightPlans_RoutePoints_EndPointId",
-                table: "FlightPlans",
-                column: "EndPointId",
-                principalTable: "RoutePoints",
-                principalColumn: "Id");
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_FlightPlans_RoutePoints_StartPointId",
-                table: "FlightPlans",
-                column: "StartPointId",
-                principalTable: "RoutePoints",
-                principalColumn: "Id");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "FK_BaseStations_ControlStations_ControlStationId",
-                table: "BaseStations");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_Drones_ControlStations_ControlStationId",
-                table: "Drones");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_FlightPlans_ControlStations_CtrlId",
-                table: "FlightPlans");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_RoutePoints_FlightPlans_FlightPlanId",
-                table: "RoutePoints");
-
             migrationBuilder.DropTable(
                 name: "ChangeModes");
 
@@ -426,34 +384,34 @@ namespace CentralBackend.Migrations
                 name: "Incidences");
 
             migrationBuilder.DropTable(
+                name: "RoutePoints");
+
+            migrationBuilder.DropTable(
                 name: "Samples");
 
             migrationBuilder.DropTable(
                 name: "Sensors");
 
             migrationBuilder.DropTable(
-                name: "DronCharacteristics");
-
-            migrationBuilder.DropTable(
-                name: "ControlStations");
-
-            migrationBuilder.DropTable(
                 name: "FlightPlans");
 
             migrationBuilder.DropTable(
-                name: "Drones");
-
-            migrationBuilder.DropTable(
-                name: "RoutePoints");
-
-            migrationBuilder.DropTable(
-                name: "BaseStations");
+                name: "DronCharacteristics");
 
             migrationBuilder.DropTable(
                 name: "Routes");
 
             migrationBuilder.DropTable(
+                name: "Drones");
+
+            migrationBuilder.DropTable(
                 name: "Perimeters");
+
+            migrationBuilder.DropTable(
+                name: "BaseStations");
+
+            migrationBuilder.DropTable(
+                name: "ControlStations");
         }
     }
 }

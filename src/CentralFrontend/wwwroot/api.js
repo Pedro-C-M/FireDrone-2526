@@ -1,11 +1,39 @@
 const uri = 'http://localhost:5178/api/FlightPlan'; //cambio para conexión con controller
 let flightplans = [];
 
+window.onload = async () => {
+    getFlightPlans();
+    await getDrones();
+}
+
 function getFlightPlans() {
     fetch(uri)
         .then(response => response.json())
         .then(data => _displayFlightPlans(data))
         .catch(error => console.error('Unable to get flight plans.', error));
+}
+
+async function getDrones()
+{
+    try {
+        const res = await fetch('http://localhost:5178/api/Drone');
+        const drones = await res.json();
+
+        const selectAssign = document.getElementById('assign-droneId');
+        const selectAdd = document.getElementById('add-dronId');
+        const selectEdit = document.getElementById('edit-dronId');
+        drones.forEach(d => {
+            const option = document.createElement('option');
+            option.value = d.id;
+            option.textContent = option.textContent = `Drone ${d.id}`;
+
+            selectAssign.appendChild(option.cloneNode(true));
+            selectAdd.appendChild(option);
+            selectEdit.appendChild(option);
+        });
+    } catch (err) {
+        console.error('Error loading drones:', err);
+    }
 }
 
 function addFlightPlan() {

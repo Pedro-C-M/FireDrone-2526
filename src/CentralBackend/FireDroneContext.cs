@@ -30,7 +30,7 @@ public class FireDrone : DbContext
 
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
-    => options.UseSqlite("Data Source=../../FireDrone.db");
+    => options.UseSqlite("Data Source=../../FireDrone-2526-3.db");
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
