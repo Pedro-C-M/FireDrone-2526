@@ -1,6 +1,8 @@
 
 namespace CentralBackend;
 
+using CentralBackend.Middleware;
+using CentralBackend.Services;
 using Microsoft.Data.Sqlite;
 using Models;
 
@@ -19,6 +21,8 @@ public class Program
 
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddControllers();
+        builder.Services.AddScoped<FlightPlanService>();
+        builder.Services.AddScoped<DroneService>();
         builder.Services.AddCors(options =>
         {
             options.AddPolicy("AllowFrontend", policy =>
@@ -43,6 +47,7 @@ public class Program
         app.UseCors("AllowFrontend");
         app.UseAuthorization();
         app.MapControllers();
+        app.UseMiddleware<ErrorHandlingMiddleware>();
 
         var summaries = new[]
         {
