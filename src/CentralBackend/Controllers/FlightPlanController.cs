@@ -43,6 +43,20 @@ namespace CentralBackend.Controllers
             return Ok(result);
         }
 
+        [HttpPut("{id}/stop")]
+        public async Task<IActionResult> StopFlightPlan(int id)
+        {
+            var result = await _service.StopFlightPlanAsync(id);
+            return Ok(result);
+        }
+
+        [HttpPut("{id}/manual")]
+        public async Task<IActionResult> SwitchToManual(int id)
+        {
+            var result = await _service.SwitchToManualModeAsync(id);
+            return Ok(result);
+        }
+
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {

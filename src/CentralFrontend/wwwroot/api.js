@@ -132,6 +132,68 @@ function deleteFlightPlan(id) {
  });
 }
 
+function stopFlightPlan(id) {
+    console.log(`Stopping flight plan ${id}...`);
+
+    if (!confirm(`Are you sure you want to stop flight plan #${id}?`)) {
+        return;
+    }
+
+    fetch(`${uri}/${id}/stop`, {
+        method: 'PUT',
+        headers: {
+     'Accept': 'application/json',
+       'Content-Type': 'application/json'
+ }
+    })
+      .then(response => {
+    if (!response.ok) {
+ throw new Error(`Failed to stop flight plan: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+     console.log('Stop flight plan successful:', data);
+    alert(`Flight plan #${id} stopped successfully!`);
+ getFlightPlans(); // Refresh table
+        })
+        .catch(error => {
+    console.error('Error stopping flight plan:', error);
+            alert(`Failed to stop flight plan: ${error.message}`);
+        });
+}
+
+function switchToManualMode(id) {
+    console.log(`Switching flight plan ${id} to manual mode...`);
+
+    if (!confirm(`Switch flight plan #${id} to manual mode?`)) {
+        return;
+    }
+
+fetch(`${uri}/${id}/manual`, {
+      method: 'PUT',
+        headers: {
+            'Accept': 'application/json',
+        'Content-Type': 'application/json'
+        }
+    })
+        .then(response => {
+     if (!response.ok) {
+    throw new Error(`Failed to switch to manual mode: ${response.status}`);
+            }
+  return response.json();
+    })
+        .then(data => {
+     console.log('Switch to manual mode successful:', data);
+          alert(`Flight plan #${id} switched to manual mode successfully!`);
+            getFlightPlans(); // Refresh table
+        })
+        .catch(error => {
+      console.error('Error switching to manual mode:', error);
+        alert(`Failed to switch to manual mode: ${error.message}`);
+        });
+}
+
 function displayEditForm(id) {
     const flightplan = flightplans.find(fp => fp.id === id);
 
@@ -214,6 +276,24 @@ const template = document.getElementById('flightplan_row');
      deleteFlightPlan(flightplan.id);
             }
    });
+
+        const stopButton = clone.querySelector('.btn-stop');
+        if (stopButton) {
+            stopButton.addEventListener('click', () => {
+                if (confirm(`Are you sure you want to stop flight plan #${flightplan.id}?`)) {
+                    stopFlightPlan(flightplan.id);
+                }
+            });
+        }
+
+        const manualButton = clone.querySelector('.btn-manual');
+        if (manualButton) {
+            manualButton.addEventListener('click', () => {
+                if (confirm(`Switch flight plan #${flightplan.id} to manual mode?`)) {
+                    switchToManualMode(flightplan.id);
+                }
+            });
+        }
 
         tBody.appendChild(clone);
     });
