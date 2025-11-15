@@ -20,10 +20,15 @@ namespace ControlBackend.Controllers
         [HttpPost("{id}/start")]
         public async Task<IActionResult> StartFlight(int id)
         {
+            Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] StartFlight called for Drone ID: {id}");
+     
             var msg = new { command = "start", droneId = id };
             var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(msg));
 
             await _publisher.PublishAsync("drone.{id}.commands", body);
+
+            Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] Start command sent to RabbitMQ for Drone ID: {id}");
+
             return Ok(new { status = "sent", action = "start", droneId = id });
         }
 

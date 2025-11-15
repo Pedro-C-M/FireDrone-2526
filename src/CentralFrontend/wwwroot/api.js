@@ -1,5 +1,57 @@
 const uri = 'http://localhost:5178/api/FlightPlan'; //cambio para conexión con controller
+const droneUri = 'http://localhost:5178/api/Drone';
 let flightplans = [];
+
+
+// Load data when page loads
+window.onload = async () => {
+    console.log('Page loaded, fetching data...');
+    await getDrones();
+  getFlightPlans();
+};
+
+async function getDrones() {
+  try {
+        console.log('Fetching drones from:', droneUri);
+        const response = await fetch(droneUri);
+        
+        if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+        }
+      
+  const drones = await response.json();
+    console.log('Drones loaded:', drones);
+
+        const selectAssign = document.getElementById('assign-droneId');
+  const selectAdd = document.getElementById('add-dronId');
+        const selectEdit = document.getElementById('edit-dronId');
+
+        // Clear existing options (except the first "Select..." option)
+     [selectAssign, selectAdd, selectEdit].forEach(select => {
+     if (select) {
+  while (select.options.length > 1) {
+            select.remove(1);
+                }
+  }
+        });
+
+      // Add drone options
+        drones.forEach(drone => {
+            const option = document.createElement('option');
+      option.value = drone.id;
+    option.textContent = `Drone ${drone.id} - ${drone.state || 'Unknown'}`;
+
+            if (selectAssign) selectAssign.appendChild(option.cloneNode(true));
+       if (selectAdd) selectAdd.appendChild(option.cloneNode(true));
+         if (selectEdit) selectEdit.appendChild(option.cloneNode(true));
+});
+
+    console.log(`Loaded ${drones.length} drones into dropdowns`);
+ } catch (error) {
+  console.error('Error loading drones:', error);
+ alert('Failed to load drones. Please check if the backend is running on http://localhost:5178');
+    }
+}
 
 function getFlightPlans() {
     fetch(uri)
@@ -17,41 +69,67 @@ function addFlightPlan() {
     const addStateInput = document.getElementById('add-state');
 
     const flightplan = {
-        dronId: parseInt(addDronIdInput.value.trim()),
+      dronId: parseInt(addDronIdInput.value.trim()),
         rutaId: parseInt(addRutaIdInput.value.trim()),
         estControlId: addEstControlIdInput.value ? parseInt(addEstControlIdInput.value.trim()) : null,
-        startingPointId: addStartingPointIdInput.value ? parseInt(addStartingPointIdInput.value.trim()) : null,
-        startingTime: addStartingTimeInput.value,
+      startingPointId: addStartingPointIdInput.value ? parseInt(addStartingPointIdInput.value.trim()) : null,
+  startingTime: addStartingTimeInput.value,
         state: parseInt(addStateInput.value)
     };
 
     fetch(uri, {
         method: 'POST',
-        headers: {
+    headers: {
             'Accept': 'application/json',
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(flightplan)
+   'Content-Type': 'application/json'
+    },
+     body: JSON.stringify(flightplan)
     })
-        .then(response => response.json())
-        .then(() => {
-            getFlightPlans();
-            addDronIdInput.value = '';
-            addRutaIdInput.value = '';
+      .then(response => response.json())
+     .then(() => {
+      getFlightPlans();
+  addDronIdInput.value = '';
+         addRutaIdInput.value = '';
             addEstControlIdInput.value = '';
             addStartingPointIdInput.value = '';
-            addStartingTimeInput.value = '';
-            addStateInput.value = '0';
+        addStartingTimeInput.value = '';
+      addStateInput.value = '0';
         })
-        .catch(error => console.error('Unable to add flight plan.', error));
+    .catch(error => console.error('Unable to add flight plan.', error));
 }
 
 function deleteFlightPlan(id) {
+    console.log(`Deleting flight plan ${id}...`);
+
     fetch(`${uri}/${id}`, {
-        method: 'DELETE'
+    method: 'DELETE',
+        headers: {
+    'Accept': 'application/json',
+     'Content-Type': 'application/json'
+        }
     })
-        .then(() => getFlightPlans())
-        .catch(error => console.error('Unable to delete flight plan.', error));
+        .then(response => {
+  if (!response.ok) {
+    if (response.status === 404) {
+       throw new Error(`Flight plan ${id} not found`);
+        } else if (response.status === 500) {
+  throw new Error('Server error occurred while deleting');
+             } else {
+                    throw new Error(`Failed to delete flight plan: ${response.status}`);
+                }
+  }
+            return response;
+  })
+        .then(() => {
+    // Show success message
+        alert(`Flight plan #${id} deleted successfully`);
+          // Refresh the list
+    getFlightPlans();
+ })
+        .catch(error => {
+            console.error('Unable to delete flight plan.', error);
+            alert(`Error deleting flight plan: ${error.message}`);
+ });
 }
 
 function displayEditForm(id) {
@@ -71,31 +149,31 @@ function displayEditForm(id) {
 function updateFlightPlan() {
     const flightplanId = parseInt(document.getElementById('edit-id').value);
     const flightplan = {
-        id: flightplanId,
+ id: flightplanId,
         dronId: parseInt(document.getElementById('edit-dronId').value.trim()),
         rutaId: parseInt(document.getElementById('edit-rutaId').value.trim()),
         estControlId: document.getElementById('edit-estControlId').value ? parseInt(document.getElementById('edit-estControlId').value.trim()) : null,
         startingPointId: document.getElementById('edit-startingPointId').value ? parseInt(document.getElementById('edit-startingPointId').value.trim()) : null,
-        startingTime: document.getElementById('edit-startingTime').value,
+      startingTime: document.getElementById('edit-startingTime').value,
         endingTime: document.getElementById('edit-endingTime').value || null,
         state: parseInt(document.getElementById('edit-state').value)
     };
 
-    fetch(`${uri}/${flightplanId}`, {
+ fetch(`${uri}/${flightplanId}`, {
         method: 'PUT',
         headers: {
             'Accept': 'application/json',
-            'Content-Type': 'application/json'
+         'Content-Type': 'application/json'
         },
         body: JSON.stringify(flightplan)
     })
         .then(() => {
             getFlightPlans();
-            closeInput();
+        closeInput();
         })
         .catch(error => console.error('Unable to update flight plan.', error));
 
-    return false;
+  return false;
 }
 
 function closeInput() {
@@ -113,29 +191,29 @@ function _displayFlightPlans(data) {
 
     _displayCount(data.length);
 
-    const template = document.getElementById('flightplan_row');
+const template = document.getElementById('flightplan_row');
 
     data.forEach(flightplan => {
         const clone = template.content.cloneNode(true);
         const td = clone.querySelectorAll('td');
 
         td[0].textContent = flightplan.id;
-        td[1].textContent = flightplan.dronId;
-        td[2].textContent = flightplan.rutaId;
+ td[1].textContent = flightplan.dronId;
+    td[2].textContent = flightplan.rutaId;
         td[3].textContent = flightplan.estControlId || 'N/A';
-        td[4].textContent = formatDateTime(flightplan.startingTime);
+  td[4].textContent = formatDateTime(flightplan.startingTime);
         td[5].textContent = flightplan.endingTime ? formatDateTime(flightplan.endingTime) : 'In Progress';
         td[6].textContent = getStatusText(flightplan.state);
 
-        const editButton = clone.querySelector('.btn-warning');
-        editButton.addEventListener('click', () => displayEditForm(flightplan.id));
+   const editButton = clone.querySelector('.btn-warning');
+   editButton.addEventListener('click', () => displayEditForm(flightplan.id));
 
-        const deleteButton = clone.querySelector('.btn-danger');
+    const deleteButton = clone.querySelector('.btn-danger');
         deleteButton.addEventListener('click', () => {
-            if (confirm('Are you sure you want to delete this flight plan?')) {
-                deleteFlightPlan(flightplan.id);
+   if (confirm(`Are you sure you want to delete flight plan #${flightplan.id}? This action cannot be undone.`)) {
+     deleteFlightPlan(flightplan.id);
             }
-        });
+   });
 
         tBody.appendChild(clone);
     });
@@ -147,7 +225,7 @@ function getStatusText(state) {
     switch (state) {
         case 0: return 'On Course';
         case 1: return 'Completed';
-        case 2: return 'Cancelled';
+    case 2: return 'Cancelled';
         default: return 'Unknown';
     }
 }
@@ -160,7 +238,7 @@ function formatDateTime(dateTimeString) {
 function formatDateTimeLocal(dateTimeString) {
     const date = new Date(dateTimeString);
     const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     const hours = String(date.getHours()).padStart(2, '0');
     const minutes = String(date.getMinutes()).padStart(2, '0');
@@ -169,29 +247,54 @@ function formatDateTimeLocal(dateTimeString) {
 
 
 function assignDronToPlan() {
+    console.log('=== assignDronToPlan called ===');
+    
     const planId = document.getElementById('assign-planId').value;
     const droneId = document.getElementById('assign-droneId').value;
 
+    console.log('Plan ID:', planId);
+    console.log('Drone ID:', droneId);
+
     if (!planId || !droneId) {
-        alert("Please enter both a flight plan ID and a drone ID.");
-        return;
+        alert("Please enter both a flight plan ID and select a drone.");
+        console.error('Missing planId or droneId');
+      return;
     }
 
-    fetch(`${uri}/${planId}/assign`, {
+    const payload = { DronId: parseInt(droneId) };
+    const url = `${uri}/${planId}/assign`;
+    
+    console.log('Making request to:', url);
+    console.log('Payload:', payload);
+
+    fetch(url, {
         method: 'PUT',
         headers: {
             'Accept': 'application/json',
-            'Content-Type': 'application/json'
+ 'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ DronId: parseInt(droneId) })
+  body: JSON.stringify(payload)
     })
         .then(response => {
-            if (!response.ok) throw new Error('Assignment failed');
+   console.log('Response status:', response.status);
+    console.log('Response ok:', response.ok);
+ 
+            if (!response.ok) {
+      throw new Error(`Assignment failed with status: ${response.status}`);
+     }
             return response.json();
-        })
+     })
         .then(data => {
-            alert(`Drone ${data.dronId} assigned to plan ${data.id}`);
-            getFlightPlans(); // refrescar tabla
+    console.log('Assignment successful:', data);
+          alert(`Drone ${data.dronId} assigned to flight plan ${data.id} successfully!`);
+      getFlightPlans(); // Refresh table
+  
+       // Clear the form
+    document.getElementById('assign-planId').value = '';
+    document.getElementById('assign-droneId').value = '';
         })
-        .catch(error => console.error('Unable to assign drone.', error));
+        .catch(error => {
+            console.error('Error assigning drone:', error);
+         alert(`Failed to assign drone: ${error.message}`);
+     });
 }

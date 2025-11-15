@@ -2,7 +2,6 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,11 +9,9 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CentralBackend.Migrations
 {
     [DbContext(typeof(FireDrone))]
-    [Migration("20251114121025_InitialCreate")]
-    partial class InitialCreate
+    partial class FireDroneModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.10");
@@ -164,11 +161,11 @@ namespace CentralBackend.Migrations
                     b.Property<int>("DronId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("EndPointId")
-                        .HasColumnType("INTEGER");
+                    b.Property<float?>("EndLat")
+                        .HasColumnType("REAL");
 
-                    b.Property<int?>("EndingPointId")
-                        .HasColumnType("INTEGER");
+                    b.Property<float?>("EndLong")
+                        .HasColumnType("REAL");
 
                     b.Property<DateTime?>("EndingTime")
                         .HasColumnType("TEXT");
@@ -176,13 +173,13 @@ namespace CentralBackend.Migrations
                     b.Property<int?>("EstControlId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<float?>("InitLat")
+                        .HasColumnType("REAL");
+
+                    b.Property<float?>("InitLong")
+                        .HasColumnType("REAL");
+
                     b.Property<int>("RutaId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int?>("StartPointId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int?>("StartingPointId")
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("StartingTime")
@@ -198,11 +195,7 @@ namespace CentralBackend.Migrations
                     b.HasIndex("DronId")
                         .IsUnique();
 
-                    b.HasIndex("EndPointId");
-
                     b.HasIndex("RutaId");
-
-                    b.HasIndex("StartPointId");
 
                     b.ToTable("FlightPlans");
                 });
@@ -404,29 +397,17 @@ namespace CentralBackend.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Models.RoutePoint", "EndPoint")
-                        .WithMany()
-                        .HasForeignKey("EndPointId");
-
                     b.HasOne("Models.Route", "Ruta")
                         .WithMany("Plans")
                         .HasForeignKey("RutaId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Models.RoutePoint", "StartPoint")
-                        .WithMany()
-                        .HasForeignKey("StartPointId");
-
                     b.Navigation("Ctrl");
 
                     b.Navigation("Dron");
 
-                    b.Navigation("EndPoint");
-
                     b.Navigation("Ruta");
-
-                    b.Navigation("StartPoint");
                 });
 
             modelBuilder.Entity("Models.Incidence", b =>

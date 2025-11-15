@@ -32,19 +32,8 @@ namespace CentralBackend.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] FlightPlan plan)
         {
-            var existing = await _context.FlightPlans.FindAsync(id);
-            if (existing == null) return NotFound();
-
-            existing.DronId = plan.DronId;
-            existing.RutaId = plan.RutaId;
-            existing.EstControlId = plan.EstControlId;
-           // existing.StartingPointId = plan.StartingPointId;
-            existing.StartingTime = plan.StartingTime;
-            existing.EndingTime = plan.EndingTime;
-            existing.State = plan.State;
-
-            await _context.SaveChangesAsync();
-            return Ok(existing);
+            var result = await _service.UpdateAsync(id, plan);
+            return Ok(result);
         }
 
         [HttpPut("{id}/assign")]
