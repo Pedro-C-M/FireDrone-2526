@@ -2,7 +2,7 @@
   "profiles": {
     "DroneController": {
       "commandName": "Project",
-      "commandLineArgs": "12 DroneSimulator"
+      "commandLineArgs": "2 DroneSimulator"
     }
   }
 }

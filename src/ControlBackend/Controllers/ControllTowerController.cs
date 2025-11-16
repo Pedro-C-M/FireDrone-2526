@@ -25,7 +25,7 @@ namespace ControlBackend.Controllers
             var msg = new { command = "start", droneId = id };
             var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(msg));
 
-            await _publisher.PublishAsync("drone.{id}.commands", body);
+            await _publisher.PublishAsync($"drone.{id}.commands", body);
 
             Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] Start command sent to RabbitMQ for Drone ID: {id}");
 
@@ -39,7 +39,7 @@ namespace ControlBackend.Controllers
             var msg = new { command = "stop", droneId = id };
             var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(msg));
 
-            await _publisher.PublishAsync("drone.{id}.commands", body);
+            await _publisher.PublishAsync($"drone.{id}.commands", body);
             return Ok(new { status = "sent", action = "stop", droneId = id });
         }
 
@@ -56,7 +56,7 @@ namespace ControlBackend.Controllers
             };
 
             var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(msg));
-            await _publisher.PublishAsync("drone.{id}.commands", body);
+            await _publisher.PublishAsync($"drone.{id}.commands", body);
 
             return Ok(new { status = "sent", action = "goto", droneId = id });
         }
