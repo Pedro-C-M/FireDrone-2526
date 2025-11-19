@@ -11,6 +11,14 @@ dotnet ef database update
  * 
  * Solo necesario una vez:
 dotnet tool install --global dotnet-ef
+
+Para poder copiarlo más rápido:
+*
+dotnet restore
+dotnet build
+dotnet ef migrations add InitialCreate
+dotnet ef database update
+*
  */
 
 public class FireDrone : DbContext

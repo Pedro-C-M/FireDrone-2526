@@ -16,20 +16,28 @@ function getFlightPlans() {
 async function getDrones()
 {
     try {
-        const res = await fetch('http://localhost:5178/api/Drone');
+        const res = await fetch('http://localhost:5178/api/Drone/available');
         const drones = await res.json();
 
         const selectAssign = document.getElementById('assign-droneId');
         const selectAdd = document.getElementById('add-dronId');
         const selectEdit = document.getElementById('edit-dronId');
+
+        selectAssign.innerHTML = '<option value="" disabled selected>-- Select a Drone --</option>';
+        selectAdd.innerHTML = '<option value="" disabled selected>-- Select a Drone --</option>';
+        selectEdit.innerHTML = '<option value="" disabled selected>-- Select a Drone --</option>';
+
         drones.forEach(d => {
             const option = document.createElement('option');
             option.value = d.id;
             option.textContent = option.textContent = `Drone ${d.id}`;
 
+            const option2 = option.cloneNode(true);
+            const option3 = option.cloneNode(true);
+
             selectAssign.appendChild(option.cloneNode(true));
-            selectAdd.appendChild(option);
-            selectEdit.appendChild(option);
+            selectAdd.appendChild(option2);
+            selectEdit.appendChild(option3);
         });
     } catch (err) {
         console.error('Error loading drones:', err);
@@ -48,7 +56,7 @@ function addFlightPlan() {
         dronId: parseInt(addDronIdInput.value.trim()),
         rutaId: parseInt(addRutaIdInput.value.trim()),
         estControlId: addEstControlIdInput.value ? parseInt(addEstControlIdInput.value.trim()) : null,
-        startingPointId: addStartingPointIdInput.value ? parseInt(addStartingPointIdInput.value.trim()) : null,
+        //startingPointId: addStartingPointIdInput.value ? parseInt(addStartingPointIdInput.value.trim()) : null,
         startingTime: addStartingTimeInput.value,
         state: parseInt(addStateInput.value)
     };
@@ -64,6 +72,7 @@ function addFlightPlan() {
         .then(response => response.json())
         .then(() => {
             getFlightPlans();
+            getDrones();
             addDronIdInput.value = '';
             addRutaIdInput.value = '';
             addEstControlIdInput.value = '';
@@ -78,7 +87,10 @@ function deleteFlightPlan(id) {
     fetch(`${uri}/${id}`, {
         method: 'DELETE'
     })
-        .then(() => getFlightPlans())
+        .then(() => {
+            getFlightPlans();
+            getDrones();
+        })
         .catch(error => console.error('Unable to delete flight plan.', error));
 }
 
@@ -120,6 +132,7 @@ function updateFlightPlan() {
         .then(() => {
             getFlightPlans();
             closeInput();
+            getDrones();
         })
         .catch(error => console.error('Unable to update flight plan.', error));
 
@@ -219,7 +232,8 @@ function assignDronToPlan() {
         })
         .then(data => {
             alert(`Drone ${data.dronId} assigned to plan ${data.id}`);
-            getFlightPlans(); // refrescar tabla
+            getFlightPlans();
+            getDrones();
         })
         .catch(error => console.error('Unable to assign drone.', error));
 }
