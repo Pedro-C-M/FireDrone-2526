@@ -30,8 +30,8 @@ public class FireDrone : DbContext
 
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
-    //=> options.UseSqlite("Data Source=../../FireDrone-2526-3.db");//Ruta relativa normal
-    => options.UseSqlite("Data Source=C:\\Users\\Pedro\\source\\repos\\FireDrone-2526-3\\FireDrone-2526-3.db");//Ruta fija Pedro
+    => options.UseSqlite("Data Source=../../FireDrone-2526-3.db");//Ruta relativa normal, si se va a ejecutar desde tests, poner vuestra ruta fija
+    //=> options.UseSqlite("Data Source=C:\\Users\\Pedro\\source\\repos\\FireDrone-2526-3\\FireDrone-2526-3.db");//Ruta fija Pedro
 
         
 
