@@ -9,8 +9,6 @@ public class Program
 {
     public static void Main(string[] args)
     {
-        ProbarBaseDeDatos();
-
         var builder = WebApplication.CreateBuilder(args);
 
         builder.Services.AddDbContext<FireDrone>();
@@ -71,10 +69,5 @@ public class Program
 
         app.Run();
 
-    }
-
-    private static void ProbarBaseDeDatos()
-    {
-        InstanciateBD.ProbarBaseDeDatos();
     }
 }

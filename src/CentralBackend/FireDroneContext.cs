@@ -12,7 +12,7 @@ dotnet ef database update
  * Solo necesario una vez:
 dotnet tool install --global dotnet-ef
  */
-
+namespace CentralBackend;
 public class FireDrone : DbContext
 {
     public DbSet<BaseStation> BaseStations { get; set; }
@@ -30,7 +30,10 @@ public class FireDrone : DbContext
 
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
-    => options.UseSqlite("Data Source=../../FireDrone-2526-3.db");
+    => options.UseSqlite("Data Source=../../FireDrone-2526-3.db");//Ruta relativa normal, si se va a ejecutar desde tests, poner vuestra ruta fija
+    //=> options.UseSqlite("Data Source=C:\\Users\\Pedro\\source\\repos\\FireDrone-2526-3\\FireDrone-2526-3.db");//Ruta fija Pedro
+
+        
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
