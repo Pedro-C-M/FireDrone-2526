@@ -100,8 +100,14 @@ namespace CentralBackend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<float?>("Altitude")
+                        .HasColumnType("REAL");
+
                     b.Property<int?>("BaseStationId")
                         .HasColumnType("INTEGER");
+
+                    b.Property<float?>("Battery")
+                        .HasColumnType("REAL");
 
                     b.Property<int?>("ControlStationId")
                         .HasColumnType("INTEGER");
@@ -118,8 +124,11 @@ namespace CentralBackend.Migrations
                     b.Property<int?>("SampleId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("State")
-                        .HasColumnType("TEXT");
+                    b.Property<float?>("Speed")
+                        .HasColumnType("REAL");
+
+                    b.Property<int>("State")
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 

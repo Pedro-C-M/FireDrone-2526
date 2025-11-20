@@ -17,8 +17,17 @@ namespace Models
         public DronCharacteristics? DronCharacteristics { get; set; }
 
         public ICollection<Sample>? Muestras { get; set; }
-        public string? State { get; set; }
+        public DroneState State { get; set; }
         public float? Lat { get; set; }
         public float? Lon { get; set; }
+        public float? Altitude { get; set; }
+        public float? Speed { get; set; }
+        public float? Battery { get; set; }
+    }
+    public enum DroneState
+    {
+        Stopped,
+        Flying,
+        Landed
     }
 }
