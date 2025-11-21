@@ -46,6 +46,10 @@ public class Program
         builder.Services.AddRabbitMq(rabbitOptions);
         builder.Services.AddSingleton<IPublisher, RabbitMqPublisher>();
 
+        builder.Services.AddSingleton<HttpForwarder>();
+        builder.Services.AddHostedService<DroneStatusConsumer>();
+        builder.Services.AddHttpClient<HttpForwarder>(); // HttpClient Registration
+
 
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddEndpointsApiExplorer();

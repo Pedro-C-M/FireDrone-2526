@@ -71,7 +71,7 @@ namespace DroneController.Drone
 			IDroneDriver drone = (IDroneDriver)Activator.CreateInstance(type);
 
 			// Sería necesario publicar la información
-			drone.SetUpdateCallback(new ConsoleDroneUpdate());
+			drone.SetUpdateCallback(new StatusUpdateCallback(this));
 
 			return drone;
 		}
@@ -120,13 +120,18 @@ namespace DroneController.Drone
 
 
         // Enviar el estado a través de la cola para recibir al backend control
-        private void SendStatus(string message)
+        internal void SendStatus(string message)
 		{
-			/*
-			 * FALTA POR COMPLETAR
-			 * *
-			 */
-		}
+            var body = Encoding.UTF8.GetBytes(message);
+
+            _channel.BasicPublishAsync(
+                exchange: _options.Exchange,
+                routingKey: $"drone.{_droneID}.status",
+                body: body
+            );
+
+            Log.Debug($"[STATUS] {message}");
+        }
 
 		// Gestión de los mensajes de comandos recibidos por el controlador
 		// Si se añaden más mensajes se debería gestionar con una tabla
@@ -149,7 +154,7 @@ namespace DroneController.Drone
 					new Waypoint { Latitude = 43.363, Longitude = -5.843, Altitude = 65, Speed = 20 },
 					new Waypoint { Latitude = 43.364, Longitude = -5.844, Altitude = 70, Speed = 18 }
 				};
-               // _drone.StartFlightPlan(waypoints);
+               _drone.StartFlightPlan(waypoints);
 			}
 			else if (command.Command == DroneCommand.STOP_FLIGHT_PLAN_CMD)
 			{
