@@ -104,9 +104,12 @@ namespace CentralBackend.Migrations
                     ControlStationId = table.Column<int>(type: "INTEGER", nullable: true),
                     FlightPlanId = table.Column<int>(type: "INTEGER", nullable: true),
                     SampleId = table.Column<int>(type: "INTEGER", nullable: true),
-                    State = table.Column<string>(type: "TEXT", nullable: true),
+                    State = table.Column<int>(type: "INTEGER", nullable: false),
                     Lat = table.Column<float>(type: "REAL", nullable: true),
-                    Lon = table.Column<float>(type: "REAL", nullable: true)
+                    Lon = table.Column<float>(type: "REAL", nullable: true),
+                    Altitude = table.Column<float>(type: "REAL", nullable: true),
+                    Speed = table.Column<float>(type: "REAL", nullable: true),
+                    Battery = table.Column<float>(type: "REAL", nullable: true)
                 },
                 constraints: table =>
                 {

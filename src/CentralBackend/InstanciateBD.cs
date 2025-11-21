@@ -84,7 +84,7 @@ namespace CentralBackend
                     Actual = flightPlan,
                     Lat = 43.36f,
                     Lon = -5.84f,
-                    State = "Idle"
+                    State = DroneState.Landed
                 };
                 var dronChar1 = new DronCharacteristics
                 {
@@ -101,7 +101,7 @@ namespace CentralBackend
                     Actual = flightPlan,
                     Lat = 43.36f,
                     Lon = -5.84f,
-                    State = "Idle"
+                    State = DroneState.Landed
                 };
                 var dronChar2 = new DronCharacteristics
                 {

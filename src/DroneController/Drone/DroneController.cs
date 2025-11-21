@@ -71,7 +71,7 @@ namespace DroneController.Drone
 			IDroneDriver drone = (IDroneDriver)Activator.CreateInstance(type);
 
 			// Sería necesario publicar la información
-			drone.SetUpdateCallback(new ConsoleDroneUpdate());
+			drone.SetUpdateCallback(new StatusUpdateCallback(this));
 
 			return drone;
 		}
@@ -100,9 +100,8 @@ namespace DroneController.Drone
                 var message = Encoding.UTF8.GetString(ea.Body.ToArray());
                 var routingKey = ea.RoutingKey;
 
-                // Consuming example: just log the received message.
-                // In the real application, you process the message as needed.
-                Debug.WriteLine($"[x] Received '{routingKey}':'{message}'");
+                HandleDroneCommand(message);
+
                 return Task.CompletedTask;
             };
 
@@ -121,13 +120,18 @@ namespace DroneController.Drone
 
 
         // Enviar el estado a través de la cola para recibir al backend control
-        private void SendStatus(string message)
+        internal void SendStatus(string message)
 		{
-			/*
-			 * FALTA POR COMPLETAR
-			 * *
-			 */
-		}
+            var body = Encoding.UTF8.GetBytes(message);
+
+            _channel.BasicPublishAsync(
+                exchange: _options.Exchange,
+                routingKey: $"drone.{_droneID}.status",
+                body: body
+            );
+
+            Log.Debug($"[STATUS] {message}");
+        }
 
 		// Gestión de los mensajes de comandos recibidos por el controlador
 		// Si se añaden más mensajes se debería gestionar con una tabla
@@ -140,15 +144,27 @@ namespace DroneController.Drone
 
 			if (command.Command == DroneCommand.START_FLIGHT_PLAN_CMD)
 			{
-				// Decodificar los argumentos
-				Waypoint[] waypoints = JsonConvert.DeserializeObject<Waypoint[]>(command.Arguments);
-				_drone.StartFlightPlan(waypoints);
+                // Decodificar los argumentos
+                //Waypoint[] waypoints = JsonConvert.DeserializeObject<Waypoint[]>(command.Arguments);
+                Waypoint[] waypoints = //De ejemplo rellenado
+				{
+					new Waypoint { Latitude = 43.36, Longitude = -5.84, Altitude = 50, Speed = 20 },
+					new Waypoint { Latitude = 43.361, Longitude = -5.841, Altitude = 55, Speed = 22 },
+					new Waypoint { Latitude = 43.362, Longitude = -5.842, Altitude = 60, Speed = 25 },
+					new Waypoint { Latitude = 43.363, Longitude = -5.843, Altitude = 65, Speed = 20 },
+					new Waypoint { Latitude = 43.364, Longitude = -5.844, Altitude = 70, Speed = 18 }
+				};
+               _drone.StartFlightPlan(waypoints);
 			}
 			else if (command.Command == DroneCommand.STOP_FLIGHT_PLAN_CMD)
 			{
-				_drone.StopFlightPlan();
+                //_drone.StopFlightPlan();
 			}
-			else if (command.Command == DroneCommand.STATUS_CMD)
+            else if (command.Command == DroneCommand.GOTO_MANUAL)
+            {
+				Console.WriteLine("GOTO_MANUAL");
+            }
+            else if (command.Command == DroneCommand.GOTO_MANUAL)//Este para el status
 			{
 				DroneStatus status = _drone.GetStatus();
 
