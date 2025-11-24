@@ -11,7 +11,6 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        var baseUrl = builder.Configuration["Backend:BaseUrl"];
 
 
         builder.Services.AddDbContext<FireDrone>();
@@ -30,7 +29,7 @@ public class Program
         {
             options.AddPolicy("AllowFrontend", policy =>
             {
-                policy.WithOrigins("http://localhost:7788")
+                policy.WithOrigins("http://localhost:5305")//CAMBIAR IP AQUI
                       .AllowAnyHeader()
                       .AllowAnyMethod();
             });
