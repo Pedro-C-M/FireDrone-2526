@@ -70,7 +70,7 @@ namespace CentralBackend.Services
             // Call ControlBackend to start the flight
             try
             {
-                var controlBackendUrl = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://localhost:5095";
+                var controlBackendUrl = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://localhost:5307";
                 var httpClient = _httpClientFactory.CreateClient();
 
                 Console.WriteLine($"[FlightPlanService] Calling ControlBackend at {controlBackendUrl}/api/drone/{dronId}/start");
@@ -115,7 +115,7 @@ namespace CentralBackend.Services
             // Call ControlBackend to stop the flight
             try
             {
-                var controlBackendUrl = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://localhost:5095";
+                var controlBackendUrl = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://localhost:5307";
                 var httpClient = _httpClientFactory.CreateClient();
 
                 Console.WriteLine($"[FlightPlanService] Calling ControlBackend at {controlBackendUrl}/api/drone/{existing.DronId}/stop");
@@ -169,7 +169,7 @@ namespace CentralBackend.Services
             // Note: You may need to implement a specific endpoint in ControlBackend for mode changes
             try
             {
-                var controlBackendUrl = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://localhost:5095";
+                var controlBackendUrl = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://localhost:5307";
                 var httpClient = _httpClientFactory.CreateClient();
 
                 Console.WriteLine($"[FlightPlanService] Notifying ControlBackend of manual mode for drone {existing.DronId}");
