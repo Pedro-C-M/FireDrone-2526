@@ -14,7 +14,7 @@ namespace ControlBackend
         public async Task SendStatusUpstreamAsync(string statusJson)
         {
             var content = new StringContent(statusJson, Encoding.UTF8, "application/json");
-            Console.WriteLine(content);
+            //Console.WriteLine(content);
             /**
              * 
             var response = await _httpClient.PostAsync("https://api.central.com/drone/status", content);

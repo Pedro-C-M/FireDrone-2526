@@ -148,7 +148,7 @@ namespace DroneController.Drone
 
 		// Detiene la tarea de simulación
 		public void StopFlightPlan()
-        {
+        {//Si peta aqui es que se intenta parar sin start antes
 			_tokenSource.Cancel();
 			try
 			{

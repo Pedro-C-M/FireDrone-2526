@@ -158,7 +158,7 @@ namespace DroneController.Drone
 			}
 			else if (command.Command == DroneCommand.STOP_FLIGHT_PLAN_CMD)
 			{
-                //_drone.StopFlightPlan();
+                _drone.StopFlightPlan();
 			}
             else if (command.Command == DroneCommand.GOTO_MANUAL)
             {
