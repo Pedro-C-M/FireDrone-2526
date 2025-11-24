@@ -85,11 +85,12 @@ function addFlightPlan() {
     },
      body: JSON.stringify(flightplan)
     })
-      .then(response => response.json())
-     .then(() => {
-      getFlightPlans();
-  addDronIdInput.value = '';
-         addRutaIdInput.value = '';
+        .then(response => response.json())
+        .then(() => {
+            getFlightPlans();
+            getDrones();
+            addDronIdInput.value = '';
+            addRutaIdInput.value = '';
             addEstControlIdInput.value = '';
             addStartingPointIdInput.value = '';
         addStartingTimeInput.value = '';
@@ -108,6 +109,7 @@ function deleteFlightPlan(id) {
      'Content-Type': 'application/json'
         }
     })
+
         .then(response => {
   if (!response.ok) {
     if (response.status === 404) {
@@ -231,7 +233,8 @@ function updateFlightPlan() {
     })
         .then(() => {
             getFlightPlans();
-        closeInput();
+            closeInput();
+            getDrones();
         })
         .catch(error => console.error('Unable to update flight plan.', error));
 

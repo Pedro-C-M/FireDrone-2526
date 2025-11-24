@@ -47,6 +47,7 @@ namespace CentralBackend.Services
             existing.StartingTime = plan.StartingTime;
             existing.EndingTime = plan.EndingTime;
             existing.State = plan.State;
+
             //existing.ModeChangeHistoric = plan.ModeChangeHistoric;
 
             await _context.SaveChangesAsync();
