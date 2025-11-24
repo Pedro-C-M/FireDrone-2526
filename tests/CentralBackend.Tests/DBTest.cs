@@ -1,10 +1,14 @@
-namespace CentralBackend.Tests;
+using CentralBackend;
 
-[TestClass]
-public class DBTest
+namespace CentralBackend.Tests
 {
-    [TestMethod]
-    public void TestMethod1()
+    [TestClass]
+    public class DBTest
     {
+        [TestMethod]
+        public void InicializarBaseDeDatos_ComoSeedData()
+        {
+            InstanciateBD.FormaBaseDeBD();
+        }
     }
 }

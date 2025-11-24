@@ -5,25 +5,30 @@ namespace CentralBackend
 {
     public static class InstanciateBD
     {
-        public static void ProbarBaseDeDatos()
+        public static void FormaBaseDeBD()
         {
             using (var db = new FireDrone())
             {
-                // Use migrations instead of EnsureCreated
+                // Aplicar migraciones
                 db.Database.Migrate();
+
+                db.Database.EnsureDeleted(); // Borra toda la base
+                db.Database.EnsureCreated(); // La vuelve a crear con la estructura actual
+
 
                 // ---------- Sensores ----------
                 if (!db.Sensors.Any())
                 {
-                    Console.WriteLine("Creando sensores iniciales...");
-                    var sensor1 = new Sensor { Model = "SensorModelX" };
-                    var sensor2 = new Sensor { Model = "SensorModelY" };
-                    var sensor3 = new Sensor { Model = "SensorModelZ" };
-                    db.Sensors.AddRange(sensor1, sensor2, sensor3);
+                    db.Sensors.AddRange(
+                        new Sensor { Model = "SensorModelX" },
+                        new Sensor { Model = "SensorModelY" },
+                        new Sensor { Model = "SensorModelZ" },
+                        new Sensor { Model = "SensorModelUwU" }
+                    );
                     db.SaveChanges();
                 }
 
-                // Only seed if database is empty
+                // Solo sembrar si no hay drones
                 if (db.Drones.Any())
                 {
                     Console.WriteLine("La base de datos ya contiene datos.");
@@ -56,10 +61,11 @@ namespace CentralBackend
                 var point2 = new RoutePoint { Lat = 43.37f, Long = -5.85f, Height = 12, Route = route };
                 route.Coords.Add(point1);
                 route.Coords.Add(point2);
+
                 db.Routes.Add(route);
                 db.RoutePoints.AddRange(point1, point2);
 
-                // ---------- FlightPlan y ChangeMode ----------
+                // ---------- FlightPlan ----------
                 var flightPlan = new FlightPlan
                 {
                     Ruta = route,
@@ -68,27 +74,25 @@ namespace CentralBackend
                     State = FlightStatus.OnCourse
                 };
                 flightPlan.ModeChangeHistoric.Add(new ChangeMode { Moment = DateTime.Now, Mode = FlightMode.Auto });
-
                 db.FlightPlans.Add(flightPlan);
 
-                // ---------- Dron y DronCharacteristics ----------
-                var dron = new Dron
+                // ---------- Drones ----------
+                var dron1 = new Dron
                 {
                     Base = baseStation,
                     ControlStation = controlStation,
                     Actual = flightPlan,
                     Lat = 43.36f,
                     Lon = -5.84f,
-                    State = "Idle"
+                    State = DroneState.Landed
                 };
-
-                var dronChar = new DronCharacteristics
+                var dronChar1 = new DronCharacteristics
                 {
                     Model = "DronX1",
-                    Dron = dron,
+                    Dron = dron1,
                     Sensors = db.Sensors.ToList()
                 };
-                dron.DronCharacteristics = dronChar;
+                dron1.DronCharacteristics = dronChar1;
 
                 var dron2 = new Dron
                 {
@@ -97,9 +101,8 @@ namespace CentralBackend
                     Actual = flightPlan,
                     Lat = 43.36f,
                     Lon = -5.84f,
-                    State = "Idle"
+                    State = DroneState.Landed
                 };
-
                 var dronChar2 = new DronCharacteristics
                 {
                     Model = "DronX1",
@@ -108,35 +111,15 @@ namespace CentralBackend
                 };
                 dron2.DronCharacteristics = dronChar2;
 
-                var dron3 = new Dron
-                {
-                    Base = baseStation,
-                    ControlStation = controlStation,
-                    Actual = flightPlan,
-                    Lat = 43.36f,
-                    Lon = -5.84f,
-                    State = "Idle"
-                };
-
-                var dronChar3 = new DronCharacteristics
-                {
-                    Model = "DronX1",
-                    Dron = dron3,
-                    Sensors = db.Sensors.ToList()
-                };
-                dron3.DronCharacteristics = dronChar3;
-
-                db.Drones.Add(dron);
-                db.DronCharacteristics.Add(dronChar);
+                db.Drones.Add(dron1);
+                db.DronCharacteristics.Add(dronChar1);
                 db.Drones.Add(dron2);
                 db.DronCharacteristics.Add(dronChar2);
-                db.Drones.Add(dron3);
-                db.DronCharacteristics.Add(dronChar3);
 
                 // ---------- Sample ----------
                 var sample = new Sample
                 {
-                    Dron = dron,
+                    Dron = dron1,
                     File = "sample1.txt",
                     Lat = 43.36f,
                     Lon = -5.84f,
@@ -177,6 +160,5 @@ namespace CentralBackend
                 Console.WriteLine($"Perimeters: {db.Perimeters.Count()}");
             }
         }
-
     }
 }

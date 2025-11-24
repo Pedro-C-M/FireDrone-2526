@@ -37,6 +37,7 @@ public class Program
         var builder = WebApplication.CreateBuilder(args);
 
         // Add services to the container.
+        builder.Services.AddControllers();
         builder.Services.AddAuthorization();
 
         //Esto inyecta en el programa el publisher de RabbitMQ 
@@ -44,6 +45,10 @@ public class Program
         builder.Services.AddSingleton(rabbitOptions);
         builder.Services.AddRabbitMq(rabbitOptions);
         builder.Services.AddSingleton<IPublisher, RabbitMqPublisher>();
+
+        builder.Services.AddSingleton<HttpForwarder>();
+        builder.Services.AddHostedService<DroneStatusConsumer>();
+        builder.Services.AddHttpClient<HttpForwarder>(); // HttpClient Registration
 
 
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -65,6 +70,8 @@ public class Program
         {
             "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
         };
+
+        app.MapControllers();
 
         app.MapGet("/weatherforecast", (HttpContext httpContext) =>
         {

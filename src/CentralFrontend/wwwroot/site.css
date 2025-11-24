@@ -51,14 +51,64 @@ h3 {
         color: white;
     }
 
-        .table thead th {
-            border: none;
-            padding: 12px;
-        }
+     .table thead th {
+      border: none;
+        padding: 12px;
+     }
 
     .table tbody tr:hover {
         background-color: #f5f5f5;
-    }
+ }
+
+/* Action buttons in table */
+.table tbody td button {
+    margin: 2px;
+    white-space: nowrap;
+}
+
+.btn-edit {
+    background-color: #ffc107;
+    border-color: #ffc107;
+    color: #000;
+}
+
+.btn-edit:hover {
+    background-color: #e0a800;
+    border-color: #d39e00;
+}
+
+.btn-stop {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: #fff;
+}
+
+.btn-stop:hover {
+  background-color: #c82333;
+    border-color: #bd2130;
+}
+
+.btn-manual {
+    background-color: #17a2b8;
+    border-color: #17a2b8;
+    color: #fff;
+}
+
+.btn-manual:hover {
+    background-color: #138496;
+    border-color: #117a8b;
+}
+
+.btn-delete {
+background-color: #6c757d;
+    border-color: #6c757d;
+    color: #fff;
+}
+
+.btn-delete:hover {
+  background-color: #5a6268;
+    border-color: #545b62;
+}
 
 .btn-primary {
     background-color: #d32f2f;
@@ -67,7 +117,7 @@ h3 {
 
     .btn-primary:hover {
         background-color: #b71c1c;
-        border-color: #b71c1c;
+  border-color: #b71c1c;
     }
 
 .form-label {
@@ -83,10 +133,15 @@ h3 {
 /* Responsive design */
 @media (max-width: 768px) {
     .container {
-        padding: 15px;
+   padding: 15px;
     }
 
     .table {
-        font-size: 14px;
+   font-size: 14px;
+    }
+    
+    .table tbody td button {
+        font-size: 11px;
+     padding: 3px 6px;
     }
 }

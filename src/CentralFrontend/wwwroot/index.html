@@ -19,10 +19,9 @@
                     <input type="number" class="form-control" id="assign-planId" placeholder="Enter plan ID" required>
                 </div>
                 <div class="col-md-5">
-                    <label for="assign-droneId" class="form-label">Drone ID</label>
-    <!--<input type="number" class="form-control" id="assign-droneId" placeholder="Enter drone ID" required>-->
+                    <label for="assign-droneId" class="form-label">Drone</label>
                     <select class="form-control" id="assign-droneId" required>
-                        <option value="" disabled selected>-- Select a Drone --</option>
+                        <option value="">-- Select a Drone --</option>
                     </select>
                 </div>
                 <div class="col-md-2 d-flex align-items-end">
@@ -36,10 +35,9 @@
         <form action="javascript:void(0);" method="POST" onsubmit="addFlightPlan()">
             <div class="row mb-3">
                 <div class="col-md-6">
-                    <label for="add-dronId" class="form-label">Drone ID</label>
-                    <!--<input type="number" class="form-control" id="add-dronId" placeholder="Drone ID" required>-->
+                    <label for="add-dronId" class="form-label">Drone</label>
                     <select class="form-control" id="add-dronId" required>
-                        <option value="" disabled selected>-- Select a Drone --</option>
+                        <option value="">-- Select a Drone --</option>
                     </select>
                 </div>
                 <div class="col-md-6">
@@ -80,10 +78,9 @@
                 <input type="hidden" id="edit-id">
                 <div class="row mb-3">
                     <div class="col-md-6">
-                        <label for="edit-dronId" class="form-label">Drone ID</label>
-                        <!--<input type="number" class="form-control" id="edit-dronId" required>-->
+                        <label for="edit-dronId" class="form-label">Drone</label>
                         <select class="form-control" id="edit-dronId" required>
-                            <option value="" disabled selected>-- Select a Drone --</option>
+                            <option value="">-- Select a Drone --</option>
                         </select>
                     </div>
                     <div class="col-md-6">
@@ -156,8 +153,10 @@
                 <td></td>
                 <td></td>
                 <td>
-                    <button class="btn btn-sm btn-warning">Edit</button>
-                    <button class="btn btn-sm btn-danger">Delete</button>
+                    <button class="btn btn-sm btn-warning btn-edit">Edit</button>
+                    <button class="btn btn-sm btn-danger btn-stop">Stop</button>
+                    <button class="btn btn-sm btn-info btn-manual">Manual</button>
+                    <button class="btn btn-sm btn-danger btn-delete">Delete</button>
                 </td>
             </tr>
         </template>
@@ -169,9 +168,9 @@
 
     <script type="text/javascript">
         if (!document.createElement("template").content) {
-        alert("This browser does not support templates");
+            alert("This browser does not support templates");
         }
-        getFlightPlans();
+        // getDrones and getFlightPlans are now called from window.onload in api.js
     </script>
 </body>
 </html>

@@ -1,4 +1,3 @@
-
 namespace CentralBackend;
 
 using CentralBackend.Middleware;
@@ -10,8 +9,6 @@ public class Program
 {
     public static void Main(string[] args)
     {
-        ProbarBaseDeDatos();
-
         var builder = WebApplication.CreateBuilder(args);
 
         builder.Services.AddDbContext<FireDrone>();
@@ -21,6 +18,9 @@ public class Program
 
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddControllers();
+
+        builder.Services.AddHttpClient();
+
         builder.Services.AddScoped<FlightPlanService>();
         builder.Services.AddScoped<DroneService>();
         builder.Services.AddCors(options =>
@@ -71,10 +71,5 @@ public class Program
 
         app.Run();
 
-    }
-
-    private static void ProbarBaseDeDatos()
-    {
-        InstanciateBD.ProbarBaseDeDatos();
     }
 }
