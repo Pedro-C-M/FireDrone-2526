@@ -33,7 +33,7 @@ namespace ControlBackend
             consumer.ReceivedAsync += async (model, ea) =>
             {
                 var message = Encoding.UTF8.GetString(ea.Body.ToArray());
-                Console.WriteLine($"[BACKEND] Status recibido: {message}");
+                //Console.WriteLine($"[BACKEND] Status recibido: {message}");
 
                 await _httpForwarder.SendStatusUpstreamAsync(message);
             };
