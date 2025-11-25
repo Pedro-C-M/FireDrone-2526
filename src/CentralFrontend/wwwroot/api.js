@@ -1,5 +1,5 @@
-const uri = 'http://localhost:5178/api/FlightPlan'; //cambio para conexión con controller
-const droneUri = 'http://localhost:5178/api/Drone';
+const uri = 'http://localhost:5306/api/FlightPlan'; //CAMBIAR IP AQUI
+const droneUri = 'http://localhost:5306/api/Drone';//CAMBIAR IP AQUI
 let flightplans = [];
 
 
@@ -49,7 +49,7 @@ async function getDrones() {
     console.log(`Loaded ${drones.length} drones into dropdowns`);
  } catch (error) {
   console.error('Error loading drones:', error);
- alert('Failed to load drones. Please check if the backend is running on http://localhost:5178');
+      alert('Failed to load drones. Please check if the backend is running on http://localhost:5306');
     }
 }
 
