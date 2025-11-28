@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using Microsoft.Extensions.Configuration;
+using System.Text;
 
 namespace ControlBackend
 {
@@ -11,13 +12,12 @@ namespace ControlBackend
             _httpClient = httpClient;
         }
 
-        public async Task SendStatusUpstreamAsync(string statusJson)
+        public async Task SendStatusUpstreamAsync(string statusJson, string dronId)
         {
             var content = new StringContent(statusJson, Encoding.UTF8, "application/json");
             //Console.WriteLine(content);
-            /**
-             * 
-            var response = await _httpClient.PostAsync("https://api.central.com/drone/status", content);
+            var centralBackendUrl = $"http://localhost:5306/api/Drone/{dronId}/status";//CAMBIAR CENTRALIZADO
+            var response = await _httpClient.PostAsync(centralBackendUrl, content);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -25,9 +25,8 @@ namespace ControlBackend
             }
             else
             {
-                Console.WriteLine($"Estado enviado correctamente a HTTP");
+                Console.WriteLine(DateTime.Now.ToString("dd-MM-yyyy HH:mm:ss") + " - Envío de estatus de dron desde Controller Backend");
             }
-             */
         }
     }
 }
