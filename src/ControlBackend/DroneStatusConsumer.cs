@@ -32,10 +32,12 @@ namespace ControlBackend
             var consumer = new AsyncEventingBasicConsumer(_channel);
             consumer.ReceivedAsync += async (model, ea) =>
             {
+                var routingKey = ea.RoutingKey; // drone.123.status
+                var droneNumber = routingKey.Split('.')[1]; // "123"
                 var message = Encoding.UTF8.GetString(ea.Body.ToArray());
                 //Console.WriteLine($"[BACKEND] Status recibido: {message}");
 
-                await _httpForwarder.SendStatusUpstreamAsync(message);
+                await _httpForwarder.SendStatusUpstreamAsync(message, droneNumber);
             };
 
             await _channel.BasicConsumeAsync(queue: queueName, autoAck: true, consumer: consumer);
