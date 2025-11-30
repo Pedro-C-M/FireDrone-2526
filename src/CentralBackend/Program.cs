@@ -82,7 +82,10 @@ public class Program
             app.UseSwaggerUI();
         }
 
-        // CORS primero
+        // ?? ErrorHandlingMiddleware AL PRINCIPIO pero ignora /droneHub
+        app.UseMiddleware<ErrorHandlingMiddleware>();
+ 
+        // CORS
         app.UseCors("AllowFrontend");
         app.UseAuthorization();
   
@@ -91,9 +94,6 @@ public class Program
      
         // Controllers
         app.MapControllers();
-
-        // ErrorHandlingMiddleware AL FINAL para que no intercepte SignalR
-        app.UseMiddleware<ErrorHandlingMiddleware>();
 
         Console.WriteLine("[Program] SignalR Hub configured at /droneHub");
         Console.WriteLine("[Program] Real-time drone updates enabled");
