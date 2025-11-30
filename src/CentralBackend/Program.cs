@@ -1,5 +1,6 @@
 namespace CentralBackend;
 
+using CentralBackend.Hubs;
 using CentralBackend.Middleware;
 using CentralBackend.Services;
 using Microsoft.Data.Sqlite;
@@ -10,8 +11,6 @@ public class Program
     public static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
-
-
 
         builder.Services.AddDbContext<FireDrone>();
 
@@ -25,15 +24,24 @@ public class Program
 
         builder.Services.AddScoped<FlightPlanService>();
         builder.Services.AddScoped<DroneService>();
+ 
+        // Agregar servicio de SignalR para drones (Singleton para mantener estado de conexiones)
+        builder.Services.AddSingleton<DroneSignalRService>();
+
+        // Agregar SignalR
+        builder.Services.AddSignalR();
+
         builder.Services.AddCors(options =>
         {
             options.AddPolicy("AllowFrontend", policy =>
             {
                 policy.WithOrigins("http://localhost:5305")//CAMBIAR IP AQUI
                       .AllowAnyHeader()
-                      .AllowAnyMethod();
+                      .AllowAnyMethod()
+                      .AllowCredentials(); // IMPORTANTE: Necesario para SignalR WebSocket
             });
         });
+        
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
 
@@ -74,12 +82,22 @@ public class Program
             app.UseSwaggerUI();
         }
 
+        // CORS primero
         app.UseCors("AllowFrontend");
         app.UseAuthorization();
+  
+        // Mapear el Hub de SignalR
+        app.MapHub<DroneHub>("/droneHub");
+     
+        // Controllers
         app.MapControllers();
+
+        // ErrorHandlingMiddleware AL FINAL para que no intercepte SignalR
         app.UseMiddleware<ErrorHandlingMiddleware>();
 
-        app.Run();
+        Console.WriteLine("[Program] SignalR Hub configured at /droneHub");
+        Console.WriteLine("[Program] Real-time drone updates enabled");
 
+        app.Run();
     }
 }
