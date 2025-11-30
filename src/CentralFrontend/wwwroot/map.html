@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Drone Map - FireDrone</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==" crossorigin="" />
+
+    <!-- Leaflet SidePanel CSS -->
+    <link rel="stylesheet" href="https://maxwell-ilai.github.io/Leaflet.SidePanel/dist/leaflet-sidepanel.css" />
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+
+    <link rel="stylesheet" href="map.css" />
+
+    <style>
+        body {
+            padding: 0;
+            margin: 0;
+        }
+
+        html, body, #mapid {
+            height: 100%;
+            width: 100%;
+        }
+
+        /* Override some sidepanel styles */
+        .sidepanel {
+            background-color: rgba(255, 255, 255, 0.95);
+        }
+
+        .sidepanel-inner-wrapper {
+            background-color: transparent;
+        }
+
+        .sidepanel-content-wrapper {
+            background-color: white;
+        }
+
+        #drone-list {
+            max-height: calc(100vh - 150px);
+            overflow-y: auto;
+        }
+
+        .drone-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+            .drone-item:hover {
+                background-color: #f8f9fa;
+            }
+
+            .drone-item h5 {
+                color: #d32f2f;
+                font-size: 16px;
+                margin-bottom: 8px;
+            }
+
+            .drone-item p {
+                margin: 4px 0;
+                font-size: 13px;
+                color: #555;
+            }
+
+            .drone-item .status-badge {
+                display: inline-block;
+                padding: 3px 8px;
+                border-radius: 12px;
+                font-size: 11px;
+                font-weight: 600;
+                color: white;
+                margin-top: 5px;
+            }
+
+        /* Top navigation bar */
+        .map-navbar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1001;
+            background: rgba(33, 37, 41, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+            .map-navbar h4 {
+                color: white;
+                margin: 0;
+                font-size: 18px;
+                font-weight: 600;
+            }
+
+            .map-navbar .btn {
+                font-size: 14px;
+            }
+
+        #mapid {
+            padding-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <div class="map-navbar">
+        <h4>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-broadcast" viewBox="0 0 16 16" style="margin-right: 8px;">
+                <path d="M3.05 3.05a7 7 0 0 0 0 9.9.5.5 0 0 1-.707.707 8 8 0 0 1 0-11.314.5.5 0 0 1 .707.707m2.122 2.122a4 4 0 0 0 0 5.656.5.5 0 1 1-.708.708 5 5 0 0 1 0-7.072.5.5 0 0 1 .708.708m5.656-.708a.5.5 0 0 1 .708 0 5 5 0 0 1 0 7.072.5.5 0 1 1-.708-.708 4 4 0 0 0 0-5.656.5.5 0 0 1 0-.708m2.122-2.12a.5.5 0 0 1 .707 0 8 8 0 0 1 0 11.313.5.5 0 0 1-.707-.707 7 7 0 0 0 0-9.9.5.5 0 0 1 0-.707M10 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0" />
+            </svg>
+            FireDrone - Real-time Map
+        </h4>
+        <div>
+            <span class="badge bg-light text-dark me-2" id="drone-count">Loading...</span>
+            <a href="index.html" class="btn btn-outline-light btn-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8" />
+                </svg>
+                Back
+            </a>
+        </div>
+    </div>
+
+    <div id="mapid">
+        <!-- Side Panel -->
+        <div id="mySidepanelLeft" class="sidepanel" aria-label="side panel" aria-hidden="false">
+            <div class="sidepanel-inner-wrapper">
+                <nav class="sidepanel-tabs-wrapper" aria-label="sidepanel tab navigation">
+                    <ul class="sidepanel-tabs">
+                        <li class="sidepanel-tab">
+                            <a href="#" class="sidebar-tab-link" role="tab" data-tab-link="tab-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-geo-alt" viewBox="0 0 16 16">
+                                    <path d="M12.166 8.94c-.524 1.062-1.234 2.12-1.96 3.07A31.493 31.493 0 0 1 8 14.58a31.481 31.481 0 0 1-2.206-2.57c-.726-.95-1.436-2.008-1.96-3.07C3.304 7.867 3 6.862 3 6a5 5 0 0 1 10 0c0 .862-.305 1.867-.834 2.94zM8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10z" />
+                                    <path d="M8 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm0 1a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
+                                </svg>
+                            </a>
+                        </li>
+                        <li class="sidepanel-tab">
+                            <a href="#" class="sidebar-tab-link" role="tab" data-tab-link="tab-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-info-circle" viewBox="0 0 16 16">
+                                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
+                                    <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0" />
+                                </svg>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+                <div class="sidepanel-content-wrapper">
+                    <div class="sidepanel-content">
+                        <div class="sidepanel-tab-content" data-tab-content="tab-1">
+                            <h4 style="padding: 15px; margin: 0; border-bottom: 2px solid #d32f2f;">Active Drones</h4>
+                            <div id="drone-list"></div>
+                        </div>
+                        <div class="sidepanel-tab-content" data-tab-content="tab-2">
+                            <div style="padding: 15px;">
+                                <h4 style="color: #d32f2f; border-bottom: 2px solid #d32f2f; padding-bottom: 10px;">Legend</h4>
+                                <div style="margin-top: 15px;">
+                                    <div style="display: flex; align-items: center; margin: 10px 0;">
+                                        <span style="width: 16px; height: 16px; border-radius: 50%; background-color: #28a745; margin-right: 10px; border: 2px solid rgba(0,0,0,0.2);"></span>
+                                        <span>Idle / Available</span>
+                                    </div>
+                                    <div style="display: flex; align-items: center; margin: 10px 0;">
+                                        <span style="width: 16px; height: 16px; border-radius: 50%; background-color: #007bff; margin-right: 10px; border: 2px solid rgba(0,0,0,0.2);"></span>
+                                        <span>Flying / On Course</span>
+                                    </div>
+                                    <div style="display: flex; align-items: center; margin: 10px 0;">
+                                        <span style="width: 16px; height: 16px; border-radius: 50%; background-color: #ffc107; margin-right: 10px; border: 2px solid rgba(0,0,0,0.2);"></span>
+                                        <span>Warning</span>
+                                    </div>
+                                    <div style="display: flex; align-items: center; margin: 10px 0;">
+                                        <span style="width: 16px; height: 16px; border-radius: 50%; background-color: #dc3545; margin-right: 10px; border: 2px solid rgba(0,0,0,0.2);"></span>
+                                        <span>Emergency / Error</span>
+                                    </div>
+                                </div>
+                                <hr>
+                                <h5 style="color: #555; font-size: 14px;">Flight Paths</h5>
+                                <p style="font-size: 13px; color: #666;">Blue lines show drone movement trails</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="sidepanel-toggle-container">
+                <button class="sidepanel-toggle-button" type="button" aria-label="toggle side panel"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA==" crossorigin=""></script>
+
+    <!-- Leaflet SidePanel JS -->
+    <script src="https://maxwell-ilai.github.io/Leaflet.SidePanel/dist/leaflet-sidepanel.min.js"></script>
+
+    <!-- Custom Scripts -->
+    <script type="text/javascript" src="map.js"></script>
+</body>
+</html>

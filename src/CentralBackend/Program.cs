@@ -39,6 +39,34 @@ public class Program
 
         var app = builder.Build();
 
+        // Initialize database with seed data on startup (only if database doesn't exist or is empty)
+        try
+        {
+            using (var scope = app.Services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<FireDrone>();
+
+                // Check if database needs initialization
+                var databaseExists = db.Database.CanConnect();
+                var hasDrones = databaseExists && db.Drones.Any();
+
+                if (!hasDrones)
+                {
+                    Console.WriteLine("Database is empty or doesn't exist. Initializing with seed data...");
+                    InstanciateBD.FormaBaseDeBD();
+                    Console.WriteLine("Database initialization completed.");
+                }
+                else
+                {
+                    Console.WriteLine($"Database already initialized with {db.Drones.Count()} drones.");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Warning: Could not initialize database: {ex.Message}");
+        }
+
         // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
         {

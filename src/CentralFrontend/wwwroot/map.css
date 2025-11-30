@@ -1,0 +1,136 @@
+/* Map Container */
+body, html {
+    margin: 0;
+ padding: 0;
+    height: 100%;
+    width: 100%;
+}
+
+#mapid {
+    height: 100%;
+    width: 100%;
+}
+
+/* Status badges */
+.status-badge {
+    display: inline-block;
+    padding: 3px 8px;
+ border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    color: white;
+}
+
+.status-idle {
+    background-color: #28a745;
+}
+
+.status-flying {
+    background-color: #007bff;
+}
+
+.status-warning {
+    background-color: #ffc107;
+    color: #000;
+}
+
+.status-error {
+    background-color: #dc3545;
+}
+
+/* Drone Marker Pulse Animation */
+@keyframes pulse {
+    0% {
+     box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 12px rgba(0, 123, 255, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(0, 123, 255, 0);
+ }
+}
+
+.drone-marker-pulse {
+    animation: pulse 2s infinite;
+}
+
+/* Custom Leaflet Popup */
+.leaflet-popup-content-wrapper {
+    border-radius: 8px;
+    box-shadow: 0 3px 14px rgba(0,0,0,0.4);
+}
+
+.leaflet-popup-content {
+    margin: 15px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .map-navbar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .map-navbar h4 {
+        font-size: 16px;
+    }
+
+    .drone-item h5 {
+        font-size: 14px;
+    }
+
+    .drone-item p {
+        font-size: 11px;
+    }
+}
+
+/* Make sure drone markers are visible */
+.leaflet-marker-icon {
+    border: none !important;
+    background: transparent !important;
+}
+
+/* Side panel customizations */
+.sidepanel-content {
+    height: calc(100vh - 60px);
+}
+
+.sidepanel-tab-content {
+    height: 100%;
+    overflow-y: auto;
+}
+
+/* Scrollbar styling for drone list */
+#drone-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+#drone-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+#drone-list::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+#drone-list::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Loading state */
+.loading-spinner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1003;
+}
+
+/* Polyline styles are handled by Leaflet, but we can add custom classes */
+.leaflet-interactive {
+    cursor: pointer;
+}
