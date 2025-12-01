@@ -16,6 +16,14 @@ namespace CentralBackend.Middleware
 
         public async Task Invoke(HttpContext context)
         {
+            // ⚠️ IMPORTANTE: Ignorar peticiones de SignalR
+            // SignalR maneja sus propios errores
+            if (context.Request.Path.StartsWithSegments("/droneHub"))
+            {
+                await _next(context);
+                return;
+            }
+
             try
             {
                 await _next(context);
@@ -55,8 +63,8 @@ namespace CentralBackend.Middleware
 
                 var json = JsonSerializer.Serialize(new
                 {
-                    error = ex.GetType().Name,     
-                    message = ex.Message           
+                    error = ex.GetType().Name,
+                    message = ex.Message
                 });
 
                 await context.Response.WriteAsync(json);

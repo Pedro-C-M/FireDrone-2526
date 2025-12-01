@@ -120,6 +120,9 @@
             FireDrone - Real-time Map
         </h4>
         <div>
+            <span id="connection-status" class="me-2">
+              <span class="badge bg-secondary">🔄 Connecting...</span>
+            </span>
             <span class="badge bg-light text-dark me-2" id="drone-count">Loading...</span>
             <a href="index.html" class="btn btn-outline-light btn-sm">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16">
@@ -200,6 +203,9 @@
 
     <!-- Leaflet SidePanel JS -->
     <script src="https://maxwell-ilai.github.io/Leaflet.SidePanel/dist/leaflet-sidepanel.min.js"></script>
+
+    <!-- SignalR Client Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
 
     <!-- Custom Scripts -->
     <script type="text/javascript" src="map.js"></script>
