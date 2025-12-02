@@ -14,8 +14,8 @@
     {
         //public string Hostname { get; set; } = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
         public string Hostname { get; set; } = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "156.35.163.122";//IP de la maquina virtual
-        public string Username { get; set; } = Environment.GetEnvironmentVariable("RABBITMQ_USER") ?? "guest";
-        public string Password { get; set; } = Environment.GetEnvironmentVariable("RABBITMQ_PASSWORD") ?? "guest";
+        public string Username { get; set; } = Environment.GetEnvironmentVariable("RABBITMQ_USER") ?? "admin";
+        public string Password { get; set; } = Environment.GetEnvironmentVariable("RABBITMQ_PASSWORD") ?? "admin";
         public string Exchange { get; set; } = Environment.GetEnvironmentVariable("RABBITMQ_EXCHANGE") ?? "drone_exchange";
         public string Topic { get; set; } = Environment.GetEnvironmentVariable("RABBITMQ_TOPIC") ?? "drone.#";
     }
