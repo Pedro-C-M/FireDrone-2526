@@ -1,71 +1,63 @@
 // js/api.js
-import { ENDPOINTS } from './config.js';           
-import * as DroneService from './services/DroneService.js'; 
+import * as DroneService from './services/DroneService.js';
+import * as FlightPlanService from './services/FlightPlanService.js';
 
+// Variable de estado local
 let flightplans = [];
 
 // === INICIALIZACIÓN ===
-// Usamos DOMContentLoaded en lugar de window.onload para módulos
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('Page loaded, fetching data...');
-    await loadDronesToDropdowns(); // Nombre más descriptivo
-    getFlightPlans();
+    // Carga inicial en paralelo para ser más rápidos
+    await Promise.all([
+        loadDronesToDropdowns(),
+        getFlightPlans()
+    ]);
 });
 
 // === LÓGICA DE UI PARA DRONES ===
-
-/**
- * Llama al servicio de drones y rellena los selectores HTML
- */
 async function loadDronesToDropdowns() {
     try {
-        // 1. LLAMADA AL SERVICIO (Separación de datos)
         const drones = await DroneService.getAllDrones();
         console.log('Drones loaded via Service:', drones);
 
-        // 2. LÓGICA DE UI (Manipulación del DOM)
         const selectAssign = document.getElementById('assign-droneId');
         const selectAdd = document.getElementById('add-dronId');
         const selectEdit = document.getElementById('edit-dronId');
 
-        // Limpiar opciones existentes (menos la primera)
         [selectAssign, selectAdd, selectEdit].forEach(select => {
             if (select) {
-                while (select.options.length > 1) {
-                    select.remove(1);
-                }
+                while (select.options.length > 1) select.remove(1);
             }
         });
 
-        // Añadir nuevas opciones
         drones.forEach(drone => {
             const option = document.createElement('option');
             option.value = drone.id;
             option.textContent = `Drone ${drone.id} - ${drone.state || 'Unknown'}`;
-
             if (selectAssign) selectAssign.appendChild(option.cloneNode(true));
             if (selectAdd) selectAdd.appendChild(option.cloneNode(true));
             if (selectEdit) selectEdit.appendChild(option.cloneNode(true));
         });
 
-        console.log(`UI Updated: ${drones.length} drones in dropdowns`);
-
     } catch (error) {
         console.error('Error loading drones:', error);
-        alert('Failed to load drones. Please check if the backend is running on http://localhost:5306');
+        alert('Failed to load drones.');
     }
 }
 
-// === LÓGICA DE FLIGHT PLANS (Se mantiene igual, pero usando la nueva función de drones) ===
+// === LÓGICA DE FLIGHT PLANS (Ahora usa FlightPlanService) ===
 
-function getFlightPlans() {
-    fetch(ENDPOINTS.FLIGHT_PLANS)
-        .then(response => response.json())
-        .then(data => _displayFlightPlans(data))
-        .catch(error => console.error('Unable to get flight plans.', error));
+async function getFlightPlans() {
+    try {
+        const data = await FlightPlanService.getAllFlightPlans();
+        _displayFlightPlans(data);
+    } catch (error) {
+        console.error('Unable to get flight plans.', error);
+    }
 }
 
-function addFlightPlan() {
+async function addFlightPlan() {
     const addDronIdInput = document.getElementById('add-dronId');
     const addRutaIdInput = document.getElementById('add-rutaId');
     const addEstControlIdInput = document.getElementById('add-estControlId');
@@ -82,89 +74,72 @@ function addFlightPlan() {
         state: parseInt(addStateInput.value)
     };
 
-    fetch(ENDPOINTS.FLIGHT_PLANS, {
-        method: 'POST',
-        headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(flightplan)
-    })
-        .then(response => response.json())
-        .then(() => {
-            getFlightPlans();
-            loadDronesToDropdowns(); // CAMBIO AQUÍ: Usamos la nueva función UI
+    try {
+        await FlightPlanService.createFlightPlan(flightplan);
 
-            // Limpiar formulario
-            addDronIdInput.value = '';
-            addRutaIdInput.value = '';
-            addEstControlIdInput.value = '';
-            addStartingPointIdInput.value = '';
-            addStartingTimeInput.value = '';
-            addStateInput.value = '0';
-        })
-        .catch(error => console.error('Unable to add flight plan.', error));
+        // Refrescar UI
+        await getFlightPlans();
+        await loadDronesToDropdowns();
+
+        // Limpiar formulario
+        addDronIdInput.value = '';
+        addRutaIdInput.value = '';
+        addEstControlIdInput.value = '';
+        addStartingPointIdInput.value = '';
+        addStartingTimeInput.value = '';
+        addStateInput.value = '0';
+    } catch (error) {
+        console.error('Unable to add flight plan.', error);
+        alert(`Error adding plan: ${error.message}`);
+    }
 }
 
-function deleteFlightPlan(id) {
-    console.log(`Deleting flight plan ${id}...`);
-    fetch(`${ENDPOINTS.FLIGHT_PLANS}/${id}`, {
-        method: 'DELETE',
-        headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-        }
-    })
-        .then(response => {
-            if (!response.ok) throw new Error(`Failed to delete flight plan: ${response.status}`);
-            return response;
-        })
-        .then(() => {
-            alert(`Flight plan #${id} deleted successfully`);
-            getFlightPlans();
-        })
-        .catch(error => {
-            console.error('Unable to delete flight plan.', error);
-            alert(`Error deleting flight plan: ${error.message}`);
-        });
+async function deleteFlightPlan(id) {
+    if (!confirm(`Are you sure you want to delete flight plan #${id}?`)) return;
+
+    try {
+        console.log(`Deleting flight plan ${id}...`);
+        await FlightPlanService.deleteFlightPlan(id);
+
+        alert(`Flight plan #${id} deleted successfully`);
+        await getFlightPlans();
+    } catch (error) {
+        console.error('Unable to delete flight plan.', error);
+        alert(`Error deleting flight plan: ${error.message}`);
+    }
 }
 
-// ... [stopFlightPlan y switchToManualMode se mantienen igual] ...
-
-function stopFlightPlan(id) {
-    console.log(`Stopping flight plan ${id}...`);
+async function stopFlightPlan(id) {
     if (!confirm(`Are you sure you want to stop flight plan #${id}?`)) return;
 
-    fetch(`${ENDPOINTS.FLIGHT_PLANS}/${id}/stop`, {
-        method: 'PUT',
-        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }
-    })
-        .then(response => {
-            if (!response.ok) throw new Error(`Failed: ${response.status}`);
-            return response.json();
-        })
-        .then(data => {
-            alert(`Flight plan #${id} stopped successfully!`);
-            getFlightPlans();
-        })
-        .catch(error => alert(error.message));
+    try {
+        console.log(`Stopping flight plan ${id}...`);
+        await FlightPlanService.stopFlightPlan(id);
+
+        alert(`Flight plan #${id} stopped successfully!`);
+        await getFlightPlans();
+    } catch (error) {
+        console.error('Error stopping flight plan:', error);
+        alert(`Failed to stop: ${error.message}`);
+    }
 }
 
-function switchToManualMode(id) {
+async function switchToManualMode(id) {
     if (!confirm(`Switch flight plan #${id} to manual mode?`)) return;
-    fetch(`${ENDPOINTS.FLIGHT_PLANS}/${id}/manual`, {
-        method: 'PUT',
-        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }
-    })
-        .then(res => res.ok ? res.json() : Promise.reject(res))
-        .then(() => {
-            alert(`Manual mode activated for #${id}`);
-            getFlightPlans();
-        })
-        .catch(err => console.error(err));
+
+    try {
+        console.log(`Switching plan ${id} to manual...`);
+        await FlightPlanService.setManualMode(id);
+
+        alert(`Flight plan #${id} switched to manual mode!`);
+        await getFlightPlans();
+    } catch (error) {
+        console.error('Error switching manual mode:', error);
+        alert(`Failed to switch: ${error.message}`);
+    }
 }
 
-// ... [displayEditForm se mantiene igual] ...
+// === LÓGICA DE ACTUALIZACIÓN Y EDICIÓN ===
 
 function displayEditForm(id) {
     const flightplan = flightplans.find(fp => fp.id === id);
@@ -181,9 +156,9 @@ function displayEditForm(id) {
     document.getElementById('editForm').style.display = 'block';
 }
 
-function updateFlightPlan() {
+async function updateFlightPlan() {
     const flightplanId = parseInt(document.getElementById('edit-id').value);
-    const flightplan = {
+    const flightplanData = {
         id: flightplanId,
         dronId: parseInt(document.getElementById('edit-dronId').value.trim()),
         rutaId: parseInt(document.getElementById('edit-rutaId').value.trim()),
@@ -194,25 +169,20 @@ function updateFlightPlan() {
         state: parseInt(document.getElementById('edit-state').value)
     };
 
-    fetch(`${ENDPOINTS.FLIGHT_PLANS}/${flightplanId}`, {
-        method: 'PUT',
-        headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(flightplan)
-    })
-        .then(() => {
-            getFlightPlans();
-            closeInput();
-            loadDronesToDropdowns(); // CAMBIO AQUÍ
-        })
-        .catch(error => console.error('Unable to update flight plan.', error));
+    try {
+        await FlightPlanService.updateFlightPlan(flightplanId, flightplanData);
 
+        await getFlightPlans();
+        closeInput();
+        await loadDronesToDropdowns();
+    } catch (error) {
+        console.error('Unable to update flight plan.', error);
+        alert(`Error updating plan: ${error.message}`);
+    }
     return false;
 }
 
-function assignDronToPlan() {
+async function assignDronToPlan() {
     const planId = document.getElementById('assign-planId').value;
     const droneId = document.getElementById('assign-droneId').value;
 
@@ -221,52 +191,39 @@ function assignDronToPlan() {
         return;
     }
 
-    const payload = { DronId: parseInt(droneId) };
-    const url = `${ENDPOINTS.FLIGHT_PLANS}/${planId}/assign`;
+    try {
+        const result = await FlightPlanService.assignDrone(planId, droneId);
 
-    fetch(url, {
-        method: 'PUT',
-        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-    })
-        .then(response => {
-            if (!response.ok) throw new Error(`Assignment failed: ${response.status}`);
-            return response.json();
-        })
-        .then(data => {
-            alert(`Drone ${data.dronId} assigned to flight plan ${data.id} successfully!`);
-            getFlightPlans();
-            document.getElementById('assign-planId').value = '';
-            document.getElementById('assign-droneId').value = '';
-        })
-        .catch(error => {
-            console.error('Error assigning drone:', error);
-            alert(`Failed to assign drone: ${error.message}`);
-        });
+        alert(`Drone ${result.dronId} assigned to flight plan ${result.id} successfully!`);
+        await getFlightPlans();
+
+        document.getElementById('assign-planId').value = '';
+        document.getElementById('assign-droneId').value = '';
+    } catch (error) {
+        console.error('Error assigning drone:', error);
+        alert(`Failed to assign drone: ${error.message}`);
+    }
 }
 
-// === UTILIDADES ===
+// === UTILIDADES UI ===
 function closeInput() { document.getElementById('editForm').style.display = 'none'; }
-function formatDateTime(dateTimeString) { return new Date(dateTimeString).toLocaleString(); }
-function formatDateTimeLocal(dateTimeString) {
-    if (!dateTimeString) return '';
-    const date = new Date(dateTimeString);
-    const pad = (n) => String(n).padStart(2, '0');
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+function formatDateTime(str) { return new Date(str).toLocaleString(); }
+function formatDateTimeLocal(str) {
+    if (!str) return '';
+    const d = new Date(str);
+    const pad = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 function getStatusText(state) {
-    const states = ['On Course', 'Completed', 'Cancelled'];
-    return states[state] || 'Unknown';
+    const s = ['On Course', 'Completed', 'Cancelled'];
+    return s[state] || 'Unknown';
+}
+
+function _displayCount(count) {
+    document.getElementById('counter').innerText = `${count} flight plans`;
 }
 
 function _displayFlightPlans(data) {
-    // ... (Tu función _displayFlightPlans original) ...
-    // Se mantiene casi igual, solo asegúrate de llamar a las funciones globales en los onclick
-    // Como estamos en un módulo, necesitamos exponer las funciones al window o usar addEventListener
-    // Para simplificar, he añadido la exposición al window abajo.
-
-    // NOTA: He resumido esta parte para no ocupar tanto espacio, 
-    // pero copia tu _displayFlightPlans original aquí.
     const tBody = document.getElementById('flightplans_tbody');
     tBody.innerHTML = '';
     _displayCount(data.length);
@@ -275,7 +232,7 @@ function _displayFlightPlans(data) {
     data.forEach(flightplan => {
         const clone = template.content.cloneNode(true);
         const td = clone.querySelectorAll('td');
-        // ... (resto del mapeo de celdas) ...
+
         td[0].textContent = flightplan.id;
         td[1].textContent = flightplan.dronId;
         td[2].textContent = flightplan.rutaId;
@@ -284,31 +241,24 @@ function _displayFlightPlans(data) {
         td[5].textContent = flightplan.endingTime ? formatDateTime(flightplan.endingTime) : 'In Progress';
         td[6].textContent = getStatusText(flightplan.state);
 
-        // BOTONES: Asignamos eventos directamente en JS para evitar problemas de scope
+        // Eventos de botones
         clone.querySelector('.btn-warning').onclick = () => displayEditForm(flightplan.id);
-        clone.querySelector('.btn-danger').onclick = () => { if (confirm('Delete?')) deleteFlightPlan(flightplan.id) };
+        clone.querySelector('.btn-danger').onclick = () => deleteFlightPlan(flightplan.id);
+
         const stopBtn = clone.querySelector('.btn-stop');
-        if (stopBtn) stopBtn.onclick = () => { if (confirm('Stop?')) stopFlightPlan(flightplan.id) };
+        if (stopBtn) stopBtn.onclick = () => stopFlightPlan(flightplan.id);
+
         const manualBtn = clone.querySelector('.btn-manual');
-        if (manualBtn) manualBtn.onclick = () => { if (confirm('Manual mode?')) switchToManualMode(flightplan.id) };
+        if (manualBtn) manualBtn.onclick = () => switchToManualMode(flightplan.id);
 
         tBody.appendChild(clone);
     });
     flightplans = data;
 }
 
-function _displayCount(count) {
-    document.getElementById('counter').innerText = `${count} flight plans`;
-}
-
-
-// === ¡IMPORTANTE! EXPOSICIÓN GLOBAL ===
-// Como api.js ahora es un módulo (tiene import), sus funciones son PRIVADAS.
-// El HTML (onsubmit="addFlightPlan()") no puede verlas a menos que las hagamos globales así:
-
+// === EXPOSICIÓN GLOBAL (Necesaria para los onsubmit del HTML) ===
 window.addFlightPlan = addFlightPlan;
 window.updateFlightPlan = updateFlightPlan;
 window.assignDronToPlan = assignDronToPlan;
 window.closeInput = closeInput;
-// getDrones ya no es necesaria exponerla, pero si quieres:
-window.getDrones = loadDronesToDropdowns;
+window.getDrones = loadDronesToDropdowns; // Por si acaso
