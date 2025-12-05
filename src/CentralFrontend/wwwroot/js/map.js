@@ -4,7 +4,7 @@ const GIJON_CENTER = [43.5322, -5.6611];
 const DEFAULT_ZOOM = 13;
 
 // API endpoint
-const droneUri = 'http://localhost:5306/api/Drone'; // CAMBIAR IP AQUI si es necesario
+import { ENDPOINTS } from './config.js';
 
 let map;
 let droneLayer;
@@ -85,7 +85,7 @@ function initMap() {
  */
 async function loadDrones() {
     try {
-        const response = await fetch(droneUri);
+        const response = await fetch(ENDPOINTS.DRONES);
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
