@@ -1,0 +1,370 @@
+/* =========================================
+   1. BASE & LAYOUT
+   ========================================= */
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+#mapid {
+    height: 100%;
+    width: 100%;
+    padding-top: 0;
+}
+
+/* =========================================
+   2. TOP NAVIGATION BAR
+   ========================================= */
+.map-navbar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1001; /* Encima del mapa */
+    background: rgba(33, 37, 41, 0.95);
+    backdrop-filter: blur(10px);
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+    .map-navbar h4 {
+        color: white;
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+    }
+
+    .map-navbar .btn {
+        font-size: 14px;
+    }
+
+/* =========================================
+   3. SIDE PANEL (ESTRUCTURA)
+   ========================================= */
+/* Overrides para la librería Leaflet-Sidepanel */
+.sidepanel {
+    background-color: rgba(255, 255, 255, 0.95);
+}
+
+.sidepanel-inner-wrapper {
+    background-color: transparent;
+}
+
+.sidepanel-content-wrapper {
+    background-color: white;
+}
+
+.sidepanel-content {
+    height: calc(100vh - 60px);
+}
+
+.sidepanel-tab-content {
+    height: 100%;
+    overflow-y: auto;
+}
+
+/* Clase extra para limpiar los estilos inline de los títulos */
+.panel-header {
+    padding: 15px;
+    margin: 0;
+    border-bottom: 2px solid #d32f2f;
+}
+
+/* =========================================
+   4. DRONE LIST ITEMS
+   ========================================= */
+#drone-list {
+    max-height: calc(100vh - 150px);
+    overflow-y: auto;
+}
+
+    /* Scrollbar personalizado para la lista */
+    #drone-list::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    #drone-list::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+
+    #drone-list::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 4px;
+    }
+
+        #drone-list::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+.drone-item {
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+    .drone-item:hover {
+        background-color: #f8f9fa;
+    }
+
+    .drone-item h5 {
+        color: #d32f2f;
+        font-size: 16px;
+        margin-bottom: 8px;
+    }
+
+    .drone-item p {
+        margin: 4px 0;
+        font-size: 13px;
+        color: #555;
+    }
+
+/* =========================================
+   5. STATUS BADGES
+   ========================================= */
+.status-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    color: white;
+    margin-top: 5px;
+}
+
+/* Variantes de color */
+.status-idle {
+    background-color: #28a745;
+}
+
+.status-flying {
+    background-color: #007bff;
+}
+
+.status-warning {
+    background-color: #ffc107;
+    color: #000;
+}
+
+.status-error {
+    background-color: #dc3545;
+}
+
+/* =========================================
+   6. LEAFLET & MAP CUSTOMIZATION
+   ========================================= */
+/* Asegurar que los marcadores se vean */
+.leaflet-marker-icon {
+    border: none !important;
+    background: transparent !important;
+}
+
+.leaflet-interactive {
+    cursor: pointer;
+}
+
+/* Popups personalizados */
+.leaflet-popup-content-wrapper {
+    border-radius: 8px;
+    box-shadow: 0 3px 14px rgba(0,0,0,0.4);
+}
+
+.leaflet-popup-content {
+    margin: 15px;
+}
+
+/* Animación de pulso para el drone */
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.7);
+    }
+
+    70% {
+        box-shadow: 0 0 0 12px rgba(0, 123, 255, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(0, 123, 255, 0);
+    }
+}
+
+.drone-marker-pulse {
+    animation: pulse 2s infinite;
+}
+
+.loading-spinner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1003;
+}
+
+/* =========================================
+   7. RESPONSIVE
+   ========================================= */
+@media (max-width: 768px) {
+    .map-navbar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+        .map-navbar h4 {
+            font-size: 16px;
+        }
+
+    .drone-item h5 {
+        font-size: 14px;
+    }
+
+    .drone-item p {
+        font-size: 11px;
+    }
+}
+
+
+
+/* Map Container 
+body, html {
+    margin: 0;
+ padding: 0;
+    height: 100%;
+    width: 100%;
+}
+
+#mapid {
+    height: 100%;
+    width: 100%;
+}
+
+/* Status badges *
+.status-badge {
+    display: inline-block;
+    padding: 3px 8px;
+ border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    color: white;
+}
+
+.status-idle {
+    background-color: #28a745;
+}
+
+.status-flying {
+    background-color: #007bff;
+}
+
+.status-warning {
+    background-color: #ffc107;
+    color: #000;
+}
+
+.status-error {
+    background-color: #dc3545;
+}
+
+/* Drone Marker Pulse Animation *
+@keyframes pulse {
+    0% {
+     box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 12px rgba(0, 123, 255, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(0, 123, 255, 0);
+ }
+}
+
+.drone-marker-pulse {
+    animation: pulse 2s infinite;
+}
+
+/* Custom Leaflet Popup *
+.leaflet-popup-content-wrapper {
+    border-radius: 8px;
+    box-shadow: 0 3px 14px rgba(0,0,0,0.4);
+}
+
+.leaflet-popup-content {
+    margin: 15px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Responsive Design *
+@media (max-width: 768px) {
+    .map-navbar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .map-navbar h4 {
+        font-size: 16px;
+    }
+
+    .drone-item h5 {
+        font-size: 14px;
+    }
+
+    .drone-item p {
+        font-size: 11px;
+    }
+}
+
+/* Make sure drone markers are visible *
+.leaflet-marker-icon {
+    border: none !important;
+    background: transparent !important;
+}
+
+/* Side panel customizations *
+.sidepanel-content {
+    height: calc(100vh - 60px);
+}
+
+.sidepanel-tab-content {
+    height: 100%;
+    overflow-y: auto;
+}
+
+/* Scrollbar styling for drone list *
+#drone-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+#drone-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+#drone-list::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+#drone-list::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Loading state *
+.loading-spinner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1003;
+}
+
+/* Polyline styles are handled by Leaflet, but we can add custom classes *
+.leaflet-interactive {
+    cursor: pointer;
+}
+*/
