@@ -1,4 +1,3 @@
-// js/api.js
 import * as DroneService from './services/DroneService.js';
 import * as FlightPlanService from './services/FlightPlanService.js';
 
@@ -46,8 +45,7 @@ async function loadDronesToDropdowns() {
     }
 }
 
-// === LÓGICA DE FLIGHT PLANS (Ahora usa FlightPlanService) ===
-
+// === LÓGICA DE FLIGHT PLANS ===
 async function getFlightPlans() {
     try {
         const data = await FlightPlanService.getAllFlightPlans();
