@@ -1,207 +1,218 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace CentralBackend
 {
     public static class InstanciateBD
     {
+        // Configuración de la cantidad de datos a generar
+        private const int NUM_SENSORS = 10;
+        private const int NUM_BASE_STATIONS = 3;
+        private const int NUM_ROUTES = 5;
+        private const int NUM_DRONES = 10; // Generaremos 10 drones
+        private const int NUM_FLIGHT_PLANS = 10; // Un plan por dron
+
+        // Coordenadas base (Gijón) para generar variaciones
+        private const float BASE_LAT = 43.5322f;
+        private const float BASE_LON = -5.6611f;
+
         public static void FormaBaseDeBD()
         {
             using (var db = new FireDrone())
             {
                 try
                 {
-                    // Ensure database is deleted and recreated from scratch
-                    db.Database.EnsureDeleted(); // Borra toda la base
-                    db.Database.EnsureCreated(); // La vuelve a crear con la estructura actual
+                    // 1. Limpiar y recrear la base de datos
+                    Console.WriteLine("Eliminando base de datos antigua...");
+                    db.Database.EnsureDeleted();
+                    Console.WriteLine("Creando nueva estructura de base de datos...");
+                    db.Database.EnsureCreated();
 
-                    Console.WriteLine("Sembrando datos iniciales...");
+                    Console.WriteLine("Sembrando datos masivos...");
+                    var random = new Random();
 
-                    // ---------- Sensores ----------
-                    db.Sensors.AddRange(
-                        new Sensor { Model = "SensorModelX" },
-                        new Sensor { Model = "SensorModelY" },
-                        new Sensor { Model = "SensorModelZ" },
-                        new Sensor { Model = "SensorModelUwU" }
-                    );
-                    db.SaveChanges();
+                    // 2. Generar Sensores
+                    var sensors = new List<Sensor>();
+                    for (int i = 1; i <= NUM_SENSORS; i++)
+                    {
+                        sensors.Add(new Sensor { Model = $"SensorModel-{char.ConvertFromUtf32(65 + (i % 26))}{i}" });
+                    }
+                    db.Sensors.AddRange(sensors);
+                    db.SaveChanges(); // Guardamos para tener IDs si fueran necesarios
 
-                    // ---------- BaseStation y ControlStation ----------
-                    // Control Station at Universidad de Oviedo - Campus de Gijón
-                    var baseStation = new BaseStation();
+                    // 3. Generar Control Station (Principal)
                     var controlStation = new ControlStation
                     {
                         Lat = 43.5267f,  // Campus Universitario de Gijón
                         Lon = -5.6445f,
-                        BaseStations = new List<BaseStation> { baseStation }
+                        BaseStations = new List<BaseStation>()
                     };
-
-                    db.BaseStations.Add(baseStation);
                     db.ControlStations.Add(controlStation);
 
-                    // ---------- Route 1 ----------
-                    var route1 = new Models.Route
+                    // 4. Generar Base Stations
+                    for (int i = 1; i <= NUM_BASE_STATIONS; i++)
                     {
-                        Type = RouteType.Simple,
-                        Perimeter = new Perimeter(),
-                        Coords = new List<RoutePoint>()
-                    };
-
-                    var point1_1 = new RoutePoint { Lat = 43.5408f, Long = -5.6615f, Height = 50, Route = route1 };  // Playa San Lorenzo
-                    var point1_2 = new RoutePoint { Lat = 43.5450f, Long = -5.6660f, Height = 55, Route = route1 };  // Hacia Cerro de Santa Catalina
-                    route1.Coords.Add(point1_1);
-                    route1.Coords.Add(point1_2);
-
-                    db.Routes.Add(route1);
-                    db.RoutePoints.AddRange(point1_1, point1_2);
-
-                    // ---------- Route 2 ----------
-                    var route2 = new Models.Route
-                    {
-                        Type = RouteType.Simple,
-                        Perimeter = new Perimeter(),
-                        Coords = new List<RoutePoint>()
-                    };
-
-                    var point2_1 = new RoutePoint { Lat = 43.5472f, Long = -5.6682f, Height = 45, Route = route2 };  // Puerto Deportivo
-                    var point2_2 = new RoutePoint { Lat = 43.5500f, Long = -5.6700f, Height = 50, Route = route2 };  // Hacia Museo del Ferrocarril
-                    route2.Coords.Add(point2_1);
-                    route2.Coords.Add(point2_2);
-
-                    db.Routes.Add(route2);
-                    db.RoutePoints.AddRange(point2_1, point2_2);
-
-                    // ---------- FlightPlan 1 ----------
-                    var flightPlan1 = new FlightPlan
-                    {
-                        Ruta = route1,
-                        Ctrl = controlStation,
-                        StartingTime = DateTime.Now,
-                        State = FlightStatus.OnCourse
-                    };
-                    flightPlan1.ModeChangeHistoric.Add(new ChangeMode { Moment = DateTime.Now, Mode = FlightMode.Auto });
-
-                    // ---------- FlightPlan 2 ----------
-                    var flightPlan2 = new FlightPlan
-                    {
-                        Ruta = route2,
-                        Ctrl = controlStation,
-                        StartingTime = DateTime.Now,
-                        State = FlightStatus.OnCourse
-                    };
-                    flightPlan2.ModeChangeHistoric.Add(new ChangeMode { Moment = DateTime.Now, Mode = FlightMode.Auto });
-
-                    // ---------- Drone 1 - Patrullando Playa de San Lorenzo ----------
-                    var dron1 = new Dron
-                    {
-                        Base = baseStation,
-                        ControlStation = controlStation,
-                        Actual = flightPlan1,
-                        Lat = 43.5408f,  // Playa de San Lorenzo (zona central)
-                        Lon = -5.6615f,
-                        State = DroneState.Flying,
-                        Altitude = 50,
-                        Speed = 15,
-                        Battery = 85
-                    };
-                    var dronChar1 = new DronCharacteristics
-                    {
-                        Model = "DronX1-FireWatch",
-                        Dron = dron1,
-                        Sensors = db.Sensors.ToList()
-                    };
-                    dron1.DronCharacteristics = dronChar1;
-                    flightPlan1.Dron = dron1;
-
-                    // ---------- Drone 2 - En Puerto Deportivo ----------
-                    var dron2 = new Dron
-                    {
-                        Base = baseStation,
-                        ControlStation = controlStation,
-                        Actual = flightPlan2,
-                        Lat = 43.5472f,  // Puerto Deportivo de Gijón
-                        Lon = -5.6682f,
-                        State = DroneState.Landed,
-                        Altitude = 0,
-                        Speed = 0,
-                        Battery = 95
-                    };
-                    var dronChar2 = new DronCharacteristics
-                    {
-                        Model = "DronX2-Coastal",
-                        Dron = dron2,
-                        Sensors = db.Sensors.ToList()
-                    };
-                    dron2.DronCharacteristics = dronChar2;
-                    flightPlan2.Dron = dron2;
-
-                    db.FlightPlans.Add(flightPlan1);
-                    db.FlightPlans.Add(flightPlan2);
-                    db.Drones.Add(dron1);
-                    db.DronCharacteristics.Add(dronChar1);
-                    db.Drones.Add(dron2);
-                    db.DronCharacteristics.Add(dronChar2);
-
-                    // ---------- Sample ----------
-                    var sample = new Sample
-                    {
-                        Dron = dron1,
-                        File = "sample_playa_san_lorenzo.jpg",
-                        Lat = 43.5408f,
-                        Lon = -5.6615f,
-                        Time = DateTime.Now
-                    };
-                    db.Samples.Add(sample);
-
-                    // ---------- Incidence ----------
-                    var incidence = new Incidence
-                    {
-                        Actual = flightPlan1,
-                        Msg = "Rutina de patrullaje en Playa de San Lorenzo",
-                        Type = "Info",
-                        Time = DateTime.Now
-                    };
-                    db.Incidences.Add(incidence);
-
-                    // ---------- Perimeter 1 - Área Playa San Lorenzo ----------
-                    var perimeter1 = route1.Perimeter;
-                    var coord1_1 = new Coordinate { Latitude = 43.5390, Longitude = -5.6600, Perimeter = perimeter1 };  // Inicio playa
-                    var coord1_2 = new Coordinate { Latitude = 43.5420, Longitude = -5.6630, Perimeter = perimeter1 };  // Mitad playa
-                    var coord1_3 = new Coordinate { Latitude = 43.5450, Longitude = -5.6660, Perimeter = perimeter1 };  // Hacia Cerro
-                    var coord1_4 = new Coordinate { Latitude = 43.5430, Longitude = -5.6640, Perimeter = perimeter1 };  // Regreso
-                    perimeter1.Coords = new List<Coordinate> { coord1_1, coord1_2, coord1_3, coord1_4 };
-                    db.Perimeters.Add(perimeter1);
-
-                    // ---------- Perimeter 2 - Área Puerto Deportivo ----------
-                    var perimeter2 = route2.Perimeter;
-                    var coord2_1 = new Coordinate { Latitude = 43.5460, Longitude = -5.6670, Perimeter = perimeter2 };  // Entrada puerto
-                    var coord2_2 = new Coordinate { Latitude = 43.5472, Longitude = -5.6682, Perimeter = perimeter2 };  // Centro puerto
-                    var coord2_3 = new Coordinate { Latitude = 43.5485, Longitude = -5.6695, Perimeter = perimeter2 };  // Salida puerto
-                    var coord2_4 = new Coordinate { Latitude = 43.5500, Longitude = -5.6700, Perimeter = perimeter2 };  // Zona museo
-                    perimeter2.Coords = new List<Coordinate> { coord2_1, coord2_2, coord2_3, coord2_4 };
-                    db.Perimeters.Add(perimeter2);
-
-                    // Guardar todos los cambios
+                        var baseStation = new BaseStation(); // Aquí podrías añadir propiedades si BaseStation las tuviera
+                        controlStation.BaseStations.Add(baseStation);
+                        db.BaseStations.Add(baseStation);
+                    }
                     db.SaveChanges();
 
-                    // Mostrar comprobación
-                    Console.WriteLine("Instancias creadas en la base de datos:");
-                    Console.WriteLine($"Drones: {db.Drones.Count()}");
-                    Console.WriteLine($"  - Drone 1 (DronX1-FireWatch): Flying at Playa de San Lorenzo ({dron1.Lat}, {dron1.Lon})");
-                    Console.WriteLine($"  - Drone 2 (DronX2-Coastal): Landed at Puerto Deportivo ({dron2.Lat}, {dron2.Lon})");
-                    Console.WriteLine($"ControlStations: {db.ControlStations.Count()} - Campus Universitario de Gijón");
+                    // 5. Generar Rutas y Puntos de Ruta
+                    var routes = new List<Models.Route>();
+                    for (int i = 1; i <= NUM_ROUTES; i++)
+                    {
+                        var route = new Models.Route
+                        {
+                            Type = i % 2 == 0 ? RouteType.Simple : RouteType.Periodic, // Alternar tipos
+                            Perimeter = new Perimeter(),
+                            Coords = new List<RoutePoint>()
+                        };
+
+                        // Crear 3-5 puntos aleatorios cercanos a Gijón para cada ruta
+                        int numPoints = random.Next(3, 6);
+                        for (int j = 0; j < numPoints; j++)
+                        {
+                            var point = new RoutePoint
+                            {
+                                Lat = BASE_LAT + (float)(random.NextDouble() * 0.02 - 0.01), // Variación +/- 0.01 grados
+                                Long = BASE_LON + (float)(random.NextDouble() * 0.02 - 0.01),
+                                Height = random.Next(30, 100),
+                                Route = route
+                            };
+                            route.Coords.Add(point);
+                            db.RoutePoints.Add(point);
+                        }
+
+                        // Crear Perímetro para la ruta
+                        var perimeter = route.Perimeter;
+                        perimeter.Coords = new List<Coordinate>();
+
+                        var firstPoint = route.Coords.First();
+                        var centerLat = firstPoint.Lat;
+                        var centerLon = firstPoint.Long;
+
+                        double offset = 0.002;
+
+                        perimeter.Coords.Add(new Coordinate { Latitude = (double)(centerLat + offset), Longitude = (double)(centerLon + offset), Perimeter = perimeter });
+                        perimeter.Coords.Add(new Coordinate { Latitude = (double)(centerLat + offset), Longitude = (double)(centerLon + offset), Perimeter = perimeter });
+                        perimeter.Coords.Add(new Coordinate { Latitude = (double)(centerLat + offset), Longitude = (double)(centerLon + offset), Perimeter = perimeter });
+                        perimeter.Coords.Add(new Coordinate { Latitude = (double)(centerLat + offset), Longitude = (double)(centerLon + offset), Perimeter = perimeter });
+
+                        db.Perimeters.Add(perimeter);
+                        routes.Add(route);
+                        db.Routes.Add(route);
+                    }
+                    db.SaveChanges();
+
+                    // 6. Generar Drones y sus Características
+                    var drones = new List<Dron>();
+                    var baseStationsList = controlStation.BaseStations.ToList();
+
+                    for (int i = 1; i <= NUM_DRONES; i++)
+                    {
+                        var dron = new Dron
+                        {
+                            Base = baseStationsList[i % baseStationsList.Count],
+
+                            ControlStation = controlStation,
+                            Lat = BASE_LAT + (float)(random.NextDouble() * 0.03 - 0.015),
+                            Lon = BASE_LON + (float)(random.NextDouble() * 0.03 - 0.015),
+                            State = (DroneState)random.Next(0, 3),
+                            Altitude = random.Next(0, 120),
+                            Speed = random.Next(0, 60),
+                            Battery = random.Next(10, 100)
+                        };
+                        var dronChar = new DronCharacteristics
+                        {
+                            Model = $"FireWatch-X{i}",
+                            Dron = dron,
+                            Sensors = sensors.OrderBy(x => random.Next()).Take(2).ToList()
+                        };
+                        dron.DronCharacteristics = dronChar;
+
+                        drones.Add(dron);
+                        db.Drones.Add(dron);
+                        db.DronCharacteristics.Add(dronChar);
+                    }
+                    db.SaveChanges();
+
+                    // 7. Generar Planes de Vuelo (Asignar 1 a cada dron para simplificar, o aleatorio)
+                    for (int i = 0; i < NUM_FLIGHT_PLANS; i++)
+                    {
+                        // Asegurarnos de no salirnos del índice si hay menos rutas/drones que planes
+                        var assignedDron = drones[i % drones.Count];
+                        var assignedRoute = routes[i % routes.Count];
+
+                        var flightPlan = new FlightPlan
+                        {
+                            Ruta = assignedRoute,
+                            Ctrl = controlStation,
+                            StartingTime = DateTime.Now.AddMinutes(-random.Next(0, 120)), // Empezó hace un rato
+                            State = (FlightStatus)random.Next(0, 3),
+                            Dron = assignedDron // Asignamos el dron al plan
+                        };
+
+                        // Actualizar la referencia circular en el dron (el dron conoce su plan actual)
+                        assignedDron.Actual = flightPlan;
+
+                        // Histórico de cambios de modo
+                        flightPlan.ModeChangeHistoric = new List<ChangeMode>
+                        {
+                            new ChangeMode { Moment = DateTime.Now.AddMinutes(-30), Mode = FlightMode.Auto }
+                        };
+
+                        db.FlightPlans.Add(flightPlan);
+
+                        // 8. Generar Muestras (Samples) e Incidencias para este plan
+                        if (i % 2 == 0) // Solo generar para la mitad de los planes
+                        {
+                            db.Samples.Add(new Sample
+                            {
+                                Dron = assignedDron,
+                                File = $"sample_plan_{i}.jpg",
+                                Lat = assignedDron.Lat,
+                                Lon = assignedDron.Lon,
+                                Time = DateTime.Now
+                            });
+
+                            db.Incidences.Add(new Incidence
+                            {
+                                Actual = flightPlan,
+                                Msg = $"Reporte rutinario del plan {i}",
+                                Type = "Info",
+                                Time = DateTime.Now
+                            });
+                        }
+                    }
+
+                    // Guardar todos los cambios finales
+                    db.SaveChanges();
+
+                    // Mostrar resumen en consola
+                    Console.WriteLine("\n--- Resumen de Datos Generados ---");
+                    Console.WriteLine($"Sensores: {db.Sensors.Count()}");
+                    Console.WriteLine($"ControlStations: {db.ControlStations.Count()}");
                     Console.WriteLine($"BaseStations: {db.BaseStations.Count()}");
                     Console.WriteLine($"Routes: {db.Routes.Count()}");
+                    Console.WriteLine($"Drones: {db.Drones.Count()}");
                     Console.WriteLine($"FlightPlans: {db.FlightPlans.Count()}");
                     Console.WriteLine($"Samples: {db.Samples.Count()}");
                     Console.WriteLine($"Incidences: {db.Incidences.Count()}");
-                    Console.WriteLine($"Sensors: {db.Sensors.Count()}");
                     Console.WriteLine($"Perimeters: {db.Perimeters.Count()}");
+                    Console.WriteLine("----------------------------------");
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Error al inicializar la base de datos: {ex.Message}");
                     Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                    if (ex.InnerException != null)
+                    {
+                        Console.WriteLine($"Inner Exception: {ex.InnerException.Message}");
+                    }
                     throw;
                 }
             }

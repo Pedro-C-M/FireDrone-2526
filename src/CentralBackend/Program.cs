@@ -46,6 +46,8 @@ public class Program
         builder.Services.AddSwaggerGen();
 
         var app = builder.Build();
+        //Descomentar para generar una vez luego volveer a comentar
+        InstanciateBD.FormaBaseDeBD();
 
         // Initialize database with seed data on startup (only if database doesn't exist or is empty)
         try
