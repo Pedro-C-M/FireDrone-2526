@@ -15,102 +15,6 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 
     <link rel="stylesheet" href="/assets/css/map.css" />
-
-    <!--
-    <style>
-        body {
-            padding: 0;
-            margin: 0;
-        }
-
-        html, body, #mapid {
-            height: 100%;
-            width: 100%;
-        }
-
-        /* Override some sidepanel styles */
-        .sidepanel {
-            background-color: rgba(255, 255, 255, 0.95);
-        }
-
-        .sidepanel-inner-wrapper {
-            background-color: transparent;
-        }
-
-        .sidepanel-content-wrapper {
-            background-color: white;
-        }
-
-        #drone-list {
-            max-height: calc(100vh - 150px);
-            overflow-y: auto;
-        }
-
-        .drone-item {
-            padding: 15px;
-            border-bottom: 1px solid #eee;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-            .drone-item:hover {
-                background-color: #f8f9fa;
-            }
-
-            .drone-item h5 {
-                color: #d32f2f;
-                font-size: 16px;
-                margin-bottom: 8px;
-            }
-
-            .drone-item p {
-                margin: 4px 0;
-                font-size: 13px;
-                color: #555;
-            }
-
-            .drone-item .status-badge {
-                display: inline-block;
-                padding: 3px 8px;
-                border-radius: 12px;
-                font-size: 11px;
-                font-weight: 600;
-                color: white;
-                margin-top: 5px;
-            }
-
-        /* Top navigation bar */
-        .map-navbar {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1001;
-            background: rgba(33, 37, 41, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 12px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-
-            .map-navbar h4 {
-                color: white;
-                margin: 0;
-                font-size: 18px;
-                font-weight: 600;
-            }
-
-            .map-navbar .btn {
-                font-size: 14px;
-            }
-
-        #mapid {
-            padding-top: 0;
-        }
-    </style>
-    -->
 </head>
 <body>
     <!-- Top Navigation Bar -->
@@ -126,7 +30,7 @@
               <span class="badge bg-secondary">🔄 Connecting...</span>
             </span>
             <span class="badge bg-light text-dark me-2" id="drone-count">Loading...</span>
-            <a href="index.html" class="btn btn-outline-light btn-sm">
+            <a href="/index.html" class="btn btn-outline-light btn-sm">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16">
                     <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8" />
                 </svg>
