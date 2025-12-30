@@ -12,8 +12,8 @@ namespace CentralBackend
         private const int NUM_SENSORS = 10;
         private const int NUM_BASE_STATIONS = 3;
         private const int NUM_ROUTES = 5;
-        private const int NUM_DRONES = 10; // Generaremos 10 drones
-        private const int NUM_FLIGHT_PLANS = 10; // Un plan por dron
+        private const int NUM_DRONES = 12; // Generaremos 12 drones (2 sin plan de vuelo)
+        private const int NUM_FLIGHT_PLANS = 10; // Un plan por dron (los últimos 2 drones no tendrán plan)
 
         // Coordenadas base (Gijón) para generar variaciones
         private const float BASE_LAT = 43.5322f;

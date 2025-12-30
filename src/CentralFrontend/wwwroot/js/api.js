@@ -75,7 +75,7 @@ async function getFlightPlans() {
 }
 
 async function addFlightPlan() {
-    const addDronIdInput = document.getElementById('add-dronId');
+  const addDronIdInput = document.getElementById('add-dronId');
     const addRutaIdInput = document.getElementById('add-rutaId');
     const addEstControlIdInput = document.getElementById('add-estControlId');
     const addStartingPointIdInput = document.getElementById('add-startingPointId');
@@ -85,21 +85,21 @@ async function addFlightPlan() {
     if (!addDronIdInput) return;
 
     const flightplan = {
-        dronId: parseInt(addDronIdInput.value.trim()),
-        rutaId: parseInt(addRutaIdInput.value.trim()),
-        estControlId: addEstControlIdInput.value ? parseInt(addEstControlIdInput.value.trim()) : null,
+      dronId: parseInt(addDronIdInput.value.trim()),
+     rutaId: parseInt(addRutaIdInput.value.trim()),
+ estControlId: addEstControlIdInput.value ? parseInt(addEstControlIdInput.value.trim()) : null,
         startingPointId: addStartingPointIdInput.value ? parseInt(addStartingPointIdInput.value.trim()) : null,
         startingTime: addStartingTimeInput.value,
-        state: parseInt(addStateInput.value)
+   state: parseInt(addStateInput.value)
     };
 
     try {
         await FlightPlanService.createFlightPlan(flightplan);
-        alert("Plan created successfully!");
-        window.location.href = 'index.html';
+    alert("Plan created successfully!");
+        window.location.href = '/index.html';
     } catch (error) {
         console.error('Unable to add flight plan.', error);
-        alert(`Error adding plan: ${error.message}`);
+  alert(`Error adding plan: ${error.message}`);
     }
 }
 
@@ -138,34 +138,68 @@ async function switchToManualMode(id) {
 
 // === LÓGICA DE ACTUALIZACIÓN Y EDICIÓN ===
 function displayEditForm(id) {
+    console.log('displayEditForm called with id:', id);
+    
     const flightplan = flightplans.find(fp => fp.id === id);
-    if (!flightplan) return;
+    if (!flightplan) {
+        console.error('Flight plan not found:', id);
+        return;
+    }
 
-    document.getElementById('edit-id').value = flightplan.id;
-    document.getElementById('edit-dronId').value = flightplan.dronId;
-    document.getElementById('edit-rutaId').value = flightplan.rutaId;
-    // ... resto de campos ...
-    document.getElementById('edit-state').value = flightplan.state;
-    document.getElementById('editForm').style.display = 'block';
+    console.log('Flight plan found:', flightplan);
+
+    // Set form values with null checks
+    const editId = document.getElementById('edit-id');
+    const editDronId = document.getElementById('edit-dronId');
+    const editRutaId = document.getElementById('edit-rutaId');
+const editState = document.getElementById('edit-state');
+    const editForm = document.getElementById('editForm');
+
+    if (editId) editId.value = flightplan.id;
+    if (editDronId) editDronId.value = flightplan.dronId;
+    if (editRutaId) editRutaId.value = flightplan.rutaId;
+    if (editState) editState.value = flightplan.state;
+    
+    if (editForm) {
+      editForm.style.display = 'block';
+        // Scroll to the form
+        editForm.scrollIntoView({ behavior: 'smooth' });
+    } else {
+        console.error('Edit form not found');
+    }
 }
 
 async function updateFlightPlan() {
     const flightplanId = parseInt(document.getElementById('edit-id').value);
-    // ... Recogida de datos simplificada para el ejemplo ...
+    
+    // Get the original flight plan to preserve unchanged fields
+    const originalPlan = flightplans.find(fp => fp.id === flightplanId);
+    if (!originalPlan) {
+        console.error('Original flight plan not found');
+        return false;
+    }
+
     const flightplanData = {
         id: flightplanId,
         dronId: parseInt(document.getElementById('edit-dronId').value),
+        rutaId: originalPlan.rutaId,
+      estControlId: originalPlan.estControlId,
+    startingTime: originalPlan.startingTime,
+        endingTime: originalPlan.endingTime,
         state: parseInt(document.getElementById('edit-state').value)
-        // Añade el resto de campos si es necesario
     };
+
+    console.log('Updating flight plan with data:', flightplanData);
 
     try {
         await FlightPlanService.updateFlightPlan(flightplanId, flightplanData);
+    alert('Flight plan updated successfully!');
         await getFlightPlans();
-        closeInput();
+   closeInput();
         await loadDronesToDropdowns();
     } catch (error) {
-        console.error('Unable to update flight plan.', error);
+   console.error('Unable to update flight plan.', error);
+        alert(`Error updating flight plan: ${error.message}`);
     }
     return false;
 }
@@ -270,8 +304,25 @@ function _displayFlightPlans(data) {
         // Asignamos los eventos usando la función segura
         safeAddClick('.btn-edit', () => displayEditForm(flightplan.id));
         safeAddClick('.btn-delete', () => deleteFlightPlan(flightplan.id));
-        safeAddClick('.btn-stop', () => stopFlightPlan(flightplan.id));
         safeAddClick('.btn-manual', () => switchToManualMode(flightplan.id));
+
+        // Stop button: solo habilitado cuando el vuelo está en curso (state === 0)
+        const stopBtn = clone.querySelector('.btn-stop');
+        if (stopBtn) {
+            if (flightplan.state === 0) {
+                // Vuelo en curso: botón habilitado
+                stopBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    stopFlightPlan(flightplan.id);
+                });
+            } else {
+                // Vuelo completado o cancelado: botón deshabilitado
+                stopBtn.disabled = true;
+                stopBtn.style.opacity = '0.5';
+                stopBtn.style.cursor = 'not-allowed';
+                stopBtn.title = 'Flight is not in progress';
+            }
+        }
 
         tBody.appendChild(clone);
     });
@@ -299,3 +350,5 @@ window.updateFlightPlan = updateFlightPlan;
 window.assignDronToPlan = assignDronToPlan;
 window.closeInput = closeInput;
 window.getDrones = loadDronesToDropdowns;
+window.getFlightPlans = getFlightPlans;
+window.displayEditForm = displayEditForm;
