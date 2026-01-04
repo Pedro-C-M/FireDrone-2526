@@ -159,7 +159,13 @@ function setupImportHandler() {
             alert("Por favor selecciona un archivo.");
             return;
         }
+        if (!file.name.toLowerCase().endsWith('.csv')) {
+            alert("❌ Error: Solo se admiten archivos con extensión .csv");
 
+            // Limpiamos el input para obligar a elegir otro
+            fileInput.value = '';
+            return;
+        }
         // Crear FormData para enviar el archivo
         const formData = new FormData();
         formData.append('file', file); // 'file' debe coincidir con el parámetro en el Controller C# (IFormFile file)

@@ -53,7 +53,7 @@ namespace CentralBackend.Controllers
                 using (var stream = file.OpenReadStream())
                 {
                     // Delegamos la lógica compleja de parseo al servicio
-                    int count = await _service.ImportFromCsvAsync(stream);
+                    int count = await _service.ImportFromCsvAsync(stream, file.FileName);
 
                     Console.WriteLine($"[RouteController] Successfully imported {count} routes.");
                     return Ok(new { message = $"Successfully imported {count} routes." });
