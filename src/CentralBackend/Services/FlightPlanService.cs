@@ -29,8 +29,47 @@ namespace CentralBackend.Services
 
         public async Task<FlightPlan> CreateAsync(FlightPlan plan)
         {
+            Console.WriteLine($"[FlightPlanService] CreateAsync called: DronId={plan.DronId}, RutaId={plan.RutaId}, State={plan.State}");
+
             _context.FlightPlans.Add(plan);
             await _context.SaveChangesAsync();
+
+            Console.WriteLine($"[FlightPlanService] FlightPlan {plan.Id} created in database");
+
+            // Only start the flight automatically if the plan is created with OnCourse status
+            if (plan.State == FlightStatus.OnCourse)
+            {
+                try
+                {
+                    var controlBackendUrl = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://localhost:5307";
+                    var httpClient = _httpClientFactory.CreateClient();
+
+                    Console.WriteLine($"[FlightPlanService] Calling ControlBackend at {controlBackendUrl}/api/drone/{plan.DronId}/start");
+
+                    var response = await httpClient.PostAsync(
+                        $"{controlBackendUrl}/api/drone/{plan.DronId}/start",
+                        null
+                    );
+
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        Console.WriteLine($"[FlightPlanService] Failed to start flight for drone {plan.DronId}: {response.StatusCode}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"[FlightPlanService] Successfully called ControlBackend StartFlight for drone {plan.DronId}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[FlightPlanService] Error calling ControlBackend StartFlight: {ex.Message}");
+                }
+            }
+            else
+            {
+                Console.WriteLine($"[FlightPlanService] Flight not started automatically - plan state is {plan.State}");
+            }
+
             return plan;
         }
 
@@ -63,9 +102,11 @@ namespace CentralBackend.Services
                 throw new NotFoundException($"FlightPlan with ID {id} does not exist.");
 
             existing.DronId = dronId;
+            existing.State = FlightStatus.OnCourse;
+            existing.StartingTime = DateTime.Now;
             await _context.SaveChangesAsync();
 
-            Console.WriteLine($"[FlightPlanService] Drone {dronId} assigned to FlightPlan {id} in database");
+            Console.WriteLine($"[FlightPlanService] Drone {dronId} assigned to FlightPlan {id} in database, state set to OnCourse");
 
             // Call ControlBackend to start the flight
             try

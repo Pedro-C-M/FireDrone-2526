@@ -165,6 +165,13 @@ namespace DroneController.Drone
 			lock (_statusLock)
 			{
 				_status.State = DroneState.Stopped;
+				_status.Speed = 0;
+				
+				// Notify the callback that the drone has stopped
+				if (_updateCallback != null)
+				{
+					_updateCallback.Update(_status);
+				}
 			}
 		}
 
