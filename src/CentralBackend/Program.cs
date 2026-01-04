@@ -5,6 +5,7 @@ using CentralBackend.Middleware;
 using CentralBackend.Services;
 using Microsoft.Data.Sqlite;
 using Models;
+using System.Text.Json.Serialization;
 
 public class Program
 {
@@ -18,13 +19,17 @@ public class Program
         builder.Services.AddAuthorization();
 
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-        builder.Services.AddControllers();
+        builder.Services.AddControllers().AddJsonOptions(options =>
+        {
+            options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+        });
 
         builder.Services.AddHttpClient();
 
         builder.Services.AddScoped<FlightPlanService>();
         builder.Services.AddScoped<DroneService>();
- 
+        builder.Services.AddScoped<RouteService>();
+
         // Agregar servicio de SignalR para drones (Singleton para mantener estado de conexiones)
         builder.Services.AddSingleton<DroneSignalRService>();
 
@@ -47,7 +52,7 @@ public class Program
 
         var app = builder.Build();
         //Descomentar para generar una vez luego volveer a comentar
-        InstanciateBD.FormaBaseDeBD();
+        //InstanciateBD.FormaBaseDeBD();
 
         // Initialize database with seed data on startup (only if database doesn't exist or is empty)
         try
