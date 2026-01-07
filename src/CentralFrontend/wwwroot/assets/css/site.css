@@ -131,3 +131,22 @@ body {
     font-size: 0.85rem;
     font-weight: 500;
 }
+
+/* === ROUTE TYPE BADGES === */
+.badge-periodic {
+    background-color: #6610f2;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.badge-simple {
+    background-color: #0d6efd;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}

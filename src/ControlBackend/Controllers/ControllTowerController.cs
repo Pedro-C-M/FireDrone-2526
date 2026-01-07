@@ -21,18 +21,18 @@ namespace ControlBackend.Controllers
         public async Task<IActionResult> StartFlight(int id, [FromBody] StartFlightDto? dto)
         {
             Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] StartFlight called for Drone ID: {id}");
-     
+
             // Prepare the command message with waypoints if provided
-            var msg = new 
-            { 
-                command = "start", 
+            var msg = new
+            {
+                command = "start",
                 droneId = id,
                 waypoints = dto?.Waypoints ?? new List<WaypointDto>()
             };
 
             var jsonMessage = JsonSerializer.Serialize(msg);
             Console.WriteLine($"[ControlBackend] Sending message to drone: {jsonMessage}");
-  
+
             var body = Encoding.UTF8.GetBytes(jsonMessage);
 
             await _publisher.PublishAsync($"drone.{id}.commands", body);

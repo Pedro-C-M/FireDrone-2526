@@ -40,7 +40,7 @@ namespace CentralBackend.Controllers
         [HttpPut("{id}/assign")]
         public async Task<IActionResult> AssignDron(int id, [FromBody] AssignDronDto dto)
         {
-            var result = await _service.AssignDronAsync(id, dto.DronId);
+            var result = await _service.AssignDronAsync(id, dto.DronId, dto.RestartFromBeginning);
             return Ok(result);
         }
 
@@ -75,6 +75,7 @@ namespace CentralBackend.Controllers
         public class AssignDronDto
         {
             public int DronId { get; set; }
+            public bool RestartFromBeginning { get; set; } = false;
         }
     }
 }
