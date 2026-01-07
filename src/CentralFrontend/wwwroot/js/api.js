@@ -125,7 +125,7 @@ async function stopFlightPlan(id) {
     }
 }
 
-async function switchToManualMode(id) {
+/*async function switchToManualMode(id) {
     if (!confirm(`Switch flight plan #${id} to manual mode?`)) return;
     try {
         await FlightPlanService.setManualMode(id);
@@ -134,7 +134,17 @@ async function switchToManualMode(id) {
     } catch (error) {
         console.error('Error switching manual mode:', error);
     }
+}*/
+//NUEVOv2
+async function switchToManualMode(id) {
+    try {
+        await FlightPlanService.setManualMode(id);
+    } catch (error) {
+        console.error('Error switching manual mode:', error);
+        throw error;
+    }
 }
+//FIN NUEVOv2
 
 // === LÓGICA DE ACTUALIZACIÓN Y EDICIÓN ===
 function displayEditForm(id) {
@@ -284,6 +294,27 @@ function _displayFlightPlans(data) {
         td[6].innerHTML = '';
         td[6].appendChild(badgeSpan);
 
+        //NUEVOv2
+        //Fila manual
+        const manualRow = document.createElement('tr');
+        manualRow.style.display = 'none';
+
+        manualRow.innerHTML = `
+            <td colspan="8">
+                <div class="card-box mt-2">
+                    <strong>Manual destination – FlightPlan #${flightplan.id}</strong>
+                    <div class="d-flex gap-2 mt-2">
+                        <input type="number" step="any" class="form-control manual-y" placeholder="Latitude">
+                        <input type="number" step="any" class="form-control manual-x" placeholder="Longitude">
+                        <button class="btn btn-primary btn-sm send-manual">Send</button>
+                        <button class="btn btn-secondary btn-sm cancel-manual">Cancel</button>
+                    </div>
+                </div>
+            </td>
+        `;
+
+        //FIN NUEVOv2
+
         // === ZONA DE BOTONES SEGURA ===
 
         // Función auxiliar: Intenta buscar el botón y añadir el evento.
@@ -304,7 +335,19 @@ function _displayFlightPlans(data) {
         // Asignamos los eventos usando la función segura
         safeAddClick('.btn-edit', () => displayEditForm(flightplan.id));
         safeAddClick('.btn-delete', () => deleteFlightPlan(flightplan.id));
-        safeAddClick('.btn-manual', () => switchToManualMode(flightplan.id));
+        //safeAddClick('.btn-manual', () => switchToManualMode(flightplan.id));
+        //NUEVOv2
+
+        safeAddClick('.btn-manual', () => {
+            if (flightplan.state !== 0) return; // solo si está en curso
+            alert(`Manual mode selected for FlightPlan #${flightplan.id}.\n\n` +
+                `The current route will be paused.\n` +
+                `Enter coordinates and press SEND to confirm the change.`);
+            manualRow.style.display =
+                manualRow.style.display === 'none' ? 'table-row' : 'none';
+        });
+
+        //FIN NUEVOv2
 
         // Stop button: solo habilitado cuando el vuelo está en curso (state === 0)
         const stopBtn = clone.querySelector('.btn-stop');
@@ -325,6 +368,45 @@ function _displayFlightPlans(data) {
         }
 
         tBody.appendChild(clone);
+        //NUEVOv2
+        tBody.appendChild(manualRow);
+
+        // ===== EVENTOS PANEL MANUAL =====
+        const sendBtn = manualRow.querySelector('.send-manual');
+        const cancelBtn = manualRow.querySelector('.cancel-manual');
+
+        sendBtn.addEventListener('click', async () => {
+            const x = parseFloat(manualRow.querySelector('.manual-x').value);
+            const y = parseFloat(manualRow.querySelector('.manual-y').value);
+
+            if (isNaN(x) || isNaN(y)) {
+                alert("Please enter valid coordinates");
+                return;
+            }
+
+            try {
+                await switchToManualMode(flightplan.id);
+
+                await fetch(`http://localhost:5306/api/flightplan/${flightplan.id}/manual-destination`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ latitude: y, longitude: x })
+                });
+
+                alert(`FlightPlan #${flightplan.id} is now in MANUAL mode`);
+                manualRow.style.display = 'none';
+
+            } catch (error) {
+                console.error(error);
+                alert('Failed to activate manual mode');
+            }
+        });
+
+        cancelBtn.addEventListener('click', () => {
+            manualRow.style.display = 'none';
+        });
+
+        //FIN NUEVOv2
     });
 
     flightplans = data;
