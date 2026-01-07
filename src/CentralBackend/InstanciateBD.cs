@@ -81,6 +81,7 @@ namespace CentralBackend
                                 Lat = BASE_LAT + (float)(random.NextDouble() * 0.02 - 0.01), // Variación +/- 0.01 grados
                                 Long = BASE_LON + (float)(random.NextDouble() * 0.02 - 0.01),
                                 Height = random.Next(30, 100),
+                                Velocity = random.Next(15, 30), // Add velocity between 15-30
                                 Route = route
                             };
                             route.Coords.Add(point);

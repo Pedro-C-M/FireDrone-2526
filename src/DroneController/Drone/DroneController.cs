@@ -147,7 +147,7 @@ namespace DroneController.Drone
         }
 
         // Gestión de los mensajes de comandos recibidos por el controlador
-    // Si se añaden más mensajes se debería gestionar con una tabla
+        // Si se añaden más mensajes se debería gestionar con una tabla
         private void HandleDroneCommand(string commandtext)
         {
        // Decodificar el mensaje
