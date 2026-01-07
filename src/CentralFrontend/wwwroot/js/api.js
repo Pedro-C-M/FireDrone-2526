@@ -313,7 +313,27 @@ function _displayFlightPlans(data) {
 
         // Asignamos los eventos usando la función segura
         safeAddClick('.btn-edit', () => displayEditForm(flightplan.id));
-        safeAddClick('.btn-delete', () => deleteFlightPlan(flightplan.id));
+
+        // Delete button: with stopPropagation to prevent row click conflicts
+        const deleteBtn = clone.querySelector('.btn-delete');
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                e.stopPropagation(); // Prevent any parent event handlers
+
+                if (!confirm(`Are you sure you want to delete flight plan #${flightplan.id}?`)) return;
+
+                try {
+                    await FlightPlanService.deleteFlightPlan(flightplan.id);
+                    alert(`Flight plan #${flightplan.id} deleted successfully`);
+                    await getFlightPlans();
+                } catch (error) {
+                    console.error('Unable to delete flight plan.', error);
+                    alert(`Error deleting flight plan: ${error.message}`);
+                }
+            });
+        }
+
         //safeAddClick('.btn-manual', () => switchToManualMode(flightplan.id));
         //NUEVOv2
 
