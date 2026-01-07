@@ -317,14 +317,27 @@ function _displayFlightPlans(data) {
         //safeAddClick('.btn-manual', () => switchToManualMode(flightplan.id));
         //NUEVOv2
 
-        safeAddClick('.btn-manual', () => {
-            if (flightplan.state !== 0) return; // solo si está en curso
-            alert(`Manual mode selected for FlightPlan #${flightplan.id}.\n\n` +
-                `The current route will be paused.\n` +
-                `Enter coordinates and press SEND to confirm the change.`);
-            manualRow.style.display =
-                manualRow.style.display === 'none' ? 'table-row' : 'none';
-        });
+        // Manual button: solo habilitado cuando el vuelo está en curso (state === 0)
+        const manualBtn = clone.querySelector('.btn-manual');
+        if (manualBtn) {
+            if (flightplan.state === 0) {
+                // Vuelo en curso: botón habilitado
+                manualBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    alert(`Manual mode selected for FlightPlan #${flightplan.id}.\n\n` +
+                        `The current route will be paused.\n` +
+                        `Enter coordinates and press SEND to confirm the change.`);
+                    manualRow.style.display =
+                        manualRow.style.display === 'none' ? 'table-row' : 'none';
+                });
+            } else {
+                // Vuelo completado o cancelado: botón deshabilitado
+                manualBtn.disabled = true;
+                manualBtn.style.opacity = '0.5';
+                manualBtn.style.cursor = 'not-allowed';
+                manualBtn.title = 'Manual mode only available for flights in progress';
+            }
+        }
 
         //FIN NUEVOv2
 
