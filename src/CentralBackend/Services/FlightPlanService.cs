@@ -44,14 +44,29 @@ namespace CentralBackend.Services
             {
                 try
                 {
+                    // Load the route with coordinates
+                    var flightPlanWithRoute = await _context.FlightPlans
+                        .Include(fp => fp.Ruta)
+                        .ThenInclude(r => r.Coords)
+                        .FirstOrDefaultAsync(fp => fp.Id == plan.Id);
+
                     var controlBackendUrl = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://localhost:5307";
                     var httpClient = _httpClientFactory.CreateClient();
 
-                    Console.WriteLine($"[FlightPlanService] Calling ControlBackend at {controlBackendUrl}/api/drone/{plan.DronId}/start");
+                    // Convert RoutePoints to Waypoints
+                    var waypoints = flightPlanWithRoute?.Ruta?.Coords?.Select(rp => new
+                    {
+                        latitude = rp.Lat,
+                        longitude = rp.Long,
+                        altitude = rp.Height,
+                        speed = rp.Velocity
+                    }).ToList();
 
-                    var response = await httpClient.PostAsync(
+                    Console.WriteLine($"[FlightPlanService] Calling ControlBackend at {controlBackendUrl}/api/drone/{plan.DronId}/start with {waypoints?.Count ?? 0} waypoints");
+
+                    var response = await httpClient.PostAsJsonAsync(
                         $"{controlBackendUrl}/api/drone/{plan.DronId}/start",
-                        null
+                        new { Waypoints = waypoints }  // Use capital W to match DTO
                     );
 
                     if (!response.IsSuccessStatusCode)
@@ -100,7 +115,11 @@ namespace CentralBackend.Services
         {
             Console.WriteLine($"[FlightPlanService] AssignDronAsync called: FlightPlanId={id}, DronId={dronId}");
 
-            var existing = await _context.FlightPlans.FindAsync(id);
+            var existing = await _context.FlightPlans
+                .Include(fp => fp.Ruta)
+                .ThenInclude(r => r.Coords)
+                .FirstOrDefaultAsync(fp => fp.Id == id);
+
             if (existing == null)
                 throw new NotFoundException($"FlightPlan with ID {id} does not exist.");
 
@@ -111,17 +130,38 @@ namespace CentralBackend.Services
 
             Console.WriteLine($"[FlightPlanService] Drone {dronId} assigned to FlightPlan {id} in database, state set to OnCourse");
 
-            // Call ControlBackend to start the flight
+            // Call ControlBackend to start the flight with waypoints from the route
             try
             {
                 var controlBackendUrl = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://localhost:5307";
                 var httpClient = _httpClientFactory.CreateClient();
 
-                Console.WriteLine($"[FlightPlanService] Calling ControlBackend at {controlBackendUrl}/api/drone/{dronId}/start");
+                // Convert RoutePoints to Waypoints
+                var waypoints = existing.Ruta?.Coords?.Select(rp => new
+                {
+                    latitude = rp.Lat,
+                    longitude = rp.Long,
+                    altitude = rp.Height,
+                    speed = rp.Velocity
+                }).ToList();
 
-                var response = await httpClient.PostAsync(
+                Console.WriteLine($"[FlightPlanService] Sending {waypoints?.Count ?? 0} waypoints to ControlBackend for drone {dronId}");
+  
+                // Log the first waypoint to verify data
+                if (waypoints != null && waypoints.Count > 0)
+                {
+                    var first = waypoints[0];
+                    Console.WriteLine($"[FlightPlanService] First waypoint: lat={first.latitude}, lon={first.longitude}, alt={first.altitude}, speed={first.speed}");
+                    if (waypoints.Count > 1)
+                    {
+                        var last = waypoints[waypoints.Count - 1];
+                        Console.WriteLine($"[FlightPlanService] Last waypoint: lat={last.latitude}, lon={last.longitude}, alt={last.altitude}, speed={last.speed}");
+                    }
+                }
+
+                var response = await httpClient.PostAsJsonAsync(
                     $"{controlBackendUrl}/api/drone/{dronId}/start",
-                    null
+                    new { Waypoints = waypoints }  // Use capital W to match DTO
                 );
 
                 if (!response.IsSuccessStatusCode)

@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using RabbitMQ.Client;
 using Microsoft.Extensions.Hosting;
 using ControlBackend;
@@ -146,59 +147,117 @@ namespace DroneController.Drone
         }
 
         // Gestión de los mensajes de comandos recibidos por el controlador
-    // Si se añaden más mensajes se debería gestionar con una tabla
+        // Si se añaden más mensajes se debería gestionar con una tabla
         private void HandleDroneCommand(string commandtext)
         {
-       // Decodificar el mensaje
-         DroneCommand command = JsonConvert.DeserializeObject<DroneCommand>(commandtext);
+            // Decodificar el mensaje
+            DroneCommand command = JsonConvert.DeserializeObject<DroneCommand>(commandtext);
 
             Log.Debug($"Executing drone command {command.Command}");
 
             if (command.Command == DroneCommand.START_FLIGHT_PLAN_CMD)
-  {
-        // Decodificar los argumentos
-//Waypoint[] waypoints = JsonConvert.DeserializeObject<Waypoint[]>(command.Arguments);
-           Waypoint[] waypoints = //De ejemplo rellenado
-				{
-       new Waypoint { Latitude = 43.36, Longitude = -5.84, Altitude = 50, Speed = 20 },
-    new Waypoint { Latitude = 43.361, Longitude = -5.841, Altitude = 55, Speed = 22 },
-         new Waypoint { Latitude = 43.362, Longitude = -5.842, Altitude = 60, Speed = 25 },
-                    new Waypoint { Latitude = 43.363, Longitude = -5.843, Altitude = 65, Speed = 20 },
-     new Waypoint { Latitude = 43.364, Longitude = -5.844, Altitude = 70, Speed = 18 }
-                };
-                _drone.StartFlightPlan(waypoints);
-     }
+            {
+                // Decodificar los argumentos desde el mensaje JSON completo
+                try
+                {
+                    dynamic commandObj = JsonConvert.DeserializeObject<dynamic>(commandtext);
+
+                    // Check if waypoints are provided in the message
+                    if (commandObj.waypoints != null && commandObj.waypoints.Count > 0)
+                    {
+                        Console.WriteLine($"[DroneController] Received {commandObj.waypoints.Count} waypoints from message");
+
+                        // Convert dynamic waypoints to Waypoint array
+                        List<Waypoint> waypointList = new List<Waypoint>();
+                        foreach (var wp in commandObj.waypoints)
+                        {
+                            // Try both PascalCase and camelCase property names
+                            // (System.Text.Json uses PascalCase by default)
+                            double? lat = wp.Latitude ?? wp.latitude;
+                            double? lon = wp.Longitude ?? wp.longitude;
+                            double? alt = wp.Altitude ?? wp.altitude;
+                            double? spd = wp.Speed ?? wp.speed;
+
+                            Console.WriteLine($"[DroneController] Waypoint: lat={lat}, lon={lon}, alt={alt}, speed={spd}");
+
+                            var waypoint = new Waypoint
+                            {
+                                Latitude = lat ?? 0,
+                                Longitude = lon ?? 0,
+                                Altitude = alt ?? 50,
+                                Speed = spd ?? 20
+                            };
+
+                            waypointList.Add(waypoint);
+                        }
+
+                        Waypoint[] waypoints = waypointList.ToArray();
+
+                        // Log first and last waypoint for verification
+                        if (waypoints.Length > 0)
+                        {
+                            Console.WriteLine($"[DroneController] First waypoint: Lat={waypoints[0].Latitude}, Lon={waypoints[0].Longitude}");
+                            if (waypoints.Length > 1)
+                            {
+                                Console.WriteLine($"[DroneController] Last waypoint: Lat={waypoints[waypoints.Length - 1].Latitude}, Lon={waypoints[waypoints.Length - 1].Longitude}");
+                            }
+                        }
+
+                        Console.WriteLine($"[DroneController] Starting flight plan with {waypoints.Length} waypoints");
+                        _drone.StartFlightPlan(waypoints);
+                    }
+                    else
+                    {
+                        Console.WriteLine($"[DroneController] No waypoints provided in message, using default route");
+                        // Fallback to hardcoded waypoints if none provided
+                        Waypoint[] waypoints = new[]
+                       {
+         new Waypoint { Latitude = 43.36, Longitude = -5.84, Altitude = 50, Speed = 20 },
+           new Waypoint { Latitude = 43.361, Longitude = -5.841, Altitude = 55, Speed = 22 },
+       new Waypoint { Latitude = 43.362, Longitude = -5.842, Altitude = 60, Speed = 25 },
+    new Waypoint { Latitude = 43.363, Longitude = -5.843, Altitude = 65, Speed = 20 },
+        new Waypoint { Latitude = 43.364, Longitude = -5.844, Altitude = 70, Speed = 18 }
+          };
+                        _drone.StartFlightPlan(waypoints);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[DroneController] Error parsing waypoints: {ex.Message}");
+                    Console.WriteLine($"[DroneController] Stack trace: {ex.StackTrace}");
+                }
+            }
             else if (command.Command == DroneCommand.STOP_FLIGHT_PLAN_CMD)
             {
-    _drone.StopFlightPlan();
-      }
+                _drone.StopFlightPlan();
+            }
             else if (command.Command == DroneCommand.GOTO_MANUAL)
             {
-     Console.WriteLine($"[DroneController] GOTO_MANUAL command received");
-                
-    // Parse the command message to extract lat/lng
-           try
-  {
-         dynamic commandObj = JsonConvert.DeserializeObject<dynamic>(commandtext);
-     double lat = commandObj.lat;
-               double lng = commandObj.lng;
-            
-          Console.WriteLine($"[DroneController] Calling GoTo with Lat={lat}, Lng={lng}");
-            _drone.GoTo(lat, lng);
-        }
-  catch (Exception ex)
-       {
-              Console.WriteLine($"[DroneController] Error parsing goto command: {ex.Message}");
-    }
-   }
-          else if (command.Command == "status") // Get status command
+                Console.WriteLine($"[DroneController] GOTO_MANUAL command received");
+
+                // Parse the command message to extract lat/lng
+                try
+                {
+                    dynamic commandObj = JsonConvert.DeserializeObject<dynamic>(commandtext);
+                    double lat = commandObj.lat;
+                    double lng = commandObj.lng;
+
+                    Console.WriteLine($"[DroneController] Calling GoTo with Lat={lat}, Lng={lng}");
+                    _drone.GoTo(lat, lng);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[DroneController] Error parsing goto command: {ex.Message}");
+                }
+            }
+            else if (command.Command == "status") // Get status command
             {
-        DroneStatus status = _drone.GetStatus();
+                DroneStatus status = _drone.GetStatus();
 
-          // Codificar el estado como JSON
-       var statusStr = JsonConvert.SerializeObject(status);
+                // Codificar el estado como JSON
+                var statusStr = JsonConvert.SerializeObject(status);
 
-     SendStatus(statusStr);
+                SendStatus(statusStr);
             }
         }
     }
