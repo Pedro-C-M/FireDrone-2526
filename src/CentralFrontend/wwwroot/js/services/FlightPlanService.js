@@ -87,13 +87,32 @@ export async function setManualMode(id) {
  */
 export async function assignDrone(planId, droneId) {
     const response = await fetch(`${ENDPOINTS.FLIGHT_PLANS}/${planId}/assign`, {
-        method: 'PUT',
+     method: 'PUT',
         headers: {
-            'Accept': 'application/json',
+   'Accept': 'application/json',
             'Content-Type': 'application/json'
-        },
+ },
         body: JSON.stringify({ DronId: parseInt(droneId) })
     });
     if (!response.ok) throw new Error(`Error assigning drone: ${response.status}`);
+  return await response.json();
+}
+
+/**
+ * Envía comando goto para modo manual
+ */
+export async function sendGotoCommand(planId, latitude, longitude) {
+    const response = await fetch(`${ENDPOINTS.FLIGHT_PLANS}/${planId}/goto`, {
+        method: 'POST',
+ headers: {
+            'Accept': 'application/json',
+   'Content-Type': 'application/json'
+     },
+        body: JSON.stringify({ 
+       Latitude: parseFloat(latitude), 
+            Longitude: parseFloat(longitude) 
+})
+    });
+    if (!response.ok) throw new Error(`Error sending goto command: ${response.status}`);
     return await response.json();
 }

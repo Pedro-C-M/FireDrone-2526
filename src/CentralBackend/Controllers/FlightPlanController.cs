@@ -1,9 +1,7 @@
 ﻿using CentralBackend.Services;
 using Microsoft.AspNetCore.Mvc;
 using Models;
-//NUEVOv2
 using ControlBackend.DTOs;
-//FIN NUEVOv2
 
 namespace CentralBackend.Controllers
 {
@@ -60,14 +58,12 @@ namespace CentralBackend.Controllers
             return Ok(result);
         }
 
-        //NUEVOv2
-        [HttpPost("{id}/manual-destination")]
-        public async Task<IActionResult> SetManualDestination(int id, [FromBody] GoToDto dto)
+        [HttpPost("{id}/goto")]
+        public async Task<IActionResult> SendManualDestination(int id, [FromBody] GoToDto dto)
         {
             await _service.SendManualDestinationAsync(id, dto);
-            return Ok();
+            return Ok(new { message = "Manual destination sent successfully" });
         }
-        //FIN NUEVOv2
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
