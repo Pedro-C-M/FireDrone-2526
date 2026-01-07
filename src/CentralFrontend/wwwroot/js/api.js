@@ -193,7 +193,7 @@ async function updateFlightPlan() {
     return false;
 }
 
-async function assignDronToPlan() {
+async function assignDronToPlan(restartFromBeginning = false) {
     const planId = document.getElementById('assign-planId').value;
     const droneId = document.getElementById('assign-droneId').value;
 
@@ -202,9 +202,11 @@ async function assignDronToPlan() {
         return;
     }
 
+    const action = restartFromBeginning ? "restart from beginning" : "resume from last position";
+
     try {
-        const result = await FlightPlanService.assignDrone(planId, droneId);
-        alert(`Drone ${result.dronId} assigned to flight plan ${result.id} successfully!`);
+        const result = await FlightPlanService.assignDrone(planId, droneId, restartFromBeginning);
+        alert(`Drone ${result.dronId} assigned to flight plan ${result.id} successfully!\nMode: ${action}`);
         await getFlightPlans();
 
         // Limpiar inputs si existen
@@ -261,7 +263,26 @@ function _displayFlightPlans(data) {
         // Rellenar celdas básicas
         td[0].textContent = flightplan.id;
         td[1].textContent = flightplan.dronId;
-        td[2].textContent = flightplan.rutaId;
+
+        // Display route information with type and waypoint count
+        const routeInfo = flightplan.ruta || flightplan.Ruta;
+        if (routeInfo) {
+            const routeType = routeInfo.type === 1 || routeInfo.Type === 1 ? 'Periodic' : 'Simple';
+            const waypointCount = routeInfo.coords?.length || routeInfo.Coords?.length || 0;
+            const routeTypeBadge = routeType === 'Periodic' ? 'badge-periodic' : 'badge-simple';
+
+            td[2].innerHTML = `
+                <div>
+                    <strong>Route #${flightplan.rutaId}</strong>
+                    <br>
+                    <span class="badge ${routeTypeBadge} mt-1">${routeType}</span>
+                    <span class="badge bg-secondary mt-1">${waypointCount} waypoints</span>
+                </div>
+            `;
+        } else {
+            td[2].textContent = `Route #${flightplan.rutaId}`;
+        }
+
         td[3].textContent = flightplan.estControlId || 'N/A';
         td[4].textContent = formatDateTime(flightplan.startingTime);
         td[5].textContent = flightplan.endingTime ? formatDateTime(flightplan.endingTime) : 'In Progress';

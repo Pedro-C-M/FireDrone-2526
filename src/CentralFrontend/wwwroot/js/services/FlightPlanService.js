@@ -85,17 +85,20 @@ export async function setManualMode(id) {
 /**
  * Asigna un dron a un plan
  */
-export async function assignDrone(planId, droneId) {
+export async function assignDrone(planId, droneId, restartFromBeginning = false) {
     const response = await fetch(`${ENDPOINTS.FLIGHT_PLANS}/${planId}/assign`, {
-     method: 'PUT',
+        method: 'PUT',
         headers: {
-   'Accept': 'application/json',
+            'Accept': 'application/json',
             'Content-Type': 'application/json'
- },
-        body: JSON.stringify({ DronId: parseInt(droneId) })
+        },
+        body: JSON.stringify({
+            DronId: parseInt(droneId),
+            RestartFromBeginning: restartFromBeginning
+        })
     });
     if (!response.ok) throw new Error(`Error assigning drone: ${response.status}`);
-  return await response.json();
+    return await response.json();
 }
 
 /**
@@ -104,14 +107,14 @@ export async function assignDrone(planId, droneId) {
 export async function sendGotoCommand(planId, latitude, longitude) {
     const response = await fetch(`${ENDPOINTS.FLIGHT_PLANS}/${planId}/goto`, {
         method: 'POST',
- headers: {
+        headers: {
             'Accept': 'application/json',
-   'Content-Type': 'application/json'
-     },
-        body: JSON.stringify({ 
-       Latitude: parseFloat(latitude), 
-            Longitude: parseFloat(longitude) 
-})
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            Latitude: parseFloat(latitude),
+            Longitude: parseFloat(longitude)
+        })
     });
     if (!response.ok) throw new Error(`Error sending goto command: ${response.status}`);
     return await response.json();

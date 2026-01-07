@@ -18,18 +18,28 @@ namespace ControlBackend.Controllers
 
         // 1) Comenzar vuelo: POST /api/drone/{id}/start
         [HttpPost("{id}/start")]
-        public async Task<IActionResult> StartFlight(int id)
+        public async Task<IActionResult> StartFlight(int id, [FromBody] StartFlightDto? dto)
         {
             Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] StartFlight called for Drone ID: {id}");
-     
-            var msg = new { command = "start", droneId = id };
-            var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(msg));
+
+            // Prepare the command message with waypoints if provided
+            var msg = new
+            {
+                command = "start",
+                droneId = id,
+                waypoints = dto?.Waypoints ?? new List<WaypointDto>()
+            };
+
+            var jsonMessage = JsonSerializer.Serialize(msg);
+            Console.WriteLine($"[ControlBackend] Sending message to drone: {jsonMessage}");
+
+            var body = Encoding.UTF8.GetBytes(jsonMessage);
 
             await _publisher.PublishAsync($"drone.{id}.commands", body);
 
-            Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] Start command sent to RabbitMQ for Drone ID: {id}");
+            Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] Start command sent to RabbitMQ for Drone ID: {id} with {dto?.Waypoints?.Count ?? 0} waypoints");
 
-            return Ok(new { status = "sent", action = "start", droneId = id });
+            return Ok(new { status = "sent", action = "start", droneId = id, waypointCount = dto?.Waypoints?.Count ?? 0 });
         }
 
         // 2) Parar vuelo: POST /api/drone/{id}/stop
