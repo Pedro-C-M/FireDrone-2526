@@ -175,6 +175,56 @@ namespace DroneController.Drone
 			}
 		}
 
+		// Ir a una coordenada específica (modo manual)
+		public void GoTo(double latitude, double longitude)
+		{
+			Console.WriteLine($"[DroneSimulator] GoTo called: Lat={latitude}, Lon={longitude}");
+
+			// Stop any existing flight before starting manual movement
+			if (_task != null && !_task.IsCompleted)
+			{
+				Console.WriteLine($"[DroneSimulator] Stopping existing flight before manual GoTo");
+				try
+				{
+					_tokenSource?.Cancel();
+					_task.Wait(TimeSpan.FromSeconds(2)); // Wait with timeout
+				}
+				catch (AggregateException)
+				{
+					// Expected after cancellation
+				}
+				finally
+				{
+					_tokenSource?.Dispose();
+				}
+			}
+
+			// Get current position
+			DroneStatus currentStatus = GetStatus();
+
+			// Create waypoints array: current position + target coordinate
+			Waypoint[] waypoints = new Waypoint[]
+			{
+				new Waypoint
+				{
+					Latitude = currentStatus.Latitude,
+					Longitude = currentStatus.Longitude,
+					Altitude = currentStatus.Altitude > 0 ? currentStatus.Altitude : 50, // Use current altitude or default
+					Speed = 20     // Default speed
+				},
+				new Waypoint
+				{
+					Latitude = latitude,
+					Longitude = longitude,
+					Altitude = 50, // Default altitude
+					Speed = 20     // Default speed
+				}
+			};
+
+			// Start a new flight plan from current position to target coordinate
+			StartFlightPlan(waypoints);
+		}
+
 		// Obtiene el estado actual del dron
 		public DroneStatus GetStatus()
 		{

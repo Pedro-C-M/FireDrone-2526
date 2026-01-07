@@ -1,6 +1,9 @@
 ﻿using CentralBackend.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using Models;
+//NUEVOv2
+using ControlBackend.DTOs;
+//FIN NUEVOv2
 
 namespace CentralBackend.Services
 {
@@ -225,6 +228,48 @@ namespace CentralBackend.Services
 
             return existing;
         }
+
+        //NUEVOv2
+        public async Task SendManualDestinationAsync(int flightPlanId, GoToDto dto)
+        {
+            var existing = await _context.FlightPlans.FindAsync(flightPlanId);
+            if (existing == null)
+                throw new NotFoundException($"FlightPlan with ID {flightPlanId} does not exist.");
+
+            // Llamada al ControlBackend
+            try
+            {
+                var controlBackendUrl = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://localhost:5307";
+                var httpClient = _httpClientFactory.CreateClient();
+
+                var payload = new
+                {
+                    latitude = dto.Latitude,
+                    longitude = dto.Longitude
+                };
+
+                Console.WriteLine($"[FlightPlanService] Sending manual destination to ControlBackend for drone {existing.DronId}");
+
+                var response = await httpClient.PostAsJsonAsync(
+                    $"{controlBackendUrl}/api/drone/{existing.DronId}/goto",
+                    payload
+                );
+
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new Exception($"ControlBackend returned {response.StatusCode}");
+                }
+
+                Console.WriteLine($"[FlightPlanService] Manual destination sent successfully");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[FlightPlanService] Error sending manual destination: {ex.Message}");
+                throw;
+            }
+        }
+        //FIN NUEVOv2
 
         public async Task DeleteAsync(int id)
         {

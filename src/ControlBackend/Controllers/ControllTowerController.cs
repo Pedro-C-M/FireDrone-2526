@@ -47,6 +47,8 @@ namespace ControlBackend.Controllers
         [HttpPost("{id}/goto")]
         public async Task<IActionResult> GoToCoordinate(int id, [FromBody] GoToDto dto)
         {
+            Console.WriteLine($"[DroneController] GoToCoordinate called for Drone ID: {id}, Latitude: {dto.Latitude}, Longitude: {dto.Longitude}");
+
             var msg = new
             {
                 command = "goto",
@@ -57,6 +59,8 @@ namespace ControlBackend.Controllers
 
             var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(msg));
             await _publisher.PublishAsync($"drone.{id}.commands", body);
+
+            Console.WriteLine($"[DroneController] Goto command published to RabbitMQ for Drone ID: {id}");
 
             return Ok(new { status = "sent", action = "goto", droneId = id });
         }

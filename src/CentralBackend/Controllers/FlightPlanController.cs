@@ -1,6 +1,7 @@
 ﻿using CentralBackend.Services;
 using Microsoft.AspNetCore.Mvc;
 using Models;
+using ControlBackend.DTOs;
 
 namespace CentralBackend.Controllers
 {
@@ -55,6 +56,13 @@ namespace CentralBackend.Controllers
         {
             var result = await _service.SwitchToManualModeAsync(id);
             return Ok(result);
+        }
+
+        [HttpPost("{id}/goto")]
+        public async Task<IActionResult> SendManualDestination(int id, [FromBody] GoToDto dto)
+        {
+            await _service.SendManualDestinationAsync(id, dto);
+            return Ok(new { message = "Manual destination sent successfully" });
         }
 
         [HttpDelete("{id}")]
