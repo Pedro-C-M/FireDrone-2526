@@ -273,9 +273,44 @@ namespace CentralBackend.Services
 
         public async Task DeleteAsync(int id)
         {
-            var existing = await _context.FlightPlans.FindAsync(id);
+            var existing = await _context.FlightPlans
+                .Include(fp => fp.ModeChangeHistoric)
+                .Include(fp => fp.Dron)
+                .Include(fp => fp.RoutePoints) // Include route points that might reference this flight plan
+                .FirstOrDefaultAsync(fp => fp.Id == id);
+
             if (existing == null)
                 throw new NotFoundException($"FlightPlan with ID {id} does not exist.");
+
+            // Null out the drone's reference to this flight plan to avoid foreign key constraint issues
+            if (existing.Dron != null)
+            {
+                existing.Dron.Actual = null;
+                existing.Dron.FlightPlanId = null;
+            }
+
+            // Remove incidences that reference this flight plan
+            var incidences = await _context.Incidences
+                .Where(i => i.FlightPlanId == id)
+                .ToListAsync();
+
+            if (incidences.Any())
+            {
+                _context.Incidences.RemoveRange(incidences);
+            }
+
+            // Null out RoutePoints that might reference this flight plan
+            if (existing.RoutePoints != null && existing.RoutePoints.Any())
+            {
+                // Note: RoutePoints should belong to Routes, not FlightPlans
+                // But if they have FlightPlanId set, we clear it
+                foreach (var routePoint in existing.RoutePoints)
+                {
+                    // These points should stay with their route, just remove flight plan reference
+                    // The EF navigation property should handle this, but we can be explicit
+                }
+                existing.RoutePoints.Clear();
+            }
 
             _context.FlightPlans.Remove(existing);
             await _context.SaveChangesAsync();
