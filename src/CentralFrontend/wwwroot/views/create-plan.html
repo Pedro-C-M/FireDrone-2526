@@ -39,29 +39,31 @@
         </nav>
 
         <main class="main-content">
-            <h2 class="page-title mb-4">Operations Center</h2>
+            <h2 class="page-title mb-4">Create New Flight Plan</h2>
 
-            <div class="row">
-                <div class="col-md-7">
+            <div class="row justify-content-center">
+                <div class="col-md-8">
                     <div class="card-box">
-                        <h4 class="mb-3 text-primary">Create Flight Plan</h4>
+                        <h4 class="mb-3 text-primary">Flight Plan Details</h4>
+                        <p class="text-muted small mb-4">Create a new flight plan. After creation, go to the Dashboard to assign a drone and start the route.</p>
                         <form action="javascript:void(0);" method="POST" onsubmit="addFlightPlan()">
                             <div class="row mb-3">
                                 <div class="col-md-6">
-                                    <label for="add-dronId" class="form-label">Select Drone</label>
-                                    <select class="form-control" id="add-dronId" required>
-                                        <option value="">Loading...</option>
+                                    <label for="add-dronId" class="form-label">Select Drone (Optional)</label>
+                                    <select class="form-control" id="add-dronId">
+                                        <option value="">Not assigned (assign later)</option>
                                     </select>
+                                    <small class="form-text text-muted">You can assign a drone later from the Dashboard</small>
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="add-rutaId" class="form-label">Route ID</label>
+                                    <label for="add-rutaId" class="form-label">Route ID <span class="text-danger">*</span></label>
                                     <input type="number" class="form-control" id="add-rutaId" placeholder="Ex: 1" required>
                                 </div>
                             </div>
                             <div class="row mb-3">
                                 <div class="col-md-6">
-                                    <label for="add-estControlId" class="form-label">Station ID</label>
-                                    <input type="number" class="form-control" id="add-estControlId" placeholder="Ex: 1">
+                                    <label for="add-estControlId" class="form-label">Control Station ID</label>
+                                    <input type="number" class="form-control" id="add-estControlId" placeholder="Ex: 1" value="1">
                                 </div>
                                 <div class="col-md-6">
                                     <label for="add-startingPointId" class="form-label">Starting Point</label>
@@ -70,53 +72,28 @@
                             </div>
                             <div class="row mb-3">
                                 <div class="col-md-6">
-                                    <label for="add-startingTime" class="form-label">Start Time</label>
+                                    <label for="add-startingTime" class="form-label">Start Time <span class="text-danger">*</span></label>
                                     <input type="datetime-local" class="form-control" id="add-startingTime" required>
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="add-state" class="form-label">Initial Status</label>
+                                    <label for="add-state" class="form-label">Initial Status <span class="text-danger">*</span></label>
                                     <select class="form-control" id="add-state" required>
-                                        <option value="0">On Course</option>
+                                        <option value="2" selected>Cancelled (Not started)</option>
+                                        <option value="0">On Course (Auto-start)</option>
                                         <option value="1">Completed</option>
-                                        <option value="2">Cancelled</option>
                                     </select>
+                                    <small class="form-text text-muted">Select "Cancelled" to start manually from Dashboard</small>
                                 </div>
                             </div>
-                            <button type="submit" class="btn btn-primary w-100">Create Plan</button>
-                        </form>
-                    </div>
-                </div>
-
-                <div class="col-md-5">
-                    <div class="card-box">
-                        <h4 class="mb-3 text-success">Quick Assign</h4>
-                        <p class="text-muted small">Re-assign a drone to an existing flight plan.</p>
-                        <form id="assignForm" onsubmit="return false;">
-                            <div class="mb-3">
-                                <label for="assign-planId" class="form-label">Flight Plan ID</label>
-                                <input type="number" class="form-control" id="assign-planId" placeholder="ID" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="assign-droneId" class="form-label">Drone</label>
-                                <select class="form-control" id="assign-droneId" required>
-                                    <option value="">Loading...</option>
-                                </select>
-                            </div>
-                            <div class="d-grid gap-2">
-                                <button type="button" class="btn btn-success" onclick="assignDronToPlan(false)">
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary flex-grow-1">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 5px;">
                                         <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-                                        <path d="m10.97 4.97-.02.022-3.473 4.425-2.093-2.094a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05z"/>
+                                        <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
                                     </svg>
-                                    Resume from Last Position
+                                    Create Flight Plan
                                 </button>
-                                <button type="button" class="btn btn-outline-success" onclick="assignDronToPlan(true)">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 5px;">
-                                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-                                        <path d="M6.271 5.055a.5.5 0 0 1 .52.038l3.5 2.5a.5.5 0 0 1 0 .814l-3.5 2.5A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445z"/>
-                                    </svg>
-                                    Start from Beginning
-                                </button>
+                                <a href="/index.html" class="btn btn-outline-secondary">Cancel</a>
                             </div>
                         </form>
                     </div>
