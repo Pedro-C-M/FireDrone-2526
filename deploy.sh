@@ -27,7 +27,7 @@ docker run -d --name firedrone-frontend --network firedrone-network -p 5305:5305
   -e ASPNETCORE_ENVIRONMENT=Production -e ASPNETCORE_URLS=http://+:5305 \
   --restart unless-stopped firedrone-frontend
 
-for i in {1..5}; do
+for i in {1..11}; do
   docker run -d --name firedrone-drone-$i --network firedrone-network \
     -e RABBITMQ_HOST=156.35.163.122 -e RABBITMQ_USER=admin -e RABBITMQ_PASSWORD=admin \
     -e RABBITMQ_EXCHANGE=drone_exchange --restart unless-stopped \
