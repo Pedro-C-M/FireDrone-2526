@@ -5,6 +5,7 @@ using CentralBackend.Middleware;
 using CentralBackend.Services;
 using Microsoft.Data.Sqlite;
 using Models;
+using StackExchange.Redis;
 using System.Text.Json.Serialization;
 
 public class Program
@@ -40,7 +41,7 @@ public class Program
         {
             options.AddPolicy("AllowFrontend", policy =>
             {
-                policy.WithOrigins("http://localhost:5305")//CAMBIAR IP AQUI
+                policy.WithOrigins("http://156.35.163.122:5305")//CAMBIAR IP AQUI
                       .AllowAnyHeader()
                       .AllowAnyMethod()
                       .AllowCredentials(); // IMPORTANTE: Necesario para SignalR WebSocket
@@ -49,6 +50,14 @@ public class Program
         
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
+
+        
+        builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+        {
+            var configuration = builder.Configuration["Redis:ConnectionString"];
+            return ConnectionMultiplexer.Connect(configuration);
+        });
+
 
         var app = builder.Build();
         //Descomentar para generar una vez luego volveer a comentar

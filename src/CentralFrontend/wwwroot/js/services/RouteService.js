@@ -37,7 +37,7 @@ export async function deleteRoute(id) {
     });
 
     if (!response.ok) {
-        throw new Error(`Error deleting route: ${response.status}`);
+        throw new Error(` This route is already in a flight plan, delete that flight plan to be able to delete the route.`);
     }
 
     return true; // Éxito

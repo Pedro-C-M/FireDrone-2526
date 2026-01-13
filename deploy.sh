@@ -1,5 +1,8 @@
 #!/bin/bash
 
+echo "LIMPIEZA TOTAL: Borrando todos los contenedores..."
+docker rm -f $(docker ps -a -q) 2>/dev/null || true
+
 # Build images
 echo "Building images..."
 docker build -f src/CentralBackend/Dockerfile -t firedrone-central-backend .
@@ -10,11 +13,23 @@ docker build -f src/DroneController/Dockerfile -t firedrone-drone-controller .
 # Create network
 docker network create firedrone-network 2>/dev/null || true
 
+# Base de datos de Caché (Redis)
+echo "Starting Redis on port 5308..."
+docker run -d \
+  --name firedrone-redis \
+  --network firedrone-network \
+  -p 5308:5308 \
+  --restart unless-stopped \
+  redis:alpine \
+  redis-server --port 5308
+
 # Run containers
 echo "Starting containers..."
 docker run -d --name firedrone-central-backend --network firedrone-network -p 5306:5306 \
-  -e ASPNETCORE_ENVIRONMENT=Production -e ASPNETCORE_URLS=http://+:5306 \
-  -e ControlBackend__Url=http://control-backend:5307 \
+  -e ASPNETCORE_ENVIRONMENT=Production \
+  -e ASPNETCORE_URLS=http://+:5306 \
+  -e ControlBackend__Url=http://firedrone-control-backend:5307 \
+  -e ConnectionStrings__Redis=firedrone-redis:5308,abortConnect=false \
   -v $(pwd)/data:/app/data --restart unless-stopped firedrone-central-backend
 
 docker run -d --name firedrone-control-backend --network firedrone-network -p 5307:5307 \
