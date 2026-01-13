@@ -7,7 +7,7 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
       "dotnetRunMessages": true,
-      "applicationUrl": "http://156.35.163.122:5306"
+      "applicationUrl": "http://localhost:5306"
     },
     "IIS Express": {
       "commandName": "IISExpress",
@@ -19,10 +19,10 @@
     },
     "WSL": {
       "commandName": "WSL2",
-      "launchUrl": "http://156.35.163.122:5306/swagger",
+      "launchUrl": "http://localhost:5306/swagger",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "ASPNETCORE_URLS": "http://156.35.163.122:5306"
+        "ASPNETCORE_URLS": "http://localhost:5306"
       },
       "distributionName": ""
     }
@@ -32,7 +32,7 @@
     "windowsAuthentication": false,
     "anonymousAuthentication": true,
     "iisExpress": {
-      "applicationUrl": "http://156.35.163.122:42393",
+      "applicationUrl": "http://localhost:42393",
       "sslPort": 0
     }
   }

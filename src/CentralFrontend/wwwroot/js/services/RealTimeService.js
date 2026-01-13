@@ -39,6 +39,13 @@ export async function startConnection(onStatusChange) {
 
 // === SUSCRIPCIONES A EVENTOS ===
 
+/**
+ * Suscribirse a actualizaciones individuales de drones en tiempo real
+ */
+export function onDroneUpdate(callback) {
+    if (connection) connection.on("ReceiveDroneUpdate", callback);
+}
+
 export function onDroneAssigned(callback) {
     if (connection) connection.on("DroneAssigned", callback);
 }
@@ -49,4 +56,11 @@ export function onDroneStateChanged(callback) {
 
 export function onAllDronesUpdate(callback) {
     if (connection) connection.on("ReceiveAllDrones", callback);
+}
+
+/**
+ * Obtener el estado de la conexión
+ */
+export function getConnectionState() {
+    return connection ? connection.state : 'Disconnected';
 }

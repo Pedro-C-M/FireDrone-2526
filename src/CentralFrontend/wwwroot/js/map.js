@@ -320,10 +320,10 @@ async function initializeSignalR() {
  try {
      // Create SignalR connection
   signalRConnection = new signalR.HubConnectionBuilder()
-      .withUrl("http://156.35.163.122:5306/droneHub", {
-      withCredentials: true
+      .withUrl("http://localhost:5306/droneHub", {
+    withCredentials: true
      })
-        .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
+      .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
      .configureLogging(signalR.LogLevel.Information)
    .build();
 
@@ -331,16 +331,16 @@ async function initializeSignalR() {
       signalRConnection.on("ReceiveDroneUpdate", (droneData) => {
 console.log('[SignalR] Received real-time drone update:', droneData);
        // Update the drone on the map immediately
-       updateSingleDroneOnMap(droneData);
+    updateSingleDroneOnMap(droneData);
         });
 
     signalRConnection.on("ReceiveAllDrones", (drones) => {
        console.log('[SignalR] Received all drones:', drones.length);
    // Update all drones on the map
-            updateAllDronesData(drones);
+          updateAllDronesData(drones);
    });
 
-        signalRConnection.on("DroneAssigned", (data) => {
+     signalRConnection.on("DroneAssigned", (data) => {
      console.log('[SignalR] Drone assigned:', data);
       showNotification(`Drone ${data.droneId} assigned to flight plan ${data.flightPlanId}`);
        // Reload drones after assignment
@@ -350,7 +350,7 @@ console.log('[SignalR] Received real-time drone update:', droneData);
         signalRConnection.on("DroneStateChanged", (data) => {
   console.log('[SignalR] Drone state changed:', data);
   showNotification(`Drone ${data.droneId} state: ${getStateText(data.state)}`);
-       });
+     });
 
      // Handle reconnecting
  signalRConnection.onreconnecting((error) => {
@@ -365,7 +365,7 @@ console.log('[SignalR] Received real-time drone update:', droneData);
         loadDrones();
  });
 
-        // Handle closed connection
+    // Handle closed connection
         signalRConnection.onclose((error) => {
     console.error('[SignalR] Connection closed:', error);
    updateConnectionStatus(false, 'Disconnected');

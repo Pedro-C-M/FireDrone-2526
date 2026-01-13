@@ -41,7 +41,7 @@ public class Program
         {
             options.AddPolicy("AllowFrontend", policy =>
             {
-                policy.WithOrigins("http://156.35.163.122:5305")//CAMBIAR IP AQUI
+                policy.WithOrigins("http://localhost:5305")
                       .AllowAnyHeader()
                       .AllowAnyMethod()
                       .AllowCredentials(); // IMPORTANTE: Necesario para SignalR WebSocket
@@ -51,15 +51,49 @@ public class Program
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
 
-        
+        // Redis Connection Configuration
         builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
         {
-            var configuration = builder.Configuration["Redis:ConnectionString"];
-            return ConnectionMultiplexer.Connect(configuration);
+            var configuration = builder.Configuration["Redis:ConnectionString"] ?? "localhost:6379";
+            var options = ConfigurationOptions.Parse(configuration);
+            options.AbortOnConnectFail = false; // Don't crash if Redis is unavailable
+            options.ConnectTimeout = 5000;
+            options.SyncTimeout = 5000;
+            
+            try
+            {
+                var redis = ConnectionMultiplexer.Connect(options);
+                Console.WriteLine($"[Redis] Connected successfully to {configuration}");
+                return redis;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Redis] WARNING: Could not connect to Redis at {configuration}: {ex.Message}");
+                Console.WriteLine("[Redis] Application will continue without caching");
+                throw;
+            }
         });
 
+        // Register Redis Cache Service
+        builder.Services.AddSingleton<RedisCacheService>();
 
         var app = builder.Build();
+
+        // Test Redis connection on startup
+        try
+        {
+            using (var scope = app.Services.CreateScope())
+            {
+                var cache = scope.ServiceProvider.GetRequiredService<RedisCacheService>();
+                var status = cache.GetConnectionStatus();
+                Console.WriteLine($"[Redis] Cache service status: {status}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Redis] WARNING: Cache service not available: {ex.Message}");
+        }
+
         //Descomentar para generar una vez luego volveer a comentar
         //InstanciateBD.FormaBaseDeBD();
 
@@ -113,6 +147,7 @@ public class Program
 
         Console.WriteLine("[Program] SignalR Hub configured at /droneHub");
         Console.WriteLine("[Program] Real-time drone updates enabled");
+        Console.WriteLine("[Program] Redis caching enabled for improved performance");
 
         app.Run();
     }

@@ -11,28 +11,61 @@ namespace CentralBackend.Services
 {
     public class RouteService
     {
-        private readonly FireDrone _context; // Tu DbContext
+        private readonly FireDrone _context;
+        private readonly RedisCacheService _cache;
+        private readonly ILogger<RouteService> _logger;
 
-        public RouteService(FireDrone context)
+        // Cache configuration constants
+        private const string ROUTES_CACHE_KEY = "routes:all";
+        private const string ROUTE_CACHE_KEY_PREFIX = "route:";
+        private static readonly TimeSpan CacheExpiration = TimeSpan.FromMinutes(10);
+
+        public RouteService(FireDrone context, RedisCacheService cache, ILogger<RouteService> logger)
         {
             _context = context;
+            _cache = cache;
+            _logger = logger;
         }
 
+        /// <summary>
+        /// Obtiene todas las rutas con caché Redis
+        /// </summary>
         public async Task<List<Models.Route>> GetAllAsync()
         {
-            // Es vital usar .Include para traer las coordenadas al frontend
-            return await _context.Routes
+            // 🔍 Intentar obtener desde caché
+            var cachedRoutes = await _cache.GetAsync<List<Models.Route>>(ROUTES_CACHE_KEY);
+            if (cachedRoutes != null)
+            {
+                _logger.LogInformation("✅ Routes retrieved from Redis Cache ({Count} routes)", cachedRoutes.Count);
+                return cachedRoutes;
+            }
+
+            // 💾 Si no está en caché, consultar BD
+            _logger.LogInformation("⚠️ Cache MISS - Querying database for routes");
+            var routes = await _context.Routes
                 .Include(r => r.Coords)
                 .ToListAsync();
+
+            // 💾 Guardar en caché
+            if (routes.Any())
+            {
+                await _cache.SetAsync(ROUTES_CACHE_KEY, routes, CacheExpiration);
+                _logger.LogInformation("✅ Routes stored in Redis Cache ({Count} routes, expires in {Minutes}min)",
+                    routes.Count, CacheExpiration.TotalMinutes);
+            }
+
+            return routes;
         }
 
+        /// <summary>
+        /// Elimina una ruta e invalida la caché
+        /// </summary>
         public async Task<bool> DeleteAsync(int id)
         {
             // 1. Comprobar si algún Plan de Vuelo usa esta ruta
             var routeInUse = await _context.FlightPlans.AnyAsync(fp => fp.Ruta.Id == id);
             if (routeInUse)
             {
-                // Opcional: Podrías lanzar una excepción personalizada aquí
                 throw new Exception("No se puede borrar la ruta porque está asignada a un Plan de Vuelo activo.");
             }
 
@@ -44,8 +77,17 @@ namespace CentralBackend.Services
 
             _context.Routes.Remove(route);
             await _context.SaveChangesAsync();
+
+            // 🗑️ Invalidar caché
+            await InvalidateRoutesCache("Route deleted");
+            _logger.LogInformation("Route {RouteId} deleted and cache invalidated", id);
+
             return true;
         }
+
+        /// <summary>
+        /// Importa rutas desde CSV e invalida la caché
+        /// </summary>
         public async Task<int> ImportFromCsvAsync(Stream fileStream, string fileName)
         {
             if (!fileName.EndsWith(".csv", StringComparison.OrdinalIgnoreCase))
@@ -153,9 +195,22 @@ namespace CentralBackend.Services
             {
                 _context.Routes.AddRange(rutasParaGuardar);
                 await _context.SaveChangesAsync();
+
+                // 🗑️ Invalidar caché tras importar
+                await InvalidateRoutesCache($"Imported {rutasParaGuardar.Count} routes from CSV");
+                _logger.LogInformation("{Count} routes imported from CSV and cache invalidated", rutasParaGuardar.Count);
             }
 
             return rutasParaGuardar.Count;
+        }
+
+        /// <summary>
+        /// Invalida todas las cachés relacionadas con rutas
+        /// </summary>
+        private async Task InvalidateRoutesCache(string reason)
+        {
+            await _cache.RemoveAsync(ROUTES_CACHE_KEY);
+            _logger.LogInformation("🗑️ Routes cache invalidated. Reason: {Reason}", reason);
         }
     }
 }
