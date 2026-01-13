@@ -6,67 +6,24 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using StackExchange.Redis;
-using System.Text.Json;
 
 namespace CentralBackend.Services
 {
     public class RouteService
     {
         private readonly FireDrone _context; // Tu DbContext
-        private readonly IDatabase _cache;
 
-        private const string ROUTES_CACHE_KEY = "routes_all";
-
-        private static readonly JsonSerializerOptions _jsonOptions =
-            new JsonSerializerOptions
-            {
-                ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles
-            };
-
-        public RouteService(FireDrone context, IConnectionMultiplexer redis)
+        public RouteService(FireDrone context)
         {
             _context = context;
-            _cache = redis.GetDatabase();
         }
 
         public async Task<List<Models.Route>> GetAllAsync()
         {
-            /*
             // Es vital usar .Include para traer las coordenadas al frontend
             return await _context.Routes
                 .Include(r => r.Coords)
                 .ToListAsync();
-            */
-
-            /*PRUEBA DE REDIS DE AQUÍ HACIA ABAJO EN EL MÉTODO*/
-
-            //Se intenta obtener de Redis
-            var cachedRoutes = await _cache.StringGetAsync(ROUTES_CACHE_KEY);
-
-            if (!cachedRoutes.IsNullOrEmpty)
-            {
-                Console.WriteLine("[RouteService] Returning routes from Redis cache");
-                //return JsonSerializer.Deserialize<List<Models.Route>>(cachedRoutes)!;
-                return JsonSerializer.Deserialize<List<Models.Route>>(cachedRoutes!, _jsonOptions)!;
-            }
-
-            //Si no se puede, se obtiene de la BD
-            Console.WriteLine("[RouteService] Cache miss. Loading routes from database");
-
-            var routes = await _context.Routes
-                .Include(r => r.Coords)
-                .ToListAsync();
-
-            //Y se guardan en Redis (5 minutos)
-            await _cache.StringSetAsync(
-                ROUTES_CACHE_KEY,
-                //JsonSerializer.Serialize(routes),
-                JsonSerializer.Serialize(routes, _jsonOptions),
-                TimeSpan.FromMinutes(5)
-            );
-
-            return routes;
         }
 
         public async Task<bool> DeleteAsync(int id)
@@ -85,25 +42,9 @@ namespace CentralBackend.Services
 
             if (route == null) return false;
 
-            /*PRUEBA DE REDIS DE AQUÍ HACIA ABAJO EN EL MÉTODO*/
-
-            /* 
             _context.Routes.Remove(route);
             await _context.SaveChangesAsync();
             return true;
-            */
-
-            _context.Routes.Remove(route);
-            await _context.SaveChangesAsync();
-
-            //Se invalida caché
-            await _cache.KeyDeleteAsync(ROUTES_CACHE_KEY);
-
-            Console.WriteLine("[RouteService] Routes cache invalidated after delete");
-
-            return true;
-
-
         }
         public async Task<int> ImportFromCsvAsync(Stream fileStream, string fileName)
         {
@@ -213,13 +154,6 @@ namespace CentralBackend.Services
                 _context.Routes.AddRange(rutasParaGuardar);
                 await _context.SaveChangesAsync();
             }
-
-            /*PRUEBA REDIS*/
-            //Invalidar caché tras importar rutas
-            await _cache.KeyDeleteAsync(ROUTES_CACHE_KEY);
-
-            Console.WriteLine("[RouteService] Routes cache invalidated after CSV import");
-            /*FIN PRUEBA*/
 
             return rutasParaGuardar.Count;
         }
