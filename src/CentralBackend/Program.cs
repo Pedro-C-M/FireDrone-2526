@@ -41,7 +41,7 @@ public class Program
         {
             options.AddPolicy("AllowFrontend", policy =>
             {
-                policy.WithOrigins("http://156.35.163.122:5305")//CAMBIAR IP AQUI
+                policy.WithOrigins("http://localhost:5305")//CAMBIAR IP AQUI
                       .AllowAnyHeader()
                       .AllowAnyMethod()
                       .AllowCredentials(); // IMPORTANTE: Necesario para SignalR WebSocket
