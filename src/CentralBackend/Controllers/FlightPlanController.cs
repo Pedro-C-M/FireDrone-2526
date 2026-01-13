@@ -26,8 +26,20 @@ namespace CentralBackend.Controllers
         [HttpPost]
         public async Task<ActionResult<FlightPlan>> Create([FromBody] FlightPlan plan)
         {
-            var result = await _service.CreateAsync(plan);
-            return Ok(result);
+            try
+            {
+                var createdPlan = await _service.CreateAsync(plan);
+                return Ok(createdPlan);
+            }
+            catch (InvalidOperationException ex) // Capturamos la excepción específica
+            {
+                // Devolvemos 400 (Bad Request) con el MENSAJE de texto
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Error interno del servidor.");
+            }
         }
 
         [HttpPut("{id}")]
