@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 
 public class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
 
@@ -79,14 +79,27 @@ public class Program
 
         var app = builder.Build();
 
-        // Test Redis connection on startup
+        // Test Redis connection on startup - FIX: Don't use scope for Singleton
         try
         {
-            using (var scope = app.Services.CreateScope())
+            var cache = app.Services.GetRequiredService<RedisCacheService>();
+            var status = cache.GetConnectionStatus();
+            Console.WriteLine($"[Redis] Cache service status: {status}");
+            
+            // Try a simple ping operation to verify Redis is actually working
+            var testKey = "startup:test";
+            var testValue = DateTime.UtcNow.ToString("O");
+            await cache.SetAsync(testKey, testValue, TimeSpan.FromSeconds(10));
+            var retrieved = await cache.GetAsync<string>(testKey);
+            
+            if (retrieved == testValue)
             {
-                var cache = scope.ServiceProvider.GetRequiredService<RedisCacheService>();
-                var status = cache.GetConnectionStatus();
-                Console.WriteLine($"[Redis] Cache service status: {status}");
+                Console.WriteLine("[Redis] ? Cache is WORKING - successfully tested SET/GET operations");
+                await cache.RemoveAsync(testKey);
+            }
+            else
+            {
+                Console.WriteLine("[Redis] ?? Cache test failed - could not retrieve test value");
             }
         }
         catch (Exception ex)

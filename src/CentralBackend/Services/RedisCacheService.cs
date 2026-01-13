@@ -30,16 +30,16 @@ namespace CentralBackend.Services
                 var value = await _db.StringGetAsync(key);
                 if (value.IsNullOrEmpty)
                 {
-                    _logger.LogDebug("Cache MISS for key: {Key}", key);
+                    _logger.LogInformation("?? [Redis] Cache MISS for key: {Key}", key);
                     return default;
                 }
 
-                _logger.LogDebug("Cache HIT for key: {Key}", key);
+                _logger.LogInformation("? [Redis] Cache HIT for key: {Key}", key);
                 return JsonSerializer.Deserialize<T>(value!);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting cache key: {Key}", key);
+                _logger.LogError(ex, "? [Redis] Error getting cache key: {Key}", key);
                 return default;
             }
         }
@@ -63,11 +63,11 @@ namespace CentralBackend.Services
                     await _db.StringSetAsync(key, json, when: When.Always);
                 }
 
-                _logger.LogDebug("Cache SET for key: {Key}, Expiry: {Expiry}min", key, expiry?.TotalMinutes ?? -1);
+                _logger.LogInformation("?? [Redis] Cache SET for key: {Key}, Expiry: {Expiry}min", key, expiry?.TotalMinutes ?? -1);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error setting cache key: {Key}", key);
+                _logger.LogError(ex, "? [Redis] Error setting cache key: {Key}", key);
             }
         }
 
@@ -79,11 +79,11 @@ namespace CentralBackend.Services
             try
             {
                 await _db.KeyDeleteAsync(key);
-                _logger.LogDebug("Cache REMOVE for key: {Key}", key);
+                _logger.LogInformation("??? [Redis] Cache REMOVE for key: {Key}", key);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error removing cache key: {Key}", key);
+                _logger.LogError(ex, "? [Redis] Error removing cache key: {Key}", key);
             }
         }
 

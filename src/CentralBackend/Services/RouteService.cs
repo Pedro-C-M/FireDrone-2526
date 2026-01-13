@@ -36,12 +36,14 @@ namespace CentralBackend.Services
             var cachedRoutes = await _cache.GetAsync<List<Models.Route>>(ROUTES_CACHE_KEY);
             if (cachedRoutes != null)
             {
-                _logger.LogInformation("✅ Routes retrieved from Redis Cache ({Count} routes)", cachedRoutes.Count);
+                _logger.LogInformation("✅ [RouteService] Routes retrieved from Redis Cache ({Count} routes)", cachedRoutes.Count);
+                Console.WriteLine($"✅ [RouteService] Routes retrieved from Redis Cache ({cachedRoutes.Count} routes)");
                 return cachedRoutes;
             }
 
             // 💾 Si no está en caché, consultar BD
-            _logger.LogInformation("⚠️ Cache MISS - Querying database for routes");
+            _logger.LogInformation("⚠️ [RouteService] Cache MISS - Querying database for routes");
+            Console.WriteLine("⚠️ [RouteService] Cache MISS - Querying database for routes");
             var routes = await _context.Routes
                 .Include(r => r.Coords)
                 .ToListAsync();
@@ -50,8 +52,9 @@ namespace CentralBackend.Services
             if (routes.Any())
             {
                 await _cache.SetAsync(ROUTES_CACHE_KEY, routes, CacheExpiration);
-                _logger.LogInformation("✅ Routes stored in Redis Cache ({Count} routes, expires in {Minutes}min)",
+                _logger.LogInformation("✅ [RouteService] Routes stored in Redis Cache ({Count} routes, expires in {Minutes}min)",
                     routes.Count, CacheExpiration.TotalMinutes);
+                Console.WriteLine($"✅ [RouteService] Routes stored in Redis Cache ({routes.Count} routes, expires in {CacheExpiration.TotalMinutes}min)");
             }
 
             return routes;
@@ -210,7 +213,8 @@ namespace CentralBackend.Services
         private async Task InvalidateRoutesCache(string reason)
         {
             await _cache.RemoveAsync(ROUTES_CACHE_KEY);
-            _logger.LogInformation("🗑️ Routes cache invalidated. Reason: {Reason}", reason);
+            _logger.LogInformation("🗑️ [RouteService] Routes cache invalidated. Reason: {Reason}", reason);
+            Console.WriteLine($"🗑️ [RouteService] Routes cache invalidated. Reason: {reason}");
         }
     }
 }
