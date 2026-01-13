@@ -31,8 +31,9 @@ namespace DroneController
 
 		int _numSteps;
 		int _currentStep;
+		bool _isPeriodic;
 
-		public double GetCurrentLatitude() { return _currentWaypoint.Latitude;  }
+        public double GetCurrentLatitude() { return _currentWaypoint.Latitude;  }
 		public double GetCurrentLongitude() { return _currentWaypoint.Longitude; }
 		public double GetCurrentAltitude() { return _currentWaypoint.Altitude; }
 		public double GetCurrentSpeed() { return _currentWaypoint.Speed; }
@@ -40,13 +41,14 @@ namespace DroneController
 		public double GetCurrentNumSteps() { return _numSteps; }
 		public double GetCurrentWaypointIndex() { return _indexCurrentWaypoint; }
 
-		public FlightSimulator(Waypoint[] waypoints, int updateInterval)
+		public FlightSimulator(Waypoint[] waypoints, int updateInterval, bool isPeriodic)
 		{
 			_updateInterval = updateInterval;
 			_waypoints = waypoints;
 			_indexCurrentWaypoint = -1;
+			_isPeriodic = isPeriodic;
 
-			NextCoordinate();
+            NextCoordinate();
 		}
 
 		public int GetNumSteps()
@@ -58,21 +60,22 @@ namespace DroneController
 		{
 			_indexCurrentWaypoint++;
 
-			if (_indexCurrentWaypoint == _waypoints.Length - 1)
-			{
-				_currentWaypoint = _waypoints[_indexCurrentWaypoint];
-				return true;
-			}
+            //MODO SIMPLE
+            if (!_isPeriodic && _indexCurrentWaypoint >= _waypoints.Length - 1)
+            {
+                _currentWaypoint = _waypoints[_indexCurrentWaypoint];
+                return true;
+            }
 
-			_currentWaypoint = new Waypoint {
+            _currentWaypoint = new Waypoint {
 				Latitude = _waypoints[_indexCurrentWaypoint].Latitude,
 				Longitude = _waypoints[_indexCurrentWaypoint].Longitude,
 				Altitude = _waypoints[_indexCurrentWaypoint].Altitude,
 				Speed = _waypoints[_indexCurrentWaypoint].Speed
 			};
 
-			// Set rate of change
-			// Distance between points with direction for lat and lon (km)
+            // Set rate of change
+            // Distance between points with direction for lat and lon (km)
 			var deltaLat = (_waypoints[_indexCurrentWaypoint + 1].Latitude - _currentWaypoint.Latitude) * KM_IN_DEGREE;
 			var deltaLon = (_waypoints[_indexCurrentWaypoint + 1].Longitude - _currentWaypoint.Longitude) * KM_IN_DEGREE;
 
@@ -81,7 +84,7 @@ namespace DroneController
 
 			// Total time between points at desired speed (sec)
 			double speed = _waypoints[_indexCurrentWaypoint].Speed / SECONDS_IN_HOUR;
-			var deltaSeconds = deltaDist / speed;
+            var deltaSeconds = deltaDist / speed;
 
 			deltaSeconds = deltaSeconds / (_updateInterval / 1000.0);
 
