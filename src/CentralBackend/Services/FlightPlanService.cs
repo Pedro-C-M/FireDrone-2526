@@ -58,14 +58,14 @@ namespace CentralBackend.Services
 
                     // Convert RoutePoints to Waypoints
                     var waypoints = flightPlanWithRoute?.Ruta?.Coords?
-   .Where(rp => rp.Lat.HasValue && rp.Long.HasValue)
-    .Select(rp => new
-    {
-        latitude = rp.Lat,
-        longitude = rp.Long,
-        altitude = rp.Height ?? 50,
-        speed = rp.Velocity ?? 20
-    }).ToList();
+                   .Where(rp => rp.Lat.HasValue && rp.Long.HasValue)
+                    .Select(rp => new
+                    {
+                        latitude = rp.Lat,
+                        longitude = rp.Long,
+                        altitude = rp.Height ?? 50,
+                        speed = rp.Velocity ?? 20
+                    }).ToList();
 
                     if (waypoints == null || !waypoints.Any())
                     {
