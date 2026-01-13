@@ -320,7 +320,7 @@ async function initializeSignalR() {
  try {
      // Create SignalR connection
   signalRConnection = new signalR.HubConnectionBuilder()
-      .withUrl("http://localhost:5306/droneHub", {
+      .withUrl("http://156.35.163.122:5306/droneHub", {
     withCredentials: true
      })
       .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])

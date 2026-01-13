@@ -1,7 +1,7 @@
 ﻿//Para centralizar las URLs de la API
 
-export const API_BASE_URL = "http://localhost:5306/api";
-export const HUB_URL = "http://localhost:5306/droneHub";
+export const API_BASE_URL = "http://156.35.163.122:5306/api";
+export const HUB_URL = "http://156.35.163.122:5306/droneHub";
 export const ENDPOINTS = {
     DRONES: `${API_BASE_URL}/Drone`,
     FLIGHT_PLANS: `${API_BASE_URL}/FlightPlan`,
