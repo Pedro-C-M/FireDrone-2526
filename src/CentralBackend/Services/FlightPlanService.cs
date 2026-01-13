@@ -55,6 +55,18 @@ namespace CentralBackend.Services
             await _context.SaveChangesAsync();
 
             Console.WriteLine($"[FlightPlanService] FlightPlan {plan.Id} created in database");
+            //Actualizar dron
+            if (plan.DronId != null)
+            {
+                var drone = await _context.Drones.FindAsync(plan.DronId);
+                if (drone != null)
+                {
+                    // Asignamos el ID del plan recién creado al Dron
+                    drone.FlightPlanId = plan.Id;
+                    _context.Drones.Update(drone);
+                    await _context.SaveChangesAsync();
+                }
+            }
 
             // Only start the flight automatically if the plan is created with OnCourse status
             if (plan.State == FlightStatus.OnCourse)
