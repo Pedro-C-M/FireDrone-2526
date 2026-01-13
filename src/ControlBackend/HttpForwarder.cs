@@ -16,7 +16,7 @@ namespace ControlBackend
         {
             var content = new StringContent(statusJson, Encoding.UTF8, "application/json");
             //Console.WriteLine(content);
-            var centralBackendUrl = $"http://localhost:5306/api/Drone/{dronId}/status";//CAMBIAR CENTRALIZADO
+            var centralBackendUrl = $"http://156.35.163.122:5306/api/Drone/{dronId}/status";//CAMBIAR CENTRALIZADO
             var response = await _httpClient.PostAsync(centralBackendUrl, content);
 
             if (!response.IsSuccessStatusCode)
