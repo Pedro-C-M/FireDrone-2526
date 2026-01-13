@@ -22,7 +22,10 @@ export async function createFlightPlan(flightPlanData) {
         },
         body: JSON.stringify(flightPlanData)
     });
-    if (!response.ok) throw new Error(`Error creating flight plan: ${response.status}`);
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || `Error creating flight plan: ${response.status}`);
+    }
     return await response.json();
 }
 

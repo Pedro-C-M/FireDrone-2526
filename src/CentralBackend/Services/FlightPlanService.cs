@@ -37,6 +37,20 @@ namespace CentralBackend.Services
         {
             Console.WriteLine($"[FlightPlanService] CreateAsync called: DronId={plan.DronId}, RutaId={plan.RutaId}, State={plan.State}");
 
+            if (plan.DronId != null)
+            {
+                // Buscamos si hay algún plan 'OnCourse' (0) o 'Active' para este dron
+                // Ajusta 'FlightStatus.OnCourse' según tus enums reales
+                bool isBusy = await _context.FlightPlans
+                    .AnyAsync(fp => fp.DronId == plan.DronId);//Puede q en futuro querramos borrar automatico si no esta corriendo el plan
+
+                if (isBusy)
+                {
+                    // Lanzamos una excepción controlada con el mensaje que quieres ver en el Front
+                    throw new InvalidOperationException($"Dron {plan.DronId} already in a flight plan, delete it before creating another one.");
+                }
+            }
+
             _context.FlightPlans.Add(plan);
             await _context.SaveChangesAsync();
 
@@ -58,14 +72,14 @@ namespace CentralBackend.Services
 
                     // Convert RoutePoints to Waypoints
                     var waypoints = flightPlanWithRoute?.Ruta?.Coords?
-   .Where(rp => rp.Lat.HasValue && rp.Long.HasValue)
-    .Select(rp => new
-    {
-        latitude = rp.Lat,
-        longitude = rp.Long,
-        altitude = rp.Height ?? 50,
-        speed = rp.Velocity ?? 20
-    }).ToList();
+                   .Where(rp => rp.Lat.HasValue && rp.Long.HasValue)
+                    .Select(rp => new
+                    {
+                        latitude = rp.Lat,
+                        longitude = rp.Long,
+                        altitude = rp.Height ?? 50,
+                        speed = rp.Velocity ?? 20
+                    }).ToList();
 
                     if (waypoints == null || !waypoints.Any())
                     {

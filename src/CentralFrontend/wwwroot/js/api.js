@@ -298,7 +298,7 @@ function _displayFlightPlans(data) {
         manualRow.innerHTML = `
     <td colspan="8">
            <div class="card-box mt-2">
-     <strong>Manual destination – FlightPlan #${flightplan.id}</strong>
+     <strong>Manual destination for FlightPlan #${flightplan.id}</strong>
          <div class="d-flex gap-2 mt-2">
                <input type="number" step="any" class="form-control manual-y" placeholder="Latitude">
        <input type="number" step="any" class="form-control manual-x" placeholder="Longitude">
@@ -444,6 +444,45 @@ restartBtn.disabled = true;
         const sendBtn = manualRow.querySelector('.send-manual');
         const cancelBtn = manualRow.querySelector('.cancel-manual');
 
+     sendBtn.addEventListener('click', async () => {
+         // 1. Obtenemos el VALOR EN TEXTO primero
+         let lonStr = manualRow.querySelector('.manual-x').value;
+         let latStr = manualRow.querySelector('.manual-y').value;
+
+         // 2. TRUCO DE SEGURIDAD: Reemplazar coma por punto
+         lonStr = lonStr.replace(',', '.');
+         latStr = latStr.replace(',', '.');
+
+         // 3. Convertimos a número
+         const longitude = parseFloat(lonStr);
+         const latitude = parseFloat(latStr);
+
+         // 4. VALIDACIÓN ESTRICTA
+         if (isNaN(longitude) || isNaN(latitude) ||
+             Math.abs(latitude) > 90 || Math.abs(longitude) > 180) {
+
+             alert(`Bad coordinates.\n\n` +
+                 `Make sure to use decimal format (ej: 43.54).\n` +
+                 `Valid range:\nLat: -90 a 90\nLon: -180 a 180`);
+             return; // Detiene todo
+         }
+
+         try {
+             console.log(`Switching to manual mode for plan ${flightplan.id} with coords: ${latitude}, ${longitude}`);
+
+             await FlightPlanService.setManualMode(flightplan.id);
+             await FlightPlanService.sendGotoCommand(flightplan.id, latitude, longitude);
+
+             alert(`FlightPlan #${flightplan.id} is now in MANUAL mode. Drone heading to coordinates.`);
+             manualRow.style.display = 'none';
+             await getFlightPlans();
+
+         } catch (error) {
+             console.error('Error activating manual mode:', error);
+             alert(`Failed to activate manual mode: ${error.message}`);
+         }
+     });
+        /** 
    sendBtn.addEventListener('click', async () => {
             const longitude = parseFloat(manualRow.querySelector('.manual-x').value);
             const latitude = parseFloat(manualRow.querySelector('.manual-y').value);
@@ -464,7 +503,8 @@ await getFlightPlans();
            console.error('Error activating manual mode:', error);
        alert(`Failed to activate manual mode: ${error.message}`);
          }
-        });
+   });
+        */
 
         cancelBtn.addEventListener('click', () => {
             manualRow.style.display = 'none';
