@@ -1,5 +1,6 @@
 # FireDrone-2526-3
-
+### Enlace de acceso al front: http://156.35.163.122:5305/ 
+Nuestro puerto de frontend es el 5305
 
 | Nombre | Usuario GitHub | Correo universitario |
 |----------|-------------|------------------------|
