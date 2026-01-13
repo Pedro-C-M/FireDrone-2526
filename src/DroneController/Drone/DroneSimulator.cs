@@ -200,7 +200,7 @@ namespace DroneController.Drone
 			{
 				_task.Wait();
 			}
-			catch (AggregateException /*e*/)
+			catch (AggregateException)
 			{
 				// Excepción esperada tras la cancelación
 				Console.WriteLine("[DroneSimulator] Flight task cancelled successfully");
