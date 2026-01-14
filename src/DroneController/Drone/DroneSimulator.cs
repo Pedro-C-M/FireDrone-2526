@@ -117,22 +117,22 @@ namespace DroneController.Drone
 		}
 
 		// Inicializa la simulación
-		public void StartSimulation(Waypoint[] waypoints, bool isPeriodic = false)
+		public void StartSimulation(Waypoint[] waypoints)
 		{
-			_flightSimulator = new FlightSimulator(waypoints, UpdateIntervalMs,isPeriodic);
+			_flightSimulator = new FlightSimulator(waypoints, UpdateIntervalMs);
 			_status.Battery = InitialBattery;
 			_status.State = DroneState.Flying;
 		}
 
 		// Ejecuta una tarea para simular el plan de vuelo entre la lista de coordenadas
-		public void StartFlightPlan(Waypoint[] waypoints, bool isPeriodic = false)
+		public void StartFlightPlan(Waypoint[] waypoints)
 		{
 			_tokenSource = new CancellationTokenSource();
 			CancellationToken token = _tokenSource.Token;
 
 			_task = Task.Factory.StartNew(() =>
 			{
-				StartSimulation(waypoints, isPeriodic);
+				StartSimulation(waypoints);
 
 				while (StepSimulation())
 				{
@@ -235,5 +235,5 @@ namespace DroneController.Drone
 			}
 			return status;
 		}
-    }
+	}
 }

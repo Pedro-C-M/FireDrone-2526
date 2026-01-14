@@ -2,7 +2,7 @@
 {
 	public interface IDroneDriver
     {
-        void StartFlightPlan(Waypoint[] plan, bool isPeriodic = false);
+        void StartFlightPlan(Waypoint[] plan);
         void StopFlightPlan();
         void GoTo(double latitude, double longitude);
 
