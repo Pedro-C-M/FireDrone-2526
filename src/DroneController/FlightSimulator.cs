@@ -62,16 +62,17 @@ namespace DroneController
         {
             _indexCurrentWaypoint++;
 
-            //MODO SIMPLE
-            // FIN DE RUTA
-            if (_indexCurrentWaypoint >= _waypoints.Length - 1)
+            // Check if we've reached the end of the waypoint array
+            if (_indexCurrentWaypoint >= _waypoints.Length)
             {
                 if (_isPeriodic)
                 {
-                    _indexCurrentWaypoint = 0; // 🔁 REINICIO
+                    _indexCurrentWaypoint = 0; // 🔁 REINICIO - wrap back to beginning
                 }
                 else
                 {
+                    // For simple routes, we've finished
+                    _indexCurrentWaypoint = _waypoints.Length - 1;
                     _currentWaypoint = _waypoints[_indexCurrentWaypoint];
                     return true; // ruta simple terminada
                 }
@@ -85,12 +86,32 @@ namespace DroneController
                 Speed = _waypoints[_indexCurrentWaypoint].Speed
             };
 
+            // Determine the next waypoint index (with wrap-around for periodic routes)
+            int nextIndex;
+            if (_indexCurrentWaypoint == _waypoints.Length - 1)
+            {
+                // We're at the last waypoint
+                if (_isPeriodic)
+                {
+                    nextIndex = 0; // Wrap back to first waypoint for periodic routes
+                }
+                else
+                {
+                    // For simple routes, we're done after this waypoint
+                    return true;
+                }
+            }
+            else
+            {
+                nextIndex = _indexCurrentWaypoint + 1;
+            }
+
             // Set rate of change
             // Distance between points with direction for lat and lon (km)
-            var deltaLat = (_waypoints[_indexCurrentWaypoint + 1].Latitude - _currentWaypoint.Latitude) * KM_IN_DEGREE;
-                var deltaLon = (_waypoints[_indexCurrentWaypoint + 1].Longitude - _currentWaypoint.Longitude) * KM_IN_DEGREE;
+            var deltaLat = (_waypoints[nextIndex].Latitude - _currentWaypoint.Latitude) * KM_IN_DEGREE;
+                var deltaLon = (_waypoints[nextIndex].Longitude - _currentWaypoint.Longitude) * KM_IN_DEGREE;
 
-                // Ss the crow flies distance (km)
+                // As the crow flies distance (km)
                 var deltaDist = Math.Sqrt((deltaLat * deltaLat) + (deltaLon * deltaLon));
 
                 // Total time between points at desired speed (sec)
