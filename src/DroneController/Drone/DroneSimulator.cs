@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace DroneController.Drone
 {
-	/*
+    /*
 	 * La clase DroneSimulator simula el movimiento de un dron implementando la interfaz IDroneDriver.
 	 * 
 	 * Para simular el vuelo se usa la clase FlightSimulator, que implementa el cálculo del desplazamiento.
@@ -17,280 +17,223 @@ namespace DroneController.Drone
 	 * Los tests muestran un ejemplo de uso.
 	 */
 
-	public class DroneSimulator : IDroneDriver
+    public class DroneSimulator : IDroneDriver
     {
-		const int DEFAULT_UPDATE_INTERVAL_MS = 1000;
-		const int DEFAULT_INITIAL_BATTERY = 1000;
+        const int DEFAULT_UPDATE_INTERVAL_MS = 1000;
+        const int DEFAULT_INITIAL_BATTERY = 1000;
 
-		public int UpdateIntervalMs { get; set; }
-		public int InitialBattery { get; set; }
+        public int UpdateIntervalMs { get; set; }
+        public int InitialBattery { get; set; }
 
-		private CancellationTokenSource _tokenSource;
-		private Task _task;
+        private CancellationTokenSource _tokenSource;
+        private Task _task;
 
-		private FlightSimulator _flightSimulator;
+        private FlightSimulator _flightSimulator;
 
-		private object _statusLock = new object();
-		private DroneStatus _status;
+        private object _statusLock = new object();
+        private DroneStatus _status;
 
-		public DroneSimulator()
-		{
-			UpdateIntervalMs = DEFAULT_UPDATE_INTERVAL_MS;
-			InitialBattery = DEFAULT_INITIAL_BATTERY;
+        public DroneSimulator()
+        {
+            UpdateIntervalMs = DEFAULT_UPDATE_INTERVAL_MS;
+            InitialBattery = DEFAULT_INITIAL_BATTERY;
 
-			_status = new DroneStatus
-			{
-				Latitude = 0,
-				Longitude = 0,
-				Altitude = 0,
-				Speed = 0,
-				Battery = 0,
-				State = DroneState.Stopped
-			};
-		}
+            _status = new DroneStatus
+            {
+                Latitude = 0,
+                Longitude = 0,
+                Altitude = 0,
+                Speed = 0,
+                Battery = 0,
+                State = DroneState.Stopped
+            };
+        }
 
-		IDroneCallback _updateCallback = null;
+        IDroneCallback _updateCallback = null;
 
-		public void SetUpdateCallback(IDroneCallback callback)
-		{
-			_updateCallback = callback;
-		}
+        public void SetUpdateCallback(IDroneCallback callback)
+        {
+            _updateCallback = callback;
+        }
 
-		// Número de pasos necesarios para completar la simulación entre las dos posiciones actuales
-		public int GetNumSteps()
-		{
-			return _flightSimulator.GetNumSteps();
-		}
+        // Número de pasos necesarios para completar la simulación entre las dos posiciones actuales
+        public int GetNumSteps()
+        {
+            return _flightSimulator.GetNumSteps();
+        }
 
-		// Retorna true si la simulación debe continuar
-		public bool StepSimulation()
-		{
-			// Actualiza la posición
-			bool arrived = _flightSimulator.StepSimulation();
+        // Retorna true si la simulación debe continuar
+        public bool StepSimulation()
+        {
+            // Actualiza la posición
+            bool arrived = _flightSimulator.StepSimulation();
 
-			// Actualiza el estado
-			bool continueSimulation = UpdateStatus(arrived);
+            // Actualiza el estado
+            bool continueSimulation = UpdateStatus(arrived);
 
-			// La simulación termina cuando se acaba la bateria y se llega al destino
-			return continueSimulation;
-		}
+            // La simulación termina cuando se acaba la bateria y se llega al destino
+            return continueSimulation;
+        }
 
-		// Actualiza el estado
-		private bool UpdateStatus(bool arrived)
-		{
-			bool continueSimulation = true;
+        // Actualiza el estado
+        private bool UpdateStatus(bool arrived)
+        {
+            bool continueSimulation = true;
 
-			// Actualización del estado de forma sincronizada (variable compartida)
-			lock (_statusLock)
-			{
-				_status.Latitude = _flightSimulator.GetCurrentLatitude();
-				_status.Longitude = _flightSimulator.GetCurrentLongitude();
-				_status.Altitude = _flightSimulator.GetCurrentAltitude();
-				_status.Speed = _flightSimulator.GetCurrentSpeed();
+            // Actualización del estado de forma sincronizada (variable compartida)
+            lock (_statusLock)
+            {
+                _status.Latitude = _flightSimulator.GetCurrentLatitude();
+                _status.Longitude = _flightSimulator.GetCurrentLongitude();
+                _status.Altitude = _flightSimulator.GetCurrentAltitude();
+                _status.Speed = _flightSimulator.GetCurrentSpeed();
 
-				// Se reduce la batería en una unidad
-				_status.Battery--;
+                // Se reduce la batería en una unidad
+                _status.Battery--;
 
-				if (arrived)
-				{
-					_status.State = DroneState.Landed;
-					_status.Altitude = 0;
-					_status.Speed = 0;
+                if (arrived)
+                {
+                    if (!_flightSimulator.IsPeriodic)
+                    {
+                        _status.State = DroneState.Landed;
+                        continueSimulation = false;
+                    }
+                }
 
-					continueSimulation = false;
-				}
+                if (_status.Battery == 0)
+                {
+                    _status.Altitude = 0;
+                    _status.Speed = 0;
 
-				if (_status.Battery == 0)
-				{
-					_status.Altitude = 0;
-					_status.Speed = 0;
+                    continueSimulation = false;
+                }
+                if (_updateCallback != null)
+                {
+                    _updateCallback.Update(_status);
+                }
+            }
 
-					continueSimulation = false;
-				}
-				if (_updateCallback != null)
-				{
-					_updateCallback.Update(_status);
-				}
-			}
+            return continueSimulation;
+        }
 
-			return continueSimulation;
-		}
+        // Inicializa la simulación
+        public void StartSimulation(Waypoint[] waypoints, bool isPeriodic = false)
+        {
+            _flightSimulator = new FlightSimulator(waypoints, UpdateIntervalMs, isPeriodic);
+            _status.Battery = InitialBattery;
+            _status.State = DroneState.Flying;
+        }
 
-		// Inicializa la simulación
-		public void StartSimulation(Waypoint[] waypoints)
-		{
-			_flightSimulator = new FlightSimulator(waypoints, UpdateIntervalMs);
-			_status.Battery = InitialBattery;
-			_status.State = DroneState.Flying;
-		}
+        // Ejecuta una tarea para simular el plan de vuelo entre la lista de coordenadas
+        public void StartFlightPlan(Waypoint[] waypoints, bool isPeriodic = false)
+        {
+            _tokenSource = new CancellationTokenSource();
+            CancellationToken token = _tokenSource.Token;
 
-		// Ejecuta una tarea para simular el plan de vuelo entre la lista de coordenadas
-		public void StartFlightPlan(Waypoint[] waypoints)
-		{
-			_tokenSource = new CancellationTokenSource();
-			CancellationToken token = _tokenSource.Token;
+            _task = Task.Factory.StartNew(() =>
+            {
+                StartSimulation(waypoints, isPeriodic);
 
-			_task = Task.Factory.StartNew(() =>
-			{
-				StartSimulation(waypoints);
+                while (StepSimulation())
+                {
+                    if (token.IsCancellationRequested)
+                        token.ThrowIfCancellationRequested();
 
-				while (StepSimulation())
-				{
-					if (token.IsCancellationRequested)
-						token.ThrowIfCancellationRequested();
+                    Task.Delay(UpdateIntervalMs).Wait();
+                }
+            }, _tokenSource.Token);
 
-					Task.Delay(UpdateIntervalMs).Wait();
-				}
-			}, _tokenSource.Token);
+            _task.ContinueWith((_task) => Log.Debug("Task simulation finished"));
+        }
 
-			_task.ContinueWith((_task) => Log.Debug("Task simulation finished"));
-		}
+        // Detiene la tarea de simulación
+        public void StopFlightPlan()
+        {//Si peta aqui es que se intenta parar sin start antes
+            _tokenSource.Cancel();
+            try
+            {
+                _task.Wait();
+            }
+            catch (AggregateException /*e*/)
+            {
+                // Excepción esperada tras la cancelación
+            }
+            finally
+            {
+                _tokenSource.Dispose();
+            }
+            lock (_statusLock)
+            {
+                _status.State = DroneState.Stopped;
+                _status.Speed = 0;
 
-		// Detiene la tarea de simulación
-		public void StopFlightPlan()
-		{
-			// Check if there's an active flight to stop
-			if (_tokenSource == null)
-			{
-				Console.WriteLine("[DroneSimulator] No active flight to stop (tokenSource is null)");
-				lock (_statusLock)
-				{
-					_status.State = DroneState.Stopped;
-					_status.Speed = 0;
-					
-					// Notify the callback that the drone has stopped
-					if (_updateCallback != null)
-					{
-						_updateCallback.Update(_status);
-					}
-				}
-				return;
-			}
+                // Notify the callback that the drone has stopped
+                if (_updateCallback != null)
+                {
+                    _updateCallback.Update(_status);
+                }
+            }
+        }
 
-			// Check if the task exists and is still running
-			if (_task == null || _task.IsCompleted)
-			{
-				Console.WriteLine("[DroneSimulator] Flight task is not running or already completed");
-				lock (_statusLock)
-				{
-					_status.State = DroneState.Stopped;
-					_status.Speed = 0;
-					
-					// Notify the callback that the drone has stopped
-					if (_updateCallback != null)
-					{
-						_updateCallback.Update(_status);
-					}
-				}
-				
-				// Clean up the token source if it exists
-				if (_tokenSource != null)
-				{
-					_tokenSource.Dispose();
-					_tokenSource = null;
-				}
-				return;
-			}
+        // Ir a una coordenada específica (modo manual)
+        public void GoTo(double latitude, double longitude)
+        {
+            Console.WriteLine($"[DroneSimulator] GoTo called: Lat={latitude}, Lon={longitude}");
 
-			// Cancel the flight task
-			Console.WriteLine("[DroneSimulator] Stopping active flight");
-			_tokenSource.Cancel();
-			
-			try
-			{
-				_task.Wait();
-			}
-			catch (AggregateException)
-			{
-				// Excepción esperada tras la cancelación
-				Console.WriteLine("[DroneSimulator] Flight task cancelled successfully");
-			}
-			finally
-			{
-				_tokenSource.Dispose();
-				_tokenSource = null;
-			}
-			
-			lock (_statusLock)
-			{
-				_status.State = DroneState.Stopped;
-				_status.Speed = 0;
-				
-				// Notify the callback that the drone has stopped
-				if (_updateCallback != null)
-				{
-					_updateCallback.Update(_status);
-				}
-			}
-		}
+            // Stop any existing flight before starting manual movement
+            if (_task != null && !_task.IsCompleted)
+            {
+                Console.WriteLine($"[DroneSimulator] Stopping existing flight before manual GoTo");
+                try
+                {
+                    _tokenSource?.Cancel();
+                    _task.Wait(TimeSpan.FromSeconds(2)); // Wait with timeout
+                }
+                catch (AggregateException)
+                {
+                    // Expected after cancellation
+                }
+                finally
+                {
+                    _tokenSource?.Dispose();
+                }
+            }
 
-		// Ir a una coordenada específica (modo manual)
-		public void GoTo(double latitude, double longitude)
-		{
-			Console.WriteLine($"[DroneSimulator] GoTo called: Lat={latitude}, Lon={longitude}");
+            // Get current position
+            DroneStatus currentStatus = GetStatus();
 
-			// Stop any existing flight before starting manual movement
-			if (_task != null && !_task.IsCompleted)
-			{
-				Console.WriteLine($"[DroneSimulator] Stopping existing flight before manual GoTo");
-				try
-				{
-					if (_tokenSource != null)
-					{
-						_tokenSource?.Cancel();
-						_task.Wait(TimeSpan.FromSeconds(2)); // Wait with timeout
-					}
-				}
-				catch (AggregateException)
-				{
-					// Expected after cancellation
-					Console.WriteLine($"[DroneSimulator] Previous flight cancelled for manual GoTo");
-				}
-				finally
-				{
-					if (_tokenSource != null)
-					{
-						_tokenSource?.Dispose();
-						_tokenSource = null;
-					}
-				}
-			}
-
-			// Get current position
-			DroneStatus currentStatus = GetStatus();
-
-			// Create waypoints array: current position + target coordinate
-			Waypoint[] waypoints = new Waypoint[]
-			{
-				new Waypoint
-				{
-					Latitude = currentStatus.Latitude,
-					Longitude = currentStatus.Longitude,
-					Altitude = currentStatus.Altitude > 0 ? currentStatus.Altitude : 50, // Use current altitude or default
-					Speed = 20 // Default speed
+            // Create waypoints array: current position + target coordinate
+            Waypoint[] waypoints = new Waypoint[]
+            {
+                new Waypoint
+                {
+                    Latitude = currentStatus.Latitude,
+                    Longitude = currentStatus.Longitude,
+                    Altitude = currentStatus.Altitude > 0 ? currentStatus.Altitude : 50, // Use current altitude or default
+					Speed = 20     // Default speed
 				},
-				new Waypoint
-				{
-					Latitude = latitude,
-					Longitude = longitude,
-					Altitude = 50, // Default altitude
-					Speed = 20   // Default speed
+                new Waypoint
+                {
+                    Latitude = latitude,
+                    Longitude = longitude,
+                    Altitude = 50, // Default altitude
+					Speed = 20     // Default speed
 				}
-			};
+            };
 
-			// Start a new flight plan from current position to target coordinate
-			StartFlightPlan(waypoints);
-		}
+            // Start a new flight plan from current position to target coordinate
+            StartFlightPlan(waypoints);
+        }
 
-		// Obtiene el estado actual del dron
-		public DroneStatus GetStatus()
-		{
-			DroneStatus status;
-			lock (_statusLock)
-			{
-				status = _status;
-			}
-			return status;
-		}
-	}
+        // Obtiene el estado actual del dron
+        public DroneStatus GetStatus()
+        {
+            DroneStatus status;
+            lock (_statusLock)
+            {
+                status = _status;
+            }
+            return status;
+        }
+    }
 }

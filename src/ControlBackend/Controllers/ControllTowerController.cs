@@ -27,7 +27,8 @@ namespace ControlBackend.Controllers
             {
                 command = "start",
                 droneId = id,
-                waypoints = dto?.Waypoints ?? new List<WaypointDto>()
+                waypoints = dto?.Waypoints ?? new List<WaypointDto>(),
+                isPeriodic = dto?.IsPeriodic ?? false
             };
 
             var jsonMessage = JsonSerializer.Serialize(msg);
