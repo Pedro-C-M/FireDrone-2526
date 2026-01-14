@@ -1,5 +1,6 @@
 using StackExchange.Redis;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace CentralBackend.Services
 {
@@ -12,12 +13,21 @@ namespace CentralBackend.Services
         private readonly IConnectionMultiplexer _redis;
         private readonly IDatabase _db;
         private readonly ILogger<RedisCacheService> _logger;
+	private readonly JsonSerializerOptions _jsonOptions;
+
 
         public RedisCacheService(IConnectionMultiplexer redis, ILogger<RedisCacheService> logger)
         {
             _redis = redis;
             _db = _redis.GetDatabase();
             _logger = logger;
+
+	    _jsonOptions = new JsonSerializerOptions
+            {
+                ReferenceHandler = ReferenceHandler.Preserve,
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                WriteIndented = false
+            };
         }
 
         /// <summary>
@@ -35,7 +45,7 @@ namespace CentralBackend.Services
                 }
 
                 _logger.LogInformation("? [Redis] Cache HIT for key: {Key}", key);
-                return JsonSerializer.Deserialize<T>(value!);
+                return JsonSerializer.Deserialize<T>(value!, _jsonOptions);
             }
             catch (Exception ex)
             {
@@ -51,7 +61,7 @@ namespace CentralBackend.Services
         {
             try
             {
-                var json = JsonSerializer.Serialize(value);
+                var json = JsonSerializer.Serialize(value, _jsonOptions);
 
                 // Use When.Always and configure expiry if provided
                 if (expiry.HasValue)
