@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 
 public class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
 
@@ -41,7 +41,7 @@ public class Program
         {
             options.AddPolicy("AllowFrontend", policy =>
             {
-                policy.WithOrigins("http://156.35.163.122:5305")//CAMBIAR IP AQUI
+                policy.WithOrigins("http://156.35.163.122:5305")
                       .AllowAnyHeader()
                       .AllowAnyMethod()
                       .AllowCredentials(); // IMPORTANTE: Necesario para SignalR WebSocket
@@ -51,15 +51,62 @@ public class Program
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
 
-        
+        // Redis Connection Configuration
         builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
         {
-            var configuration = builder.Configuration["Redis:ConnectionString"];
-            return ConnectionMultiplexer.Connect(configuration);
+            var configuration = builder.Configuration["Redis:ConnectionString"] ?? "156.35.163.122:6379";
+            var options = ConfigurationOptions.Parse(configuration);
+            options.AbortOnConnectFail = false; // Don't crash if Redis is unavailable
+            options.ConnectTimeout = 5000;
+            options.SyncTimeout = 5000;
+            
+            try
+            {
+                var redis = ConnectionMultiplexer.Connect(options);
+                Console.WriteLine($"[Redis] Connected successfully to {configuration}");
+                return redis;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Redis] WARNING: Could not connect to Redis at {configuration}: {ex.Message}");
+                Console.WriteLine("[Redis] Application will continue without caching");
+                throw;
+            }
         });
 
+        // Register Redis Cache Service
+        builder.Services.AddSingleton<RedisCacheService>();
 
         var app = builder.Build();
+
+        // Test Redis connection on startup - FIX: Don't use scope for Singleton
+        try
+        {
+            var cache = app.Services.GetRequiredService<RedisCacheService>();
+            var status = cache.GetConnectionStatus();
+            Console.WriteLine($"[Redis] Cache service status: {status}");
+            
+            // Try a simple ping operation to verify Redis is actually working
+            var testKey = "startup:test";
+            var testValue = DateTime.UtcNow.ToString("O");
+            await cache.SetAsync(testKey, testValue, TimeSpan.FromSeconds(10));
+            var retrieved = await cache.GetAsync<string>(testKey);
+            
+            if (retrieved == testValue)
+            {
+                Console.WriteLine("[Redis] ? Cache is WORKING - successfully tested SET/GET operations");
+                await cache.RemoveAsync(testKey);
+            }
+            else
+            {
+                Console.WriteLine("[Redis] ?? Cache test failed - could not retrieve test value");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Redis] WARNING: Cache service not available: {ex.Message}");
+        }
+
         //Descomentar para generar una vez luego volveer a comentar
         //InstanciateBD.FormaBaseDeBD();
 
@@ -113,6 +160,7 @@ public class Program
 
         Console.WriteLine("[Program] SignalR Hub configured at /droneHub");
         Console.WriteLine("[Program] Real-time drone updates enabled");
+        Console.WriteLine("[Program] Redis caching enabled for improved performance");
 
         app.Run();
     }

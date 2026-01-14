@@ -10,8 +10,8 @@
      */
     public class RabbitMqOptions
     {
-        public string Host { get; set; } = "localhost";
-        public int Port { get; set; } = 5305;
+        public string Host { get; set; } = "156.35.163.122";
+        public int Port { get; set; } = 5672;
         public string Exchange { get; set; } = "drone_exchange";
         public string Username { get; set; } = "guest";
         public string Password { get; set; } = "guest";

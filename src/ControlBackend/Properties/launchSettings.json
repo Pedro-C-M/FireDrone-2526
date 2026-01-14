@@ -4,7 +4,7 @@
     "windowsAuthentication": false,
     "anonymousAuthentication": true,
     "iisExpress": {
-      "applicationUrl": "http://156.35.163.122:46550",
+      "applicationUrl": "http://156.35.163.122:5307",
       "sslPort": 0
     }
   },
@@ -12,7 +12,7 @@
     "http": {
       "commandName": "Project",
       "dotnetRunMessages": true,
-      "launchBrowser": false, //Para que no salga swagger desarrollando
+      "launchBrowser": false,
       "launchUrl": "swagger",
       "applicationUrl": "http://156.35.163.122:5307",
       "environmentVariables": {

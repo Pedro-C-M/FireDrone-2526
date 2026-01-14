@@ -148,20 +148,69 @@ namespace DroneController.Drone
 
 		// Detiene la tarea de simulación
 		public void StopFlightPlan()
-        {//Si peta aqui es que se intenta parar sin start antes
+		{
+			// Check if there's an active flight to stop
+			if (_tokenSource == null)
+			{
+				Console.WriteLine("[DroneSimulator] No active flight to stop (tokenSource is null)");
+				lock (_statusLock)
+				{
+					_status.State = DroneState.Stopped;
+					_status.Speed = 0;
+					
+					// Notify the callback that the drone has stopped
+					if (_updateCallback != null)
+					{
+						_updateCallback.Update(_status);
+					}
+				}
+				return;
+			}
+
+			// Check if the task exists and is still running
+			if (_task == null || _task.IsCompleted)
+			{
+				Console.WriteLine("[DroneSimulator] Flight task is not running or already completed");
+				lock (_statusLock)
+				{
+					_status.State = DroneState.Stopped;
+					_status.Speed = 0;
+					
+					// Notify the callback that the drone has stopped
+					if (_updateCallback != null)
+					{
+						_updateCallback.Update(_status);
+					}
+				}
+				
+				// Clean up the token source if it exists
+				if (_tokenSource != null)
+				{
+					_tokenSource.Dispose();
+					_tokenSource = null;
+				}
+				return;
+			}
+
+			// Cancel the flight task
+			Console.WriteLine("[DroneSimulator] Stopping active flight");
 			_tokenSource.Cancel();
+			
 			try
 			{
 				_task.Wait();
 			}
-			catch (AggregateException /*e*/)
+			catch (AggregateException)
 			{
 				// Excepción esperada tras la cancelación
+				Console.WriteLine("[DroneSimulator] Flight task cancelled successfully");
 			}
 			finally
 			{
 				_tokenSource.Dispose();
+				_tokenSource = null;
 			}
+			
 			lock (_statusLock)
 			{
 				_status.State = DroneState.Stopped;
@@ -186,16 +235,24 @@ namespace DroneController.Drone
 				Console.WriteLine($"[DroneSimulator] Stopping existing flight before manual GoTo");
 				try
 				{
-					_tokenSource?.Cancel();
-					_task.Wait(TimeSpan.FromSeconds(2)); // Wait with timeout
+					if (_tokenSource != null)
+					{
+						_tokenSource?.Cancel();
+						_task.Wait(TimeSpan.FromSeconds(2)); // Wait with timeout
+					}
 				}
 				catch (AggregateException)
 				{
 					// Expected after cancellation
+					Console.WriteLine($"[DroneSimulator] Previous flight cancelled for manual GoTo");
 				}
 				finally
 				{
-					_tokenSource?.Dispose();
+					if (_tokenSource != null)
+					{
+						_tokenSource?.Dispose();
+						_tokenSource = null;
+					}
 				}
 			}
 
@@ -210,14 +267,14 @@ namespace DroneController.Drone
 					Latitude = currentStatus.Latitude,
 					Longitude = currentStatus.Longitude,
 					Altitude = currentStatus.Altitude > 0 ? currentStatus.Altitude : 50, // Use current altitude or default
-					Speed = 20     // Default speed
+					Speed = 20 // Default speed
 				},
 				new Waypoint
 				{
 					Latitude = latitude,
 					Longitude = longitude,
 					Altitude = 50, // Default altitude
-					Speed = 20     // Default speed
+					Speed = 20   // Default speed
 				}
 			};
 
