@@ -272,16 +272,50 @@ namespace CentralBackend.Services
                         speed = allWaypoints[closestIndex].speed
                     });
 
-                    // Add remaining waypoints from route
-                    for (int i = resumeIndex; i < allWaypoints.Count; i++)
+                    // Check if this is a periodic route
+                    bool isPeriodic = existing?.Ruta?.Type == RouteType.Periodic;
+
+                    if (isPeriodic)
                     {
-                        waypoints.Add(new
+                        // For periodic routes: add remaining waypoints from resume point to end
+                        for (int i = resumeIndex; i < allWaypoints.Count; i++)
                         {
-                            latitude = allWaypoints[i].latitude,
-                            longitude = allWaypoints[i].longitude,
-                            altitude = allWaypoints[i].altitude,
-                            speed = allWaypoints[i].speed
-                        });
+                            waypoints.Add(new
+                            {
+                                latitude = allWaypoints[i].latitude,
+                                longitude = allWaypoints[i].longitude,
+                                altitude = allWaypoints[i].altitude,
+                                speed = allWaypoints[i].speed
+                            });
+                        }
+
+                        // Then add all waypoints from the beginning back to the resume point to complete the cycle
+                        for (int i = 0; i < resumeIndex; i++)
+                        {
+                            waypoints.Add(new
+                            {
+                                latitude = allWaypoints[i].latitude,
+                                longitude = allWaypoints[i].longitude,
+                                altitude = allWaypoints[i].altitude,
+                                speed = allWaypoints[i].speed
+                            });
+                        }
+                        Console.WriteLine($"[FlightPlanService] Periodic route: added full cycle with {waypoints.Count - 1} waypoints");
+                    }
+                    else
+                    {
+                        // For simple routes: only add remaining waypoints from resume point to end
+                        for (int i = resumeIndex; i < allWaypoints.Count; i++)
+                        {
+                            waypoints.Add(new
+                            {
+                                latitude = allWaypoints[i].latitude,
+                                longitude = allWaypoints[i].longitude,
+                                altitude = allWaypoints[i].altitude,
+                                speed = allWaypoints[i].speed
+                            });
+                        }
+                        Console.WriteLine($"[FlightPlanService] Simple route: added {waypoints.Count - 1} remaining waypoints");
                     }
                 }
                 else
@@ -301,27 +335,29 @@ namespace CentralBackend.Services
 
                 Console.WriteLine($"[FlightPlanService] Sending {waypoints?.Count ?? 0} waypoints to ControlBackend for drone {dronId}");
 
-                // Log the first waypoint to verify data
-                if (waypoints != null && waypoints.Count > 0)
-                {
-                    dynamic first = waypoints[0];
-                    Console.WriteLine($"[FlightPlanService] First waypoint: lat={first.latitude}, lon={first.longitude}, alt={first.altitude}, speed={first.speed}");
-                    if (waypoints.Count > 1)
-                    {
-                        dynamic last = waypoints[waypoints.Count - 1];
-                        Console.WriteLine($"[FlightPlanService] Last waypoint: lat={last.latitude}, lon={last.longitude}, alt={last.altitude}, speed={last.speed}");
-                    }
-                }
-                bool isPeriodic = existing?.Ruta?.Type == RouteType.Periodic;
+             // Log the first waypoint to verify data
+       if (waypoints != null && waypoints.Count > 0)
+         {
+   dynamic first = waypoints[0];
+         Console.WriteLine($"[FlightPlanService] First waypoint: lat={first.latitude}, lon={first.longitude}, alt={first.altitude}, speed={first.speed}");
+           if (waypoints.Count > 1)
+        {
+     dynamic last = waypoints[waypoints.Count - 1];
+       Console.WriteLine($"[FlightPlanService] Last waypoint: lat={last.latitude}, lon={last.longitude}, alt={last.altitude}, speed={last.speed}");
+  }
+       }
+     
+     // Determine if route is periodic (already checked above, reuse the value)
+     bool isPeriodicRoute = existing?.Ruta?.Type == RouteType.Periodic;
 
 
-                var response = await httpClient.PostAsJsonAsync(
-                        $"{controlBackendUrl}/api/drone/{dronId}/start",
-                new
-                {
-                    Waypoints = waypoints,
-                    IsPeriodic = isPeriodic
-                });
+       var response = await httpClient.PostAsJsonAsync(
+             $"{controlBackendUrl}/api/drone/{dronId}/start",
+     new
+           {
+         Waypoints = waypoints,
+         IsPeriodic = isPeriodicRoute
+    });
 
                 if (!response.IsSuccessStatusCode)
                 {
