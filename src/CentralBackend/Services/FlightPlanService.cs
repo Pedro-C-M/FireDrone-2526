@@ -1,8 +1,9 @@
-﻿using CentralBackend.Exceptions;
-using Microsoft.EntityFrameworkCore;
-using Models;
+﻿using System.Net.Http.Json;
+using CentralBackend.Exceptions;
 //NUEVOv2
 using ControlBackend.DTOs;
+using Microsoft.EntityFrameworkCore;
+using Models;
 //FIN NUEVOv2
 
 namespace CentralBackend.Services
@@ -101,9 +102,15 @@ namespace CentralBackend.Services
 
                     Console.WriteLine($"[FlightPlanService] Calling ControlBackend at {controlBackendUrl}/api/drone/{plan.DronId}/start with {waypoints?.Count ?? 0} waypoints");
 
+                    bool isPeriodic = flightPlanWithRoute?.Ruta?.Type == RouteType.Periodic;
+                    //1 periodica y 0 simple
                     var response = await httpClient.PostAsJsonAsync(
                         $"{controlBackendUrl}/api/drone/{plan.DronId}/start",
-                        new { Waypoints = waypoints }  // Use capital W to match DTO
+                        new
+                        {
+                            Waypoints = waypoints,
+                            IsPeriodic = isPeriodic
+                        }
                     );
 
                     if (!response.IsSuccessStatusCode)
@@ -193,15 +200,15 @@ namespace CentralBackend.Services
 
                 // Convert RoutePoints to Waypoints
                 var allWaypoints = existing.Ruta?.Coords?
-   .Where(rp => rp.Lat.HasValue && rp.Long.HasValue)  // Filter out null coordinates
-            .OrderBy(rp => rp.Id)
-   .Select(rp => new
-   {
-       latitude = rp.Lat,
-       longitude = rp.Long,
-       altitude = rp.Height ?? 50,  // Default altitude if null
-       speed = rp.Velocity ?? 20    // Default speed if null
-   }).ToList();
+               .Where(rp => rp.Lat.HasValue && rp.Long.HasValue)  // Filter out null coordinates
+                        .OrderBy(rp => rp.Id)
+               .Select(rp => new
+               {
+                   latitude = rp.Lat,
+                   longitude = rp.Long,
+                   altitude = rp.Height ?? 50,  // Default altitude if null
+                   speed = rp.Velocity ?? 20    // Default speed if null
+               }).ToList();
 
                 if (allWaypoints == null || !allWaypoints.Any())
                 {
@@ -305,11 +312,16 @@ namespace CentralBackend.Services
                         Console.WriteLine($"[FlightPlanService] Last waypoint: lat={last.latitude}, lon={last.longitude}, alt={last.altitude}, speed={last.speed}");
                     }
                 }
+                bool isPeriodic = existing?.Ruta?.Type == RouteType.Periodic;
+
 
                 var response = await httpClient.PostAsJsonAsync(
                         $"{controlBackendUrl}/api/drone/{dronId}/start",
-                 new { Waypoints = waypoints }  // Use capital W to match DTO
-                             );
+                new
+                {
+                    Waypoints = waypoints,
+                    IsPeriodic = isPeriodic
+                });
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -498,4 +510,3 @@ namespace CentralBackend.Services
             Console.WriteLine($"[FlightPlanService] FlightPlan {id} successfully deleted. Drone {existing.DronId} is now available.");
         }
     }
-}
