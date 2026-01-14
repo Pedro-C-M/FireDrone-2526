@@ -510,3 +510,4 @@ namespace CentralBackend.Services
             Console.WriteLine($"[FlightPlanService] FlightPlan {id} successfully deleted. Drone {existing.DronId} is now available.");
         }
     }
+}
