@@ -122,7 +122,7 @@ namespace CentralBackend
                             ControlStation = controlStation,
                             Lat = BASE_LAT + (float)(random.NextDouble() * 0.03 - 0.015),
                             Lon = BASE_LON + (float)(random.NextDouble() * 0.03 - 0.015),
-                            State = (DroneState) 1,
+                            State = (DroneState) 0,
                             Altitude = random.Next(0, 120),
                             Speed = random.Next(0, 60),
                             Battery = random.Next(10, 100)
