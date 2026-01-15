@@ -40,12 +40,12 @@ public class Program
         builder.Services.AddCors(options =>
         {
             options.AddPolicy("AllowFrontend", policy =>
-{
-      policy.WithOrigins("http://localhost:5305")
-   .AllowAnyHeader()
-           .AllowAnyMethod()
-     .AllowCredentials(); // IMPORTANTE: Necesario para SignalR WebSocket
-        });
+            {
+            policy.WithOrigins("http://localhost:5305")
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials(); // IMPORTANTE: Necesario para SignalR WebSocket
+             });
         });
         
         builder.Services.AddEndpointsApiExplorer();
@@ -53,7 +53,7 @@ public class Program
 
         // Redis Connection Configuration
         builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
-     {
+        {
             var configuration = builder.Configuration["Redis:ConnectionString"] ?? "localhost:6379";
             var options = ConfigurationOptions.Parse(configuration);
             options.AbortOnConnectFail = false; // Don't crash if Redis is unavailable
@@ -145,7 +145,7 @@ public class Program
             app.UseSwaggerUI();
         }
 
-        // ?? ErrorHandlingMiddleware AL PRINCIPIO pero ignora /droneHub
+        // ErrorHandlingMiddleware AL PRINCIPIO pero ignora /droneHub
         app.UseMiddleware<ErrorHandlingMiddleware>();
  
         // CORS
