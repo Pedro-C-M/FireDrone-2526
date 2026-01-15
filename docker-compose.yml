@@ -1,0 +1,147 @@
+version: "3.9"
+
+
+
+services:
+
+  redis:
+
+    image: redis:alpine
+
+    container_name: firedrone-redis
+
+    command: redis-server --port 5308
+
+    ports:
+
+      - "5308:5308"
+
+    restart: unless-stopped
+
+
+
+  central-backend:
+
+    build:
+
+      context: .
+
+      dockerfile: src/CentralBackend/Dockerfile
+
+    container_name: firedrone-central-backend
+
+    ports:
+
+      - "5306:5306"
+
+    environment:
+
+      ASPNETCORE_ENVIRONMENT: Production
+
+      ASPNETCORE_URLS: http://+:5306
+
+      ControlBackend__Url: http://control-backend:5307
+
+      ConnectionStrings__Redis: redis:5308,abortConnect=false
+
+    volumes:
+
+      - ./data:/app/data
+
+    depends_on:
+
+      - redis
+
+    restart: unless-stopped
+
+
+
+  control-backend:
+
+    build:
+
+      context: .
+
+      dockerfile: src/ControlBackend/Dockerfile
+
+    container_name: firedrone-control-backend
+
+    ports:
+
+      - "5307:5307"
+
+    environment:
+
+      ASPNETCORE_ENVIRONMENT: Production
+
+      ASPNETCORE_URLS: http://+:5307
+
+      RABBITMQ_HOST: 156.35.163.122
+
+      RABBITMQ_USER: admin
+
+      RABBITMQ_PASSWORD: admin
+
+      RABBITMQ_EXCHANGE: drone_exchange
+
+      RABBITMQ_TOPIC: drone.#
+
+    restart: unless-stopped
+
+
+
+  frontend:
+
+    build:
+
+      context: .
+
+      dockerfile: src/CentralFrontend/Dockerfile
+
+    container_name: firedrone-frontend
+
+    ports:
+
+      - "5305:5305"
+
+    environment:
+
+      ASPNETCORE_ENVIRONMENT: Production
+
+      ASPNETCORE_URLS: http://+:5305
+
+    restart: unless-stopped
+
+
+
+  drone:
+
+    build:
+
+      context: .
+
+      dockerfile: src/DroneController/Dockerfile
+
+    environment:
+
+      RABBITMQ_HOST: 156.35.163.122
+
+      RABBITMQ_USER: admin
+
+      RABBITMQ_PASSWORD: admin
+
+      RABBITMQ_EXCHANGE: drone_exchange
+
+    command:
+
+      - sh
+
+      - -c
+
+      - |
+
+        DRONE_ID=${HOSTNAME##*-}
+
+        exec firedrone-drone-controller "$DRONE_ID" DroneSimulator
+
+    restart: unless-stopped
