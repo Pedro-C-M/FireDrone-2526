@@ -315,9 +315,9 @@ async function initializeSignalR() {
     try {
         // Create SignalR connection
         signalRConnection = new signalR.HubConnectionBuilder()
-      .withUrl(HUB_URL, {
-       withCredentials: true
-   })
+            .withUrl(HUB_URL, {
+                withCredentials: true
+        })
      .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
       .configureLogging(signalR.LogLevel.Information)
  .build();

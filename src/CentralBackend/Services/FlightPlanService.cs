@@ -71,28 +71,28 @@ namespace CentralBackend.Services
 
             // Only start the flight automatically if the plan is created with OnCourse status
             if (plan.State == FlightStatus.OnCourse)
- {
-         try
+            {
+                try
                 {
-        // Load the route with coordinates
-     var flightPlanWithRoute = await _context.FlightPlans
-      .Include(fp => fp.Ruta)
-         .ThenInclude(r => r.Coords)
-                  .FirstOrDefaultAsync(fp => fp.Id == plan.Id);
+                    // Load the route with coordinates
+                    var flightPlanWithRoute = await _context.FlightPlans
+                        .Include(fp => fp.Ruta)
+                        .ThenInclude(r => r.Coords)
+                        .FirstOrDefaultAsync(fp => fp.Id == plan.Id);
 
-    var controlBackendUrl = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://localhost:5307";
+                    var controlBackendUrl = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://localhost:5307";
                     var httpClient = _httpClientFactory.CreateClient();
 
                     // Convert RoutePoints to Waypoints
                     var waypoints = flightPlanWithRoute?.Ruta?.Coords?
-                   .Where(rp => rp.Lat.HasValue && rp.Long.HasValue)
-                    .Select(rp => new
-                    {
-                        latitude = rp.Lat,
-                        longitude = rp.Long,
-                        altitude = rp.Height ?? 50,
-                        speed = rp.Velocity ?? 20
-                    }).ToList();
+                        .Where(rp => rp.Lat.HasValue && rp.Long.HasValue)
+                        .Select(rp => new
+                        {
+                            latitude = rp.Lat,
+                            longitude = rp.Long,
+                            altitude = rp.Height ?? 50,
+                            speed = rp.Velocity ?? 20
+                        }).ToList();
 
                     if (waypoints == null || !waypoints.Any())
                     {
@@ -194,8 +194,8 @@ namespace CentralBackend.Services
 
             // Call ControlBackend to start the flight with waypoints from the route
             try
-  {
-   var controlBackendUrl = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://localhost:5307";
+            {
+                var controlBackendUrl = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://localhost:5307";
                 var httpClient = _httpClientFactory.CreateClient();
 
                 // Convert RoutePoints to Waypoints
@@ -233,48 +233,48 @@ namespace CentralBackend.Services
                 var waypoints = new List<object>();
                 bool isPeriodicRoute = existing?.Ruta?.Type == RouteType.Periodic;
 
-            if (!restartFromBeginning && currentDrone != null && currentDrone.Lat.HasValue && currentDrone.Lon.HasValue)
-    {
-             Console.WriteLine($"[FlightPlanService] Current drone position: Lat={currentDrone.Lat}, Lon={currentDrone.Lon}");
-
-       // Find the closest waypoint to current position
-                 var currentPos = (lat: (double)currentDrone.Lat.Value, lon: (double)currentDrone.Lon.Value);
-     int closestIndex = 0;
-         double minDistance = double.MaxValue;
-
-    for (int i = 0; i < allWaypoints.Count; i++)
-        {
-        var wp = allWaypoints[i];
-           if (wp.latitude.HasValue && wp.longitude.HasValue)
-         {
-var distance = Math.Sqrt(
-Math.Pow((double)wp.latitude.Value - currentPos.lat, 2) +
-     Math.Pow((double)wp.longitude.Value - currentPos.lon, 2)
-            );
-
-         if (distance < minDistance)
+                if (!restartFromBeginning && currentDrone != null && currentDrone.Lat.HasValue && currentDrone.Lon.HasValue)
                 {
-minDistance = distance;
-         closestIndex = i;
-    }
-          }
- }
+                    Console.WriteLine($"[FlightPlanService] Current drone position: Lat={currentDrone.Lat}, Lon={currentDrone.Lon}");
 
-       // Resume from the next waypoint after current position
-         var resumeIndex = Math.Min(closestIndex + 1, allWaypoints.Count - 1);
-         Console.WriteLine($"[FlightPlanService] Resuming from waypoint index {resumeIndex} (closest was {closestIndex})");
+                    // Find the closest waypoint to current position
+                    var currentPos = (lat: (double)currentDrone.Lat.Value, lon: (double)currentDrone.Lon.Value);
+                    int closestIndex = 0;
+                    double minDistance = double.MaxValue;
 
- // Add current position as first waypoint
-         waypoints.Add(new
-     {
-   latitude = currentDrone.Lat,
-    longitude = currentDrone.Lon,
-  altitude = currentDrone.Altitude ?? allWaypoints[closestIndex].altitude,
-     speed = allWaypoints[closestIndex].speed
-     });
+                    for (int i = 0; i < allWaypoints.Count; i++)
+                    {
+                        var wp = allWaypoints[i];
+                        if (wp.latitude.HasValue && wp.longitude.HasValue)
+                        {
+                            var distance = Math.Sqrt(
+                            Math.Pow((double)wp.latitude.Value - currentPos.lat, 2) +
+                            Math.Pow((double)wp.longitude.Value - currentPos.lon, 2)
+                            );
 
-           if (isPeriodicRoute)
-       {
+                            if (distance < minDistance)
+                            {
+                                minDistance = distance;
+                                closestIndex = i;
+                            }
+                    }
+                }
+
+                // Resume from the next waypoint after current position
+                var resumeIndex = Math.Min(closestIndex + 1, allWaypoints.Count - 1);
+                Console.WriteLine($"[FlightPlanService] Resuming from waypoint index {resumeIndex} (closest was {closestIndex})");
+
+                // Add current position as first waypoint
+                waypoints.Add(new
+                {
+                    latitude = currentDrone.Lat,
+                    longitude = currentDrone.Lon,
+                    altitude = currentDrone.Altitude ?? allWaypoints[closestIndex].altitude,
+                    speed = allWaypoints[closestIndex].speed
+                });
+
+                if (isPeriodicRoute)
+                {
  // For periodic routes: send the FULL ORIGINAL route starting from resume point
         // This allows FlightSimulator to handle the periodic looping correctly
              
