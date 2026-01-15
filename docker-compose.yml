@@ -253,7 +253,7 @@ services:
       context: .
       dockerfile: src/DroneController/Dockerfile
     image: firedrone-drone-controller
-    container_name: firedrone-drone-11
+    container_name: firedrone-drone-12
     networks:
       - firedrone-network
     environment:
