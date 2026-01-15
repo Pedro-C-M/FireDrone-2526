@@ -247,3 +247,19 @@ services:
       RABBITMQ_EXCHANGE: drone_exchange
     command: ["11", "DroneSimulator"]
     restart: unless-stopped
+
+  drone-12:
+    build:
+      context: .
+      dockerfile: src/DroneController/Dockerfile
+    image: firedrone-drone-controller
+    container_name: firedrone-drone-11
+    networks:
+      - firedrone-network
+    environment:
+      RABBITMQ_HOST: 156.35.163.122
+      RABBITMQ_USER: admin
+      RABBITMQ_PASSWORD: admin
+      RABBITMQ_EXCHANGE: drone_exchange
+    command: ["12", "DroneSimulator"]
+    restart: unless-stopped
