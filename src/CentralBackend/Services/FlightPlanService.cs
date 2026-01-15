@@ -71,16 +71,16 @@ namespace CentralBackend.Services
 
             // Only start the flight automatically if the plan is created with OnCourse status
             if (plan.State == FlightStatus.OnCourse)
-            {
-                try
+ {
+         try
                 {
-                    // Load the route with coordinates
-                    var flightPlanWithRoute = await _context.FlightPlans
-                        .Include(fp => fp.Ruta)
-                        .ThenInclude(r => r.Coords)
-                        .FirstOrDefaultAsync(fp => fp.Id == plan.Id);
+        // Load the route with coordinates
+     var flightPlanWithRoute = await _context.FlightPlans
+      .Include(fp => fp.Ruta)
+         .ThenInclude(r => r.Coords)
+                  .FirstOrDefaultAsync(fp => fp.Id == plan.Id);
 
-                    var controlBackendUrl = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://156.35.163.122:5307";
+    var controlBackendUrl = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://localhost:5307";
                     var httpClient = _httpClientFactory.CreateClient();
 
                     // Convert RoutePoints to Waypoints
@@ -194,8 +194,8 @@ namespace CentralBackend.Services
 
             // Call ControlBackend to start the flight with waypoints from the route
             try
-            {
-                var controlBackendUrl = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://156.35.163.122:5307";
+  {
+   var controlBackendUrl = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://localhost:5307";
                 var httpClient = _httpClientFactory.CreateClient();
 
                 // Convert RoutePoints to Waypoints
@@ -392,8 +392,8 @@ return existing;
             // Call ControlBackend to stop the flight
             try
    {
-           var controlBackendUrl = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://156.35.163.122:5307";
-     var httpClient = _httpClientFactory.CreateClient();
+       var controlBackendUrl = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://localhost:5307";
+       var httpClient = _httpClientFactory.CreateClient();
 
      Console.WriteLine($"[FlightPlanService] Calling ControlBackend at {controlBackendUrl}/api/drone/{existing.DronId}/stop");
 
@@ -445,7 +445,7 @@ return existing;
          // Call ControlBackend to notify the mode change
     try
       {
-      var controlBackendUrl = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://156.35.163.122:5307";
+      var controlBackendUrl = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://localhost:5307";
          var httpClient = _httpClientFactory.CreateClient();
 
   Console.WriteLine($"[FlightPlanService] Notifying ControlBackend of manual mode for drone {existing.DronId}");
@@ -466,9 +466,9 @@ return existing;
                 throw new NotFoundException($"FlightPlan with ID {flightPlanId} does not exist.");
 
       // Llamada al ControlBackend
-         try
+   try
   {
-   var controlBackendUrl = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://156.35.163.122:5307";
+var controlBackendUrl = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://localhost:5307";
                 var httpClient = _httpClientFactory.CreateClient();
 
       var payload = new

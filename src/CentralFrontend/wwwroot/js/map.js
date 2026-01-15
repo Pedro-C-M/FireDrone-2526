@@ -4,7 +4,7 @@ const GIJON_CENTER = [43.5322, -5.6611];
 const DEFAULT_ZOOM = 13;
 
 // API endpoint
-import { ENDPOINTS } from './config.js';
+import { ENDPOINTS, HUB_URL } from './config.js';
 
 let map;
 let droneLayer;
@@ -315,12 +315,12 @@ async function initializeSignalR() {
     try {
         // Create SignalR connection
         signalRConnection = new signalR.HubConnectionBuilder()
-            .withUrl("http://156.35.163.122:5306/droneHub", {
-                withCredentials: true
-            })
-            .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
-            .configureLogging(signalR.LogLevel.Information)
-            .build();
+      .withUrl(HUB_URL, {
+       withCredentials: true
+   })
+     .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
+      .configureLogging(signalR.LogLevel.Information)
+ .build();
 
         // Set up event handlers
         signalRConnection.on("ReceiveDroneUpdate", (droneData) => {
