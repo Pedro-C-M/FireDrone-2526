@@ -1,11 +1,17 @@
 version: "3.9"
 
+networks:
+  firedrone-network:
+    driver: bridge
+
 services:
 
   redis:
     image: redis:alpine
     container_name: firedrone-redis
     command: redis-server --port 5308
+    networks:
+      - firedrone-network
     ports:
       - "5308:5308"
     restart: unless-stopped
@@ -14,14 +20,17 @@ services:
     build:
       context: .
       dockerfile: src/CentralBackend/Dockerfile
+    image: firedrone-central-backend
     container_name: firedrone-central-backend
+    networks:
+      - firedrone-network
     ports:
       - "5306:5306"
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:5306
-      ControlBackend__Url: http://control-backend:5307
-      ConnectionStrings__Redis: redis:5308,abortConnect=false
+      ControlBackend__Url: http://firedrone-control-backend:5307
+      ConnectionStrings__Redis: firedrone-redis:5308,abortConnect=false
     volumes:
       - ./data:/app/data
     depends_on:
@@ -32,7 +41,10 @@ services:
     build:
       context: .
       dockerfile: src/ControlBackend/Dockerfile
+    image: firedrone-control-backend
     container_name: firedrone-control-backend
+    networks:
+      - firedrone-network
     ports:
       - "5307:5307"
     environment:
@@ -49,7 +61,10 @@ services:
     build:
       context: .
       dockerfile: src/CentralFrontend/Dockerfile
+    image: firedrone-frontend
     container_name: firedrone-frontend
+    networks:
+      - firedrone-network
     ports:
       - "5305:5305"
     environment:
@@ -57,14 +72,178 @@ services:
       ASPNETCORE_URLS: http://+:5305
     restart: unless-stopped
 
-  drone:
+  drone-1:
     build:
       context: .
       dockerfile: src/DroneController/Dockerfile
+    image: firedrone-drone-controller
+    container_name: firedrone-drone-1
+    networks:
+      - firedrone-network
     environment:
       RABBITMQ_HOST: 156.35.163.122
       RABBITMQ_USER: admin
       RABBITMQ_PASSWORD: admin
       RABBITMQ_EXCHANGE: drone_exchange
-    entrypoint: ["sh", "-c", "exec dotnet DroneController.dll $${HOSTNAME##*-} DroneSimulator"]
+    command: ["1", "DroneSimulator"]
+    restart: unless-stopped
+
+  drone-2:
+    build:
+      context: .
+      dockerfile: src/DroneController/Dockerfile
+    image: firedrone-drone-controller
+    container_name: firedrone-drone-2
+    networks:
+      - firedrone-network
+    environment:
+      RABBITMQ_HOST: 156.35.163.122
+      RABBITMQ_USER: admin
+      RABBITMQ_PASSWORD: admin
+      RABBITMQ_EXCHANGE: drone_exchange
+    command: ["2", "DroneSimulator"]
+    restart: unless-stopped
+
+  drone-3:
+    build:
+      context: .
+      dockerfile: src/DroneController/Dockerfile
+    image: firedrone-drone-controller
+    container_name: firedrone-drone-3
+    networks:
+      - firedrone-network
+    environment:
+      RABBITMQ_HOST: 156.35.163.122
+      RABBITMQ_USER: admin
+      RABBITMQ_PASSWORD: admin
+      RABBITMQ_EXCHANGE: drone_exchange
+    command: ["3", "DroneSimulator"]
+    restart: unless-stopped
+
+  drone-4:
+    build:
+      context: .
+      dockerfile: src/DroneController/Dockerfile
+    image: firedrone-drone-controller
+    container_name: firedrone-drone-4
+    networks:
+      - firedrone-network
+    environment:
+      RABBITMQ_HOST: 156.35.163.122
+      RABBITMQ_USER: admin
+      RABBITMQ_PASSWORD: admin
+      RABBITMQ_EXCHANGE: drone_exchange
+    command: ["4", "DroneSimulator"]
+    restart: unless-stopped
+
+  drone-5:
+    build:
+      context: .
+      dockerfile: src/DroneController/Dockerfile
+    image: firedrone-drone-controller
+    container_name: firedrone-drone-5
+    networks:
+      - firedrone-network
+    environment:
+      RABBITMQ_HOST: 156.35.163.122
+      RABBITMQ_USER: admin
+      RABBITMQ_PASSWORD: admin
+      RABBITMQ_EXCHANGE: drone_exchange
+    command: ["5", "DroneSimulator"]
+    restart: unless-stopped
+
+  drone-6:
+    build:
+      context: .
+      dockerfile: src/DroneController/Dockerfile
+    image: firedrone-drone-controller
+    container_name: firedrone-drone-6
+    networks:
+      - firedrone-network
+    environment:
+      RABBITMQ_HOST: 156.35.163.122
+      RABBITMQ_USER: admin
+      RABBITMQ_PASSWORD: admin
+      RABBITMQ_EXCHANGE: drone_exchange
+    command: ["6", "DroneSimulator"]
+    restart: unless-stopped
+
+  drone-7:
+    build:
+      context: .
+      dockerfile: src/DroneController/Dockerfile
+    image: firedrone-drone-controller
+    container_name: firedrone-drone-7
+    networks:
+      - firedrone-network
+    environment:
+      RABBITMQ_HOST: 156.35.163.122
+      RABBITMQ_USER: admin
+      RABBITMQ_PASSWORD: admin
+      RABBITMQ_EXCHANGE: drone_exchange
+    command: ["7", "DroneSimulator"]
+    restart: unless-stopped
+
+  drone-8:
+    build:
+      context: .
+      dockerfile: src/DroneController/Dockerfile
+    image: firedrone-drone-controller
+    container_name: firedrone-drone-8
+    networks:
+      - firedrone-network
+    environment:
+      RABBITMQ_HOST: 156.35.163.122
+      RABBITMQ_USER: admin
+      RABBITMQ_PASSWORD: admin
+      RABBITMQ_EXCHANGE: drone_exchange
+    command: ["8", "DroneSimulator"]
+    restart: unless-stopped
+
+  drone-9:
+    build:
+      context: .
+      dockerfile: src/DroneController/Dockerfile
+    image: firedrone-drone-controller
+    container_name: firedrone-drone-9
+    networks:
+      - firedrone-network
+    environment:
+      RABBITMQ_HOST: 156.35.163.122
+      RABBITMQ_USER: admin
+      RABBITMQ_PASSWORD: admin
+      RABBITMQ_EXCHANGE: drone_exchange
+    command: ["9", "DroneSimulator"]
+    restart: unless-stopped
+
+  drone-10:
+    build:
+      context: .
+      dockerfile: src/DroneController/Dockerfile
+    image: firedrone-drone-controller
+    container_name: firedrone-drone-10
+    networks:
+      - firedrone-network
+    environment:
+      RABBITMQ_HOST: 156.35.163.122
+      RABBITMQ_USER: admin
+      RABBITMQ_PASSWORD: admin
+      RABBITMQ_EXCHANGE: drone_exchange
+    command: ["10", "DroneSimulator"]
+    restart: unless-stopped
+
+  drone-11:
+    build:
+      context: .
+      dockerfile: src/DroneController/Dockerfile
+    image: firedrone-drone-controller
+    container_name: firedrone-drone-11
+    networks:
+      - firedrone-network
+    environment:
+      RABBITMQ_HOST: 156.35.163.122
+      RABBITMQ_USER: admin
+      RABBITMQ_PASSWORD: admin
+      RABBITMQ_EXCHANGE: drone_exchange
+    command: ["11", "DroneSimulator"]
     restart: unless-stopped
