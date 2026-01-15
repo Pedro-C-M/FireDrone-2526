@@ -31,9 +31,6 @@ async function loadRoutesData() {
     } catch (error) {
         console.error("Error cargando rutas:", error);
         tbody.innerHTML = '<tr><td colspan="3" class="text-center text-danger">Error loading routes (Check console)</td></tr>';
-
-        // Opcional: Cargar datos demo si falla
-        // renderDemoData(); 
     }
 }
 
@@ -123,8 +120,6 @@ function selectRoute(route, rowElement) {
     const latlngs = points.map(p => [p.lat || p.Lat, p.long || p.Long]);
     const color = isPeriodic ? '#6610f2' : '#0d6efd';
 
-    // --- CAMBIO PRINCIPAL AQUÍ ---
-
     // Creamos un grupo para guardar todas las líneas de esta ruta (sea 1 o 2)
     const routeGroup = L.featureGroup();
 
@@ -168,7 +163,7 @@ function setupImportHandler() {
         }
         // Crear FormData para enviar el archivo
         const formData = new FormData();
-        formData.append('file', file); // 'file' debe coincidir con el parámetro en el Controller C# (IFormFile file)
+        formData.append('file', file);
 
         const btn = form.querySelector('button[type="submit"]');
         const originalText = btn.innerHTML;
@@ -176,12 +171,11 @@ function setupImportHandler() {
         btn.innerHTML = "Uploading...";
 
         try {
-            // LLAMADA AL SERVICIO
             await importRoutes(formData);
 
             alert("Rutas importadas correctamente!");
             form.reset();
-            loadRoutesData(); // Recargar tabla
+            loadRoutesData();
         } catch (err) {
             console.error(err);
             alert("Error al importar: " + err.message);

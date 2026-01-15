@@ -23,7 +23,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function setupRealTimeListeners() {
-    // Si tienes lógica de tiempo real, va aquí.
     RealTimeService.onDroneAssigned(() => refreshDashboard());
     RealTimeService.onDroneStateChanged(() => refreshDashboard());
 }
@@ -136,7 +135,6 @@ function displayEditForm(id) {
     }
 
     console.log('Flight plan found:', flightplan);
-
     // Set form values with null checks
     const editId = document.getElementById('edit-id');
     const editDronId = document.getElementById('edit-dronId');
@@ -160,14 +158,12 @@ function displayEditForm(id) {
 
 async function updateFlightPlan() {
     const flightplanId = parseInt(document.getElementById('edit-id').value);
-
     // Get the original flight plan to preserve unchanged fields
     const originalPlan = flightplans.find(fp => fp.id === flightplanId);
     if (!originalPlan) {
         console.error('Original flight plan not found');
         return false;
     }
-
     const flightplanData = {
         id: flightplanId,
         dronId: parseInt(document.getElementById('edit-dronId').value),
@@ -212,7 +208,7 @@ function closeInput() {
     if (form) form.style.display = 'none';
 }
 
-// === NEW: Start Route Functions ===
+// === Start Route Functions ===
 async function startFlightPlanRoute(planId, droneId, restartFromBeginning = false) {
     if (!droneId) {
         alert(`Flight plan #${planId} has no drone assigned. Please assign a drone first.`);
@@ -220,18 +216,18 @@ async function startFlightPlanRoute(planId, droneId, restartFromBeginning = fals
     }
 
     const action = restartFromBeginning ? "restart from beginning" : "resume from last position";
-    
- if (!confirm(`Start route for Flight Plan #${planId} with Drone #${droneId}?\nMode: ${action}`)) {
+
+    if (!confirm(`Start route for Flight Plan #${planId} with Drone #${droneId}?\nMode: ${action}`)) {
         return;
     }
 
     try {
-  const result = await FlightPlanService.assignDrone(planId, droneId, restartFromBeginning);
-     alert(`Flight Plan #${result.id} started successfully!\nDrone: #${result.dronId}\nMode: ${action}`);
+        const result = await FlightPlanService.assignDrone(planId, droneId, restartFromBeginning);
+        alert(`Flight Plan #${result.id} started successfully!\nDrone: #${result.dronId}\nMode: ${action}`);
         await getFlightPlans();
     } catch (error) {
- console.error('Error starting flight plan:', error);
-     alert(`Failed to start flight plan: ${error.message}`);
+        console.error('Error starting flight plan:', error);
+        alert(`Failed to start flight plan: ${error.message}`);
     }
 }
 
@@ -249,263 +245,233 @@ function _displayFlightPlans(data) {
     const template = document.getElementById('flightplan_row');
     if (!template) {
         console.error("Error: No se encuentra el template 'flightplan_row' en el HTML");
-      return;
+        return;
     }
 
- data.forEach(flightplan => {
+    data.forEach(flightplan => {
         const clone = template.content.cloneNode(true);
         const td = clone.querySelectorAll('td');
 
-      // Rellenar celdas básicas
+        // Rellenar celdas básicas
         td[0].textContent = flightplan.id;
-  td[1].textContent = flightplan.dronId || 'Not assigned';
+        td[1].textContent = flightplan.dronId || 'Not assigned';
 
         // Display route information with type and waypoint count
         const routeInfo = flightplan.ruta || flightplan.Ruta;
         if (routeInfo) {
-      const routeType = routeInfo.type === 1 || routeInfo.Type === 1 ? 'Periodic' : 'Simple';
-  const waypointCount = routeInfo.coords?.length || routeInfo.Coords?.length || 0;
+            const routeType = routeInfo.type === 1 || routeInfo.Type === 1 ? 'Periodic' : 'Simple';
+            const waypointCount = routeInfo.coords?.length || routeInfo.Coords?.length || 0;
             const routeTypeBadge = routeType === 'Periodic' ? 'badge-periodic' : 'badge-simple';
 
-            td[2].innerHTML = `
-    <div>
-  <strong>Route #${flightplan.rutaId}</strong>
-        <br>
- <span class="badge ${routeTypeBadge} mt-1">${routeType}</span>
-               <span class="badge bg-secondary mt-1">${waypointCount} waypoints</span>
-      </div>
-        `;
+            td[2].innerHTML = 
+            `<div>
+                <strong>Route #${flightplan.rutaId}</strong>
+                <br><span class="badge ${routeTypeBadge} mt-1">${routeType}</span>
+                <span class="badge bg-secondary mt-1">${waypointCount} waypoints</span>
+            </div>`;
         } else {
             td[2].textContent = `Route #${flightplan.rutaId}`;
         }
 
         td[3].textContent = flightplan.estControlId || 'N/A';
         td[4].textContent = formatDateTime(flightplan.startingTime);
-     td[5].textContent = flightplan.endingTime ? formatDateTime(flightplan.endingTime) : 'In Progress';
+        td[5].textContent = flightplan.endingTime ? formatDateTime(flightplan.endingTime) : 'In Progress';
 
         // Badge de estado
-    const badgeSpan = document.createElement('span');
-   badgeSpan.className = `status-badge ${getStatusClass(flightplan.state)}`;
-     badgeSpan.textContent = getStatusText(flightplan.state);
+        const badgeSpan = document.createElement('span');
+        badgeSpan.className = `status-badge ${getStatusClass(flightplan.state)}`;
+        badgeSpan.textContent = getStatusText(flightplan.state);
         td[6].innerHTML = '';
-    td[6].appendChild(badgeSpan);
+        td[6].appendChild(badgeSpan);
 
-        //NUEVOv2
         //Fila manual
         const manualRow = document.createElement('tr');
         manualRow.style.display = 'none';
 
         manualRow.innerHTML = `
-    <td colspan="8">
-           <div class="card-box mt-2">
-     <strong>Manual destination for FlightPlan #${flightplan.id}</strong>
-         <div class="d-flex gap-2 mt-2">
-               <input type="number" step="any" class="form-control manual-y" placeholder="Latitude">
-       <input type="number" step="any" class="form-control manual-x" placeholder="Longitude">
-           <button class="btn btn-primary btn-sm send-manual">Send</button>
-  <button class="btn btn-secondary btn-sm cancel-manual">Cancel</button>
-        </div>
-     </div>
-</td>
-        `;
-
-        //FIN NUEVOv2
+        <td colspan="8">
+            <div class="card-box mt-2">
+                    <strong>Manual destination for FlightPlan #${flightplan.id}</strong>
+                <div class="d-flex gap-2 mt-2">
+                    <input type="number" step="any" class="form-control manual-y" placeholder="Latitude">
+                    <input type="number" step="any" class="form-control manual-x" placeholder="Longitude">
+                    <button class="btn btn-primary btn-sm send-manual">Send</button>
+                    <button class="btn btn-secondary btn-sm cancel-manual">Cancel</button>
+                </div>
+            </div>
+        </td>`;
 
         // === ZONA DE BOTONES SEGURA ===
 
         // Función auxiliar: Intenta buscar el botón y añadir el evento.
- const safeAddClick = (selector, action) => {
-          const btn = clone.querySelector(selector);
-       if (btn) {
-     btn.addEventListener('click', (e) => {
-      e.preventDefault();
-            action();
-  });
+        const safeAddClick = (selector, action) => {
+            const btn = clone.querySelector(selector);
+            if (btn) {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    action();
+                });
             }
         };
 
         // Resume button - starts route from last position
         const resumeBtn = clone.querySelector('.btn-resume');
-      if (resumeBtn) {
-        if (flightplan.dronId) {
-            // Flight plan has a drone assigned
-           if (flightplan.state !== 0) {
-     // Not currently flying - can resume
-         resumeBtn.addEventListener('click', (e) => {
-e.preventDefault();
- startFlightPlanRoute(flightplan.id, flightplan.dronId, false);
-   });
-      } else {
-       // Already flying
-       resumeBtn.disabled = true;
-         resumeBtn.style.opacity = '0.5';
-           resumeBtn.style.cursor = 'not-allowed';
-      resumeBtn.title = 'Flight is already in progress';
-          }
- } else {
+        if (resumeBtn) {
+            if (flightplan.dronId) {
+                // Flight plan has a drone assigned
+                if (flightplan.state !== 0) {
+                    // Not currently flying - can resume
+                    resumeBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        startFlightPlanRoute(flightplan.id, flightplan.dronId, false);
+                    });
+                } else {
+                    // Already flying
+                    resumeBtn.disabled = true;
+                    resumeBtn.style.opacity = '0.5';
+                    resumeBtn.style.cursor = 'not-allowed';
+                    resumeBtn.title = 'Flight is already in progress';
+                }
+            } else {
                 // No drone assigned
-    resumeBtn.disabled = true;
- resumeBtn.style.opacity = '0.5';
-       resumeBtn.style.cursor = 'not-allowed';
-    resumeBtn.title = 'No drone assigned to this flight plan';
-   }
+                resumeBtn.disabled = true;
+                resumeBtn.style.opacity = '0.5';
+                resumeBtn.style.cursor = 'not-allowed';
+                resumeBtn.title = 'No drone assigned to this flight plan';
+            }
         }
 
         // Restart button - starts route from beginning
-  const restartBtn = clone.querySelector('.btn-restart');
+        const restartBtn = clone.querySelector('.btn-restart');
         if (restartBtn) {
             if (flightplan.dronId) {
-          // Flight plan has a drone assigned
-     if (flightplan.state !== 0) {
-    // Not currently flying - can restart
-         restartBtn.addEventListener('click', (e) => {
-               e.preventDefault();
-             startFlightPlanRoute(flightplan.id, flightplan.dronId, true);
-         });
-           } else {
-         // Already flying
-    restartBtn.disabled = true;
-     restartBtn.style.opacity = '0.5';
-      restartBtn.style.cursor = 'not-allowed';
-              restartBtn.title = 'Flight is already in progress';
-   }
-          } else {
-    // No drone assigned
-restartBtn.disabled = true;
-           restartBtn.style.opacity = '0.5';
-    restartBtn.style.cursor = 'not-allowed';
-         restartBtn.title = 'No drone assigned to this flight plan';
-  }
+                // Flight plan has a drone assigned
+                if (flightplan.state !== 0) {
+                    // Not currently flying - can restart
+                    restartBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        startFlightPlanRoute(flightplan.id, flightplan.dronId, true);
+                    });
+                } else {
+                    // Already flying
+                    restartBtn.disabled = true;
+                    restartBtn.style.opacity = '0.5';
+                    restartBtn.style.cursor = 'not-allowed';
+                    restartBtn.title = 'Flight is already in progress';
+                }
+            } else {
+                // No drone assigned
+                restartBtn.disabled = true;
+                restartBtn.style.opacity = '0.5';
+                restartBtn.style.cursor = 'not-allowed';
+                restartBtn.title = 'No drone assigned to this flight plan';
+            }
         }
 
- // Edit button
+        // Edit button
         safeAddClick('.btn-edit', () => displayEditForm(flightplan.id));
 
-    // Delete button
+        // Delete button
         const deleteBtn = clone.querySelector('.btn-delete');
         if (deleteBtn) {
-       deleteBtn.addEventListener('click', async (e) => {
- e.preventDefault();
-       e.stopPropagation();
+            deleteBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
 
-        if (!confirm(`Are you sure you want to delete flight plan #${flightplan.id}?`)) return;
+                if (!confirm(`Are you sure you want to delete flight plan #${flightplan.id}?`)) return;
 
-  try {
-                  await FlightPlanService.deleteFlightPlan(flightplan.id);
-   alert(`Flight plan #${flightplan.id} deleted successfully`);
-              await getFlightPlans();
-  } catch (error) {
-        console.error('Unable to delete flight plan.', error);
-      alert(`Error deleting flight plan: ${error.message}`);
-   }
+                try {
+                    await FlightPlanService.deleteFlightPlan(flightplan.id);
+                    alert(`Flight plan #${flightplan.id} deleted successfully`);
+                    await getFlightPlans();
+                } catch (error) {
+                    console.error('Unable to delete flight plan.', error);
+                    alert(`Error deleting flight plan: ${error.message}`);
+                }
             });
         }
 
         // Manual button
         const manualBtn = clone.querySelector('.btn-manual');
-    if (manualBtn) {
+        if (manualBtn) {
             if (flightplan.state === 0) {
-     manualBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-         alert(`Manual mode selected for FlightPlan #${flightplan.id}.\n\n` +
-       `The current route will be paused.\n` +
-   `Enter coordinates and press SEND to confirm the change.`);
-        manualRow.style.display =
-          manualRow.style.display === 'none' ? 'table-row' : 'none';
-      });
+                manualBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    alert(`Manual mode selected for FlightPlan #${flightplan.id}.\n\n` +
+                        `The current route will be paused.\n` +
+                        `Enter coordinates and press SEND to confirm the change.`);
+                    manualRow.style.display =
+                        manualRow.style.display === 'none' ? 'table-row' : 'none';
+                });
             } else {
-     manualBtn.disabled = true;
-       manualBtn.style.opacity = '0.5';
-      manualBtn.style.cursor = 'not-allowed';
-       manualBtn.title = 'Manual mode only available for flights in progress';
-     }
+                manualBtn.disabled = true;
+                manualBtn.style.opacity = '0.5';
+                manualBtn.style.cursor = 'not-allowed';
+                manualBtn.title = 'Manual mode only available for flights in progress';
+            }
         }
 
-  // Stop button
+        // Stop button
         const stopBtn = clone.querySelector('.btn-stop');
         if (stopBtn) {
-  if (flightplan.state === 0) {
-            stopBtn.addEventListener('click', (e) => {
-   e.preventDefault();
-   stopFlightPlan(flightplan.id);
+            if (flightplan.state === 0) {
+                stopBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    stopFlightPlan(flightplan.id);
                 });
-     } else {
+            } else {
                 stopBtn.disabled = true;
-            stopBtn.style.opacity = '0.5';
-        stopBtn.style.cursor = 'not-allowed';
-           stopBtn.title = 'Flight is not in progress';
-  }
+                stopBtn.style.opacity = '0.5';
+                stopBtn.style.cursor = 'not-allowed';
+                stopBtn.title = 'Flight is not in progress';
+            }
         }
 
-    tBody.appendChild(clone);
- tBody.appendChild(manualRow);
+        tBody.appendChild(clone);
+        tBody.appendChild(manualRow);
 
-     // ===== EVENTOS PANEL MANUAL =====
+        // ===== EVENTOS PANEL MANUAL =====
         const sendBtn = manualRow.querySelector('.send-manual');
         const cancelBtn = manualRow.querySelector('.cancel-manual');
 
-     sendBtn.addEventListener('click', async () => {
-         // 1. Obtenemos el VALOR EN TEXTO primero
-         let lonStr = manualRow.querySelector('.manual-x').value;
-         let latStr = manualRow.querySelector('.manual-y').value;
+        sendBtn.addEventListener('click', async () => {
+            // 1. Obtenemos el VALOR EN TEXTO primero
+            let lonStr = manualRow.querySelector('.manual-x').value;
+            let latStr = manualRow.querySelector('.manual-y').value;
 
-         // 2. TRUCO DE SEGURIDAD: Reemplazar coma por punto
-         lonStr = lonStr.replace(',', '.');
-         latStr = latStr.replace(',', '.');
+            // 2. TRUCO DE SEGURIDAD: Reemplazar coma por punto
+            lonStr = lonStr.replace(',', '.');
+            latStr = latStr.replace(',', '.');
 
-         // 3. Convertimos a número
-         const longitude = parseFloat(lonStr);
-         const latitude = parseFloat(latStr);
+            // 3. Convertimos a número
+            const longitude = parseFloat(lonStr);
+            const latitude = parseFloat(latStr);
 
-         // 4. VALIDACIÓN ESTRICTA
-         if (isNaN(longitude) || isNaN(latitude) ||
-             Math.abs(latitude) > 90 || Math.abs(longitude) > 180) {
+            // 4. VALIDACIÓN ESTRICTA
+            if (isNaN(longitude) || isNaN(latitude) ||
+                Math.abs(latitude) > 90 || Math.abs(longitude) > 180) {
 
-             alert(`Bad coordinates.\n\n` +
-                 `Make sure to use decimal format (ej: 43.54).\n` +
-                 `Valid range:\nLat: -90 a 90\nLon: -180 a 180`);
-             return; // Detiene todo
-         }
+                alert(`Bad coordinates.\n\n` +
+                    `Make sure to use decimal format (ej: 43.54).\n` +
+                    `Valid range:\nLat: -90 a 90\nLon: -180 a 180`);
+                return; // Detiene todo
+            }
 
-         try {
-             console.log(`Switching to manual mode for plan ${flightplan.id} with coords: ${latitude}, ${longitude}`);
+            try {
+                console.log(`Switching to manual mode for plan ${flightplan.id} with coords: ${latitude}, ${longitude}`);
 
-             await FlightPlanService.setManualMode(flightplan.id);
-             await FlightPlanService.sendGotoCommand(flightplan.id, latitude, longitude);
+                await FlightPlanService.setManualMode(flightplan.id);
+                await FlightPlanService.sendGotoCommand(flightplan.id, latitude, longitude);
 
-             alert(`FlightPlan #${flightplan.id} is now in MANUAL mode. Drone heading to coordinates.`);
-             manualRow.style.display = 'none';
-             await getFlightPlans();
+                alert(`FlightPlan #${flightplan.id} is now in MANUAL mode. Drone heading to coordinates.`);
+                manualRow.style.display = 'none';
+                await getFlightPlans();
 
-         } catch (error) {
-             console.error('Error activating manual mode:', error);
-             alert(`Failed to activate manual mode: ${error.message}`);
-         }
-     });
-        /** 
-   sendBtn.addEventListener('click', async () => {
-            const longitude = parseFloat(manualRow.querySelector('.manual-x').value);
-            const latitude = parseFloat(manualRow.querySelector('.manual-y').value);
-
-            if (isNaN(longitude) || isNaN(latitude)) {
-   alert("Please enter valid coordinates");
-            return;
-       }
-
-        try {
-         console.log(`Switching to manual mode for plan ${flightplan.id} with coords: ${latitude}, ${longitude}`);
-     await FlightPlanService.setManualMode(flightplan.id);
-          await FlightPlanService.sendGotoCommand(flightplan.id, latitude, longitude);
-       alert(`FlightPlan #${flightplan.id} is now in MANUAL mode. Drone heading to coordinates.`);
- manualRow.style.display = 'none';
-await getFlightPlans();
-  } catch (error) {
-           console.error('Error activating manual mode:', error);
-       alert(`Failed to activate manual mode: ${error.message}`);
-         }
-   });
-        */
-
+            } catch (error) {
+                console.error('Error activating manual mode:', error);
+                alert(`Failed to activate manual mode: ${error.message}`);
+            }
+        });
         cancelBtn.addEventListener('click', () => {
             manualRow.style.display = 'none';
         });
@@ -521,13 +487,12 @@ function getStatusClass(state) {
         case 2: return 'bg-danger text-white';
         default: return 'bg-secondary text-white';
     }
-} // <--- ¡AQUÍ FALTABA EL CIERRE!
+}
 
 function getStatusText(state) {
     const s = ['On Course', 'Completed', 'Cancelled'];
     return s[state] || 'Unknown';
 }
-
 // === EXPOSICIÓN GLOBAL ===
 window.addFlightPlan = addFlightPlan;
 window.updateFlightPlan = updateFlightPlan;

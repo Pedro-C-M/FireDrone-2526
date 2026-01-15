@@ -23,11 +23,11 @@ const DroneState = {
 document.addEventListener('DOMContentLoaded', async function () {
     console.log('Initializing drone map...');
     initMap();
-  
+
     // Initialize SignalR for real-time updates
     console.log('[Map] Initializing SignalR connection...');
-  await initializeSignalR();
-    
+    await initializeSignalR();
+
     // Load initial drone data
     loadDrones();
 });
@@ -158,19 +158,17 @@ function createDroneIcon(state) {
     return L.divIcon({
         className: 'drone-marker',
         html: `<div class="${pulseClass}" style="
-            background-color: ${color}; 
-       width: 28px; 
-      height: 28px; 
-            border-radius: 50%; 
- border: 3px solid white;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
-   display: flex;
-            align-items: center;
+        background-color: ${color}; 
+        width: 28px; 
+        height: 28px; 
+        border-radius: 50%; 
+        border: 3px solid white;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+        display: flex;
+        align-items: center;
         justify-content: center;
-        font-size: 14px;
-        ">
-        🚁
-    </div>`,
+        font-size: 14px;">
+        🚁</div>`,
         iconSize: [28, 28],
         iconAnchor: [14, 14],
         popupAnchor: [0, -14]
@@ -221,23 +219,21 @@ function createPopupContent(drone) {
     const stateText = getStateText(drone.state);
 
     return `
-        <div style="min-width: 200px;">
-    <h6 style="color: #d32f2f; font-size: 16px; margin-bottom: 10px; border-bottom: 2px solid #d32f2f; padding-bottom: 5px;">
-      Drone #${drone.id}
-       </h6>
-          <div style="font-size: 13px;">
-       <div style="margin: 5px 0;">
-      <strong>Status:</strong> 
-      <span class="status-badge ${statusClass}">${stateText}</span>
-                </div>
-         <div style="margin: 5px 0;">
-     <strong>Position:</strong> ${drone.lat?.toFixed(5)}, ${drone.lon?.toFixed(5)}
-      </div>
-          <div style="margin: 5px 0;">
-         <strong>Flight Plan:</strong> ${drone.flightPlanId ? `#${drone.flightPlanId}` : 'None'}
-           </div>
+    <div style="min-width: 200px;">
+        <h6 style="color: #d32f2f; font-size: 16px; margin-bottom: 10px; border-bottom: 2px solid #d32f2f; padding-bottom: 5px;">Drone #${drone.id}</h6>
+        <div style="font-size: 13px;">
+            <div style="margin: 5px 0;">
+                <strong>Status:</strong> 
+                <span class="status-badge ${statusClass}">${stateText}</span>
+            </div>
+            <div style="margin: 5px 0;">
+                <strong>Position:</strong> ${drone.lat?.toFixed(5)}, ${drone.lon?.toFixed(5)}
+            </div>
+            <div style="margin: 5px 0;">
+                <strong>Flight Plan:</strong> ${drone.flightPlanId ? `#${drone.flightPlanId}` : 'None'}
             </div>
         </div>
+    </div>
     `;
 }
 
@@ -266,8 +262,7 @@ function addDroneToList(drone, list) {
     droneItem.innerHTML = `
         <h5>Drone #${drone.id}</h5>
         <p><strong>Lat:</strong> ${drone.lat?.toFixed(6)}, <strong>Lon:</strong> ${drone.lon?.toFixed(6)}</p>
-      <span class="status-badge ${statusClass}">${stateText}</span>
-    `;
+        <span class="status-badge ${statusClass}">${stateText}</span>`;
 
     list.appendChild(droneItem);
 }
@@ -317,73 +312,73 @@ window.centerOnDrone = centerOnDrone;
 let signalRConnection = null;
 
 async function initializeSignalR() {
- try {
-     // Create SignalR connection
-  signalRConnection = new signalR.HubConnectionBuilder()
-      .withUrl("http://156.35.163.122:5306/droneHub", {
-    withCredentials: true
-     })
-      .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
-     .configureLogging(signalR.LogLevel.Information)
-   .build();
+    try {
+        // Create SignalR connection
+        signalRConnection = new signalR.HubConnectionBuilder()
+            .withUrl("http://156.35.163.122:5306/droneHub", {
+                withCredentials: true
+            })
+            .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
+            .configureLogging(signalR.LogLevel.Information)
+            .build();
 
         // Set up event handlers
-      signalRConnection.on("ReceiveDroneUpdate", (droneData) => {
-console.log('[SignalR] Received real-time drone update:', droneData);
-       // Update the drone on the map immediately
-    updateSingleDroneOnMap(droneData);
+        signalRConnection.on("ReceiveDroneUpdate", (droneData) => {
+            console.log('[SignalR] Received real-time drone update:', droneData);
+            // Update the drone on the map immediately
+            updateSingleDroneOnMap(droneData);
         });
 
-    signalRConnection.on("ReceiveAllDrones", (drones) => {
-       console.log('[SignalR] Received all drones:', drones.length);
-   // Update all drones on the map
-          updateAllDronesData(drones);
-   });
+        signalRConnection.on("ReceiveAllDrones", (drones) => {
+            console.log('[SignalR] Received all drones:', drones.length);
+            // Update all drones on the map
+            updateAllDronesData(drones);
+        });
 
-     signalRConnection.on("DroneAssigned", (data) => {
-     console.log('[SignalR] Drone assigned:', data);
-      showNotification(`Drone ${data.droneId} assigned to flight plan ${data.flightPlanId}`);
-       // Reload drones after assignment
-       setTimeout(() => loadDrones(), 1000);
-   });
+        signalRConnection.on("DroneAssigned", (data) => {
+            console.log('[SignalR] Drone assigned:', data);
+            showNotification(`Drone ${data.droneId} assigned to flight plan ${data.flightPlanId}`);
+            // Reload drones after assignment
+            setTimeout(() => loadDrones(), 1000);
+        });
 
         signalRConnection.on("DroneStateChanged", (data) => {
-  console.log('[SignalR] Drone state changed:', data);
-  showNotification(`Drone ${data.droneId} state: ${getStateText(data.state)}`);
-     });
-
-     // Handle reconnecting
- signalRConnection.onreconnecting((error) => {
-     console.warn('[SignalR] Reconnecting...', error);
-       updateConnectionStatus(false, 'Reconnecting...');
- });
-
-// Handle reconnected
-   signalRConnection.onreconnected((connectionId) => {
-        console.log('[SignalR] Reconnected. ConnectionId:', connectionId);
-   updateConnectionStatus(true);
-        loadDrones();
- });
-
-    // Handle closed connection
-        signalRConnection.onclose((error) => {
-    console.error('[SignalR] Connection closed:', error);
-   updateConnectionStatus(false, 'Disconnected');
+            console.log('[SignalR] Drone state changed:', data);
+            showNotification(`Drone ${data.droneId} state: ${getStateText(data.state)}`);
         });
 
-   // Start the connection
-   await signalRConnection.start();
- console.log('[SignalR] Connected successfully. ConnectionId:', signalRConnection.connectionId);
-    updateConnectionStatus(true);
+        // Handle reconnecting
+        signalRConnection.onreconnecting((error) => {
+            console.warn('[SignalR] Reconnecting...', error);
+            updateConnectionStatus(false, 'Reconnecting...');
+        });
 
-  } catch (error) {
- console.error('[SignalR] Failed to initialize:', error);
-     updateConnectionStatus(false, 'Connection failed');
-  // Fallback to polling if SignalR fails
-      console.warn('[SignalR] Falling back to polling every 3 seconds');
-       updateInterval = setInterval(() => {
-   loadDrones();
- }, 3000);
+        // Handle reconnected
+        signalRConnection.onreconnected((connectionId) => {
+            console.log('[SignalR] Reconnected. ConnectionId:', connectionId);
+            updateConnectionStatus(true);
+            loadDrones();
+        });
+
+        // Handle closed connection
+        signalRConnection.onclose((error) => {
+            console.error('[SignalR] Connection closed:', error);
+            updateConnectionStatus(false, 'Disconnected');
+        });
+
+        // Start the connection
+        await signalRConnection.start();
+        console.log('[SignalR] Connected successfully. ConnectionId:', signalRConnection.connectionId);
+        updateConnectionStatus(true);
+
+    } catch (error) {
+        console.error('[SignalR] Failed to initialize:', error);
+        updateConnectionStatus(false, 'Connection failed');
+        // Fallback to polling if SignalR fails
+        console.warn('[SignalR] Falling back to polling every 3 seconds');
+        updateInterval = setInterval(() => {
+            loadDrones();
+        }, 3000);
     }
 }
 
@@ -392,16 +387,16 @@ console.log('[SignalR] Received real-time drone update:', droneData);
  */
 function updateSingleDroneOnMap(droneData) {
     console.log(`[Map] Updating drone ${droneData.id} in real-time`);
-    
+
     // Update lastPositions
     if (lastPositions[droneData.id]) {
         // Store previous position for drawing line
-const prevPosition = { ...lastPositions[droneData.id] };
+        const prevPosition = { ...lastPositions[droneData.id] };
     }
-    
+
     lastPositions[droneData.id] = droneData;
-    
-// Redraw all drones (simplest approach)
+
+    // Redraw all drones (simplest approach)
     loadDrones();
 }
 
@@ -411,30 +406,30 @@ const prevPosition = { ...lastPositions[droneData.id] };
 function updateAllDronesData(drones) {
     console.log(`[Map] Updating ${drones.length} drones from SignalR`);
     // This would update internal state, then redraw
-   loadDrones();
+    loadDrones();
 }
 
 /**
  * Update connection status indicator
  */
 function updateConnectionStatus(connected, message) {
- const statusElement = document.getElementById('connection-status');
-   if (!statusElement) return;
+    const statusElement = document.getElementById('connection-status');
+    if (!statusElement) return;
 
-  if (connected) {
-statusElement.innerHTML = '<span class="badge bg-success">🟢 Connected</span>';
+    if (connected) {
+        statusElement.innerHTML = '<span class="badge bg-success">🟢 Connected</span>';
     } else {
-   const msg = message || 'Disconnected';
-   statusElement.innerHTML = `<span class="badge bg-danger">🔴 ${msg}</span>`;
-}
+        const msg = message || 'Disconnected';
+        statusElement.innerHTML = `<span class="badge bg-danger">🔴 ${msg}</span>`;
+    }
 }
 
 /**
  * Show a notification to the user
  */
 function showNotification(message) {
-  console.log('[Notification]', message);
-  
+    console.log('[Notification]', message);
+
     // Create a simple toast notification
     const notification = document.createElement('div');
     notification.className = 'alert alert-info alert-dismissible fade show position-fixed top-0 end-0 m-3';
@@ -448,6 +443,6 @@ function showNotification(message) {
 
     // Auto-dismiss after 5 seconds
     setTimeout(() => {
-    notification.remove();
+        notification.remove();
     }, 5000);
 }
