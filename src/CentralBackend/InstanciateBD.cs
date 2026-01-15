@@ -152,6 +152,7 @@ namespace CentralBackend
                         {
                             Ruta = assignedRoute,
                             Ctrl = controlStation,
+                            EstControlId = controlStation.Id,
                             StartingTime = DateTime.Now.AddMinutes(-random.Next(0, 120)), // Empezó hace un rato
                             State = (FlightStatus)random.Next(0, 3),
                             Dron = assignedDron // Asignamos el dron al plan

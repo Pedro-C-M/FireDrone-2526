@@ -6,7 +6,6 @@
 		Flying,
 		Landed
 	}
-
 	public class DroneStatus
 	{
 		public double Latitude;
