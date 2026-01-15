@@ -12,8 +12,8 @@ namespace CentralBackend
         private const int NUM_SENSORS = 10;
         private const int NUM_BASE_STATIONS = 3;
         private const int NUM_ROUTES = 5;
-        private const int NUM_DRONES = 12; // Generaremos 12 drones (2 sin plan de vuelo)
-        private const int NUM_FLIGHT_PLANS = 10; // Un plan por dron (los últimos 2 drones no tendrán plan)
+        private const int NUM_DRONES = 11; // Generaremos 11 drones (1 sin plan de vuelo)
+        private const int NUM_FLIGHT_PLANS = 10; // Un plan por dron (el ultimo dron no tendra plan)
 
         // Coordenadas base (Gijón) para generar variaciones
         private const float BASE_LAT = 43.5322f;
@@ -122,7 +122,7 @@ namespace CentralBackend
                             ControlStation = controlStation,
                             Lat = BASE_LAT + (float)(random.NextDouble() * 0.03 - 0.015),
                             Lon = BASE_LON + (float)(random.NextDouble() * 0.03 - 0.015),
-                            State = (DroneState)random.Next(0, 3),
+                            State = (DroneState) 0,
                             Altitude = random.Next(0, 120),
                             Speed = random.Next(0, 60),
                             Battery = random.Next(10, 100)
@@ -154,7 +154,7 @@ namespace CentralBackend
                             Ctrl = controlStation,
                             EstControlId = controlStation.Id,
                             StartingTime = DateTime.Now.AddMinutes(-random.Next(0, 120)), // Empezó hace un rato
-                            State = (FlightStatus)random.Next(0, 3),
+                            State = (FlightStatus) 2,
                             Dron = assignedDron // Asignamos el dron al plan
                         };
 
