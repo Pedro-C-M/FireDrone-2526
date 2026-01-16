@@ -41,7 +41,7 @@ public class Program
         {
             options.AddPolicy("AllowFrontend", policy =>
             {
-            policy.WithOrigins("http://localhost:5305")
+            policy.WithOrigins("http://156.35.163.122:5305")
                 .AllowAnyHeader()
                 .AllowAnyMethod()
                 .AllowCredentials(); // IMPORTANTE: Necesario para SignalR WebSocket
@@ -54,7 +54,7 @@ public class Program
         // Redis Connection Configuration
         builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
         {
-            var configuration = builder.Configuration["Redis:ConnectionString"] ?? "localhost:6379";
+            var configuration = builder.Configuration["Redis:ConnectionString"] ?? "156.35.163.122:6379";
             var options = ConfigurationOptions.Parse(configuration);
             options.AbortOnConnectFail = false; // Don't crash if Redis is unavailable
             options.ConnectTimeout = 5000;

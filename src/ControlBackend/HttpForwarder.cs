@@ -19,7 +19,7 @@ namespace ControlBackend
             var content = new StringContent(statusJson, Encoding.UTF8, "application/json");
 
             // Get CentralBackend URL from configuration
-            var centralBackendBaseUrl = _configuration["CentralBackend:BaseUrl"] ?? "http://localhost:5306";
+            var centralBackendBaseUrl = _configuration["CentralBackend:BaseUrl"] ?? "http://156.35.163.122:5306";
             var centralBackendUrl = $"{centralBackendBaseUrl}/api/Drone/{dronId}/status";
 
             Console.WriteLine($"[HttpForwarder] Sending drone {dronId} status to {centralBackendUrl}");
