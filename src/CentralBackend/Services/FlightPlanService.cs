@@ -24,9 +24,9 @@ namespace CentralBackend.Services
         public async Task<List<FlightPlan>> GetAllAsync()
         {
             return await _context.FlightPlans
-         .Include(fp => fp.Ruta)
-             .ThenInclude(r => r.Coords)
-    .ToListAsync();
+                .Include(fp => fp.Ruta)
+                .ThenInclude(r => r.Coords)
+                .ToListAsync();
         }
 
         public async Task<FlightPlan?> GetByIdAsync(int id)
@@ -85,14 +85,14 @@ namespace CentralBackend.Services
 
                     // Convert RoutePoints to Waypoints
                     var waypoints = flightPlanWithRoute?.Ruta?.Coords?
-                   .Where(rp => rp.Lat.HasValue && rp.Long.HasValue)
-                    .Select(rp => new
-                    {
-                        latitude = rp.Lat,
-                        longitude = rp.Long,
-                        altitude = rp.Height ?? 50,
-                        speed = rp.Velocity ?? 20
-                    }).ToList();
+                        .Where(rp => rp.Lat.HasValue && rp.Long.HasValue)
+                        .Select(rp => new
+                        {
+                            latitude = rp.Lat,
+                            longitude = rp.Long,
+                            altitude = rp.Height ?? 50,
+                            speed = rp.Velocity ?? 20
+                        }).ToList();
 
                     if (waypoints == null || !waypoints.Any())
                     {
@@ -233,190 +233,190 @@ namespace CentralBackend.Services
                 var waypoints = new List<object>();
                 bool isPeriodicRoute = existing?.Ruta?.Type == RouteType.Periodic;
 
-            if (!restartFromBeginning && currentDrone != null && currentDrone.Lat.HasValue && currentDrone.Lon.HasValue)
-    {
-             Console.WriteLine($"[FlightPlanService] Current drone position: Lat={currentDrone.Lat}, Lon={currentDrone.Lon}");
-
-       // Find the closest waypoint to current position
-                 var currentPos = (lat: (double)currentDrone.Lat.Value, lon: (double)currentDrone.Lon.Value);
-     int closestIndex = 0;
-         double minDistance = double.MaxValue;
-
-    for (int i = 0; i < allWaypoints.Count; i++)
-        {
-        var wp = allWaypoints[i];
-           if (wp.latitude.HasValue && wp.longitude.HasValue)
-         {
-var distance = Math.Sqrt(
-Math.Pow((double)wp.latitude.Value - currentPos.lat, 2) +
-     Math.Pow((double)wp.longitude.Value - currentPos.lon, 2)
-            );
-
-         if (distance < minDistance)
+                if (!restartFromBeginning && currentDrone != null && currentDrone.Lat.HasValue && currentDrone.Lon.HasValue)
                 {
-minDistance = distance;
-         closestIndex = i;
-    }
-          }
- }
+                    Console.WriteLine($"[FlightPlanService] Current drone position: Lat={currentDrone.Lat}, Lon={currentDrone.Lon}");
 
-       // Resume from the next waypoint after current position
-         var resumeIndex = Math.Min(closestIndex + 1, allWaypoints.Count - 1);
-         Console.WriteLine($"[FlightPlanService] Resuming from waypoint index {resumeIndex} (closest was {closestIndex})");
+                    // Find the closest waypoint to current position
+                    var currentPos = (lat: (double)currentDrone.Lat.Value, lon: (double)currentDrone.Lon.Value);
+                    int closestIndex = 0;
+                    double minDistance = double.MaxValue;
 
- // Add current position as first waypoint
-         waypoints.Add(new
-     {
-   latitude = currentDrone.Lat,
-    longitude = currentDrone.Lon,
-  altitude = currentDrone.Altitude ?? allWaypoints[closestIndex].altitude,
-     speed = allWaypoints[closestIndex].speed
-     });
+                    for (int i = 0; i < allWaypoints.Count; i++)
+                    {
+                        var wp = allWaypoints[i];
+                        if (wp.latitude.HasValue && wp.longitude.HasValue)
+                        {
+                            var distance = Math.Sqrt(
+                            Math.Pow((double)wp.latitude.Value - currentPos.lat, 2) +
+                            Math.Pow((double)wp.longitude.Value - currentPos.lon, 2)
+                            );
 
-           if (isPeriodicRoute)
-       {
- // For periodic routes: send the FULL ORIGINAL route starting from resume point
-        // This allows FlightSimulator to handle the periodic looping correctly
-             
-       // Add waypoints from resume point to end
-   for (int i = resumeIndex; i < allWaypoints.Count; i++)
-       {
-         waypoints.Add(new
-      {
-             latitude = allWaypoints[i].latitude,
-  longitude = allWaypoints[i].longitude,
-     altitude = allWaypoints[i].altitude,
-   speed = allWaypoints[i].speed
-     });
-             }
+                            if (distance < minDistance)
+                            {
+                                minDistance = distance;
+                                closestIndex = i;
+                            }
+                        }
+                    }
 
-            // Add waypoints from beginning to complete the original route structure
-    for (int i = 0; i < allWaypoints.Count; i++)
-      {
-        waypoints.Add(new
+                    // Resume from the next waypoint after current position
+                    var resumeIndex = Math.Min(closestIndex + 1, allWaypoints.Count - 1);
+                    Console.WriteLine($"[FlightPlanService] Resuming from waypoint index {resumeIndex} (closest was {closestIndex})");
+
+                    // Add current position as first waypoint
+                    waypoints.Add(new
+                    {
+                        latitude = currentDrone.Lat,
+                        longitude = currentDrone.Lon,
+                        altitude = currentDrone.Altitude ?? allWaypoints[closestIndex].altitude,
+                        speed = allWaypoints[closestIndex].speed
+                    });
+
+                    if (isPeriodicRoute)
+                    {
+                        // For periodic routes: send the FULL ORIGINAL route starting from resume point
+                        // This allows FlightSimulator to handle the periodic looping correctly
+
+                        // Add waypoints from resume point to end
+                        for (int i = resumeIndex; i < allWaypoints.Count; i++)
+                        {
+                            waypoints.Add(new
+                            {
+                                latitude = allWaypoints[i].latitude,
+                                longitude = allWaypoints[i].longitude,
+                                altitude = allWaypoints[i].altitude,
+                                speed = allWaypoints[i].speed
+                            });
+                        }
+
+                        // Add waypoints from beginning to complete the original route structure
+                        for (int i = 0; i < allWaypoints.Count; i++)
+                        {
+                            waypoints.Add(new
+                            {
+                                latitude = allWaypoints[i].latitude,
+                                longitude = allWaypoints[i].longitude,
+                                altitude = allWaypoints[i].altitude,
+                                speed = allWaypoints[i].speed
+                            });
+                        }
+
+                        Console.WriteLine($"[FlightPlanService] Periodic route: sent full route structure with {waypoints.Count - 1} waypoints for continuous looping");
+                    }
+                    else
+                    {
+                        // For simple routes: only add remaining waypoints from resume point to end
+                        for (int i = resumeIndex; i < allWaypoints.Count; i++)
+                        {
+                            waypoints.Add(new
+                            {
+                                latitude = allWaypoints[i].latitude,
+                                longitude = allWaypoints[i].longitude,
+                                altitude = allWaypoints[i].altitude,
+                                speed = allWaypoints[i].speed
+                            });
+                        }
+                        Console.WriteLine($"[FlightPlanService] Simple route: added {waypoints.Count - 1} remaining waypoints");
+                    }
+                }
+                else
+                {
+                    // Use full route from beginning
+                    foreach (var wp in allWaypoints)
+                    {
+                        waypoints.Add(new
+                        {
+                            latitude = wp.latitude,
+                            longitude = wp.longitude,
+                            altitude = wp.altitude,
+                            speed = wp.speed
+                        });
+                    }
+                }
+
+                Console.WriteLine($"[FlightPlanService] Sending {waypoints?.Count ?? 0} waypoints to ControlBackend for drone {dronId}");
+
+                // Log the first waypoint to verify data
+                if (waypoints != null && waypoints.Count > 0)
+                {
+                    dynamic first = waypoints[0];
+                    Console.WriteLine($"[FlightPlanService] First waypoint: lat={first.latitude}, lon={first.longitude}, alt={first.altitude}, speed={first.speed}");
+                    if (waypoints.Count > 1)
+                    {
+                        dynamic last = waypoints[waypoints.Count - 1];
+                        Console.WriteLine($"[FlightPlanService] Last waypoint: lat={last.latitude}, lon={last.longitude}, alt={last.altitude}, speed={last.speed}");
+                    }
+                }
+
+                var response = await httpClient.PostAsJsonAsync(
+            $"{controlBackendUrl}/api/drone/{dronId}/start",
+                new
+                {
+                    Waypoints = waypoints,
+                    IsPeriodic = isPeriodicRoute
+                });
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    Console.WriteLine($"[FlightPlanService] Failed to start flight for drone {dronId}: {response.StatusCode}");
+                }
+                else
+                {
+                    Console.WriteLine($"[FlightPlanService] Successfully called ControlBackend StartFlight for drone {dronId}");
+                }
+            }
+            catch (Exception ex)
             {
-            latitude = allWaypoints[i].latitude,
-       longitude = allWaypoints[i].longitude,
- altitude = allWaypoints[i].altitude,
-         speed = allWaypoints[i].speed
-     });
-         }
-         
-    Console.WriteLine($"[FlightPlanService] Periodic route: sent full route structure with {waypoints.Count - 1} waypoints for continuous looping");
-      }
-    else
-           {
-   // For simple routes: only add remaining waypoints from resume point to end
-   for (int i = resumeIndex; i < allWaypoints.Count; i++)
-      {
-      waypoints.Add(new
-    {
-           latitude = allWaypoints[i].latitude,
-          longitude = allWaypoints[i].longitude,
-      altitude = allWaypoints[i].altitude,
-       speed = allWaypoints[i].speed
-          });
-         }
-                Console.WriteLine($"[FlightPlanService] Simple route: added {waypoints.Count - 1} remaining waypoints");
-    }
-       }
-        else
-    {
-           // Use full route from beginning
-  foreach (var wp in allWaypoints)
-{
-      waypoints.Add(new
-                {
-     latitude = wp.latitude,
-     longitude = wp.longitude,
-     altitude = wp.altitude,
-             speed = wp.speed
-             });
-      }
-           }
+                Console.WriteLine($"[FlightPlanService] Error calling ControlBackend StartFlight: {ex.Message}");
+            }
 
-     Console.WriteLine($"[FlightPlanService] Sending {waypoints?.Count ?? 0} waypoints to ControlBackend for drone {dronId}");
-
-        // Log the first waypoint to verify data
-      if (waypoints != null && waypoints.Count > 0)
-           {
-     dynamic first = waypoints[0];
-        Console.WriteLine($"[FlightPlanService] First waypoint: lat={first.latitude}, lon={first.longitude}, alt={first.altitude}, speed={first.speed}");
-         if (waypoints.Count > 1)
-        {
-       dynamic last = waypoints[waypoints.Count - 1];
-        Console.WriteLine($"[FlightPlanService] Last waypoint: lat={last.latitude}, lon={last.longitude}, alt={last.altitude}, speed={last.speed}");
- }
- }
-
-              var response = await httpClient.PostAsJsonAsync(
-          $"{controlBackendUrl}/api/drone/{dronId}/start",
-      new
-      {
-        Waypoints = waypoints,
-             IsPeriodic = isPeriodicRoute
-   });
-
-    if (!response.IsSuccessStatusCode)
-     {
-          Console.WriteLine($"[FlightPlanService] Failed to start flight for drone {dronId}: {response.StatusCode}");
-}
-         else
-    {
-            Console.WriteLine($"[FlightPlanService] Successfully called ControlBackend StartFlight for drone {dronId}");
+            return existing;
         }
-            }
-      catch (Exception ex)
-   {
-         Console.WriteLine($"[FlightPlanService] Error calling ControlBackend StartFlight: {ex.Message}");
-            }
-
-return existing;
-  }
 
         public async Task<FlightPlan> StopFlightPlanAsync(int id)
-    {
-    Console.WriteLine($"[FlightPlanService] StopFlightPlanAsync called: FlightPlanId={id}");
+        {
+            Console.WriteLine($"[FlightPlanService] StopFlightPlanAsync called: FlightPlanId={id}");
 
             var existing = await _context.FlightPlans.FindAsync(id);
-  if (existing == null)
-         throw new NotFoundException($"FlightPlan with ID {id} does not exist.");
+            if (existing == null)
+                throw new NotFoundException($"FlightPlan with ID {id} does not exist.");
 
-       // Update flight plan state to Cancelled
+            // Update flight plan state to Cancelled
             existing.State = FlightStatus.Cancelled;
-     existing.EndingTime = DateTime.Now;
+            existing.EndingTime = DateTime.Now;
             await _context.SaveChangesAsync();
 
             Console.WriteLine($"[FlightPlanService] FlightPlan {id} marked as Cancelled in database");
 
             // Call ControlBackend to stop the flight
             try
-   {
-           var controlBackendUrl = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://156.35.163.122:5307";
-     var httpClient = _httpClientFactory.CreateClient();
+            {
+                var controlBackendUrl = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://156.35.163.122:5307";
+                var httpClient = _httpClientFactory.CreateClient();
 
-     Console.WriteLine($"[FlightPlanService] Calling ControlBackend at {controlBackendUrl}/api/drone/{existing.DronId}/stop");
+                Console.WriteLine($"[FlightPlanService] Calling ControlBackend at {controlBackendUrl}/api/drone/{existing.DronId}/stop");
 
-           var response = await httpClient.PostAsync(
-   $"{controlBackendUrl}/api/drone/{existing.DronId}/stop",
-     null
-         );
+                var response = await httpClient.PostAsync(
+        $"{controlBackendUrl}/api/drone/{existing.DronId}/stop",
+          null
+              );
 
-     if (!response.IsSuccessStatusCode)
-         {
-          Console.WriteLine($"[FlightPlanService] Failed to stop flight for drone {existing.DronId}: {response.StatusCode}");
-     }
-      else
-        {
-    Console.WriteLine($"[FlightPlanService] Successfully called ControlBackend StopFlight for drone {existing.DronId}");
-     }
+                if (!response.IsSuccessStatusCode)
+                {
+                    Console.WriteLine($"[FlightPlanService] Failed to stop flight for drone {existing.DronId}: {response.StatusCode}");
+                }
+                else
+                {
+                    Console.WriteLine($"[FlightPlanService] Successfully called ControlBackend StopFlight for drone {existing.DronId}");
+                }
             }
-      catch (Exception ex)
- {
-   Console.WriteLine($"[FlightPlanService] Error calling ControlBackend StopFlight: {ex.Message}");
-    }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[FlightPlanService] Error calling ControlBackend StopFlight: {ex.Message}");
+            }
 
-  return existing;
+            return existing;
         }
 
         public async Task<FlightPlan> SwitchToManualModeAsync(int id)
@@ -427,121 +427,121 @@ return existing;
      .Include(fp => fp.ModeChangeHistoric)
             .FirstOrDefaultAsync(fp => fp.Id == id);
 
- if (existing == null)
-            throw new NotFoundException($"FlightPlan with ID {id} does not exist.");
+            if (existing == null)
+                throw new NotFoundException($"FlightPlan with ID {id} does not exist.");
 
-// Add a new mode change record to manual
-    var modeChange = new ChangeMode
-        {
-             Moment = DateTime.Now,
-   Mode = FlightMode.Manual
+            // Add a new mode change record to manual
+            var modeChange = new ChangeMode
+            {
+                Moment = DateTime.Now,
+                Mode = FlightMode.Manual
             };
-    existing.ModeChangeHistoric.Add(modeChange);
+            existing.ModeChangeHistoric.Add(modeChange);
 
             await _context.SaveChangesAsync();
 
-       Console.WriteLine($"[FlightPlanService] FlightPlan {id} switched to Manual mode in database");
+            Console.WriteLine($"[FlightPlanService] FlightPlan {id} switched to Manual mode in database");
 
-         // Call ControlBackend to notify the mode change
-    try
-      {
-      var controlBackendUrl = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://156.35.163.122:5307";
-         var httpClient = _httpClientFactory.CreateClient();
-
-  Console.WriteLine($"[FlightPlanService] Notifying ControlBackend of manual mode for drone {existing.DronId}");
-          Console.WriteLine($"[FlightPlanService] Manual mode activated for FlightPlan {id}, Drone {existing.DronId}");
-            }
-       catch (Exception ex)
-    {
-          Console.WriteLine($"[FlightPlanService] Error notifying manual mode change: {ex.Message}");
-         }
-
-return existing;
-        }
-
-  public async Task SendManualDestinationAsync(int flightPlanId, GoToDto dto)
-     {
-       var existing = await _context.FlightPlans.FindAsync(flightPlanId);
-            if (existing == null)
-                throw new NotFoundException($"FlightPlan with ID {flightPlanId} does not exist.");
-
-      // Llamada al ControlBackend
-         try
-  {
-   var controlBackendUrl = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://156.35.163.122:5307";
+            // Call ControlBackend to notify the mode change
+            try
+            {
+                var controlBackendUrl = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://156.35.163.122:5307";
                 var httpClient = _httpClientFactory.CreateClient();
 
-      var payload = new
-     {
-          latitude = dto.Latitude,
-  longitude = dto.Longitude
-         };
-
- Console.WriteLine($"[FlightPlanService] Sending manual destination to ControlBackend for drone {existing.DronId}");
-
-                var response = await httpClient.PostAsJsonAsync(
-       $"{controlBackendUrl}/api/drone/{existing.DronId}/goto",
-                 payload
-       );
-
-      if (!response.IsSuccessStatusCode)
-  {
-      throw new Exception($"ControlBackend returned {response.StatusCode}");
-      }
-
-  Console.WriteLine($"[FlightPlanService] Manual destination sent successfully");
+                Console.WriteLine($"[FlightPlanService] Notifying ControlBackend of manual mode for drone {existing.DronId}");
+                Console.WriteLine($"[FlightPlanService] Manual mode activated for FlightPlan {id}, Drone {existing.DronId}");
             }
             catch (Exception ex)
             {
-     Console.WriteLine($"[FlightPlanService] Error sending manual destination: {ex.Message}");
-      throw;
+                Console.WriteLine($"[FlightPlanService] Error notifying manual mode change: {ex.Message}");
             }
-}
+
+            return existing;
+        }
+
+        public async Task SendManualDestinationAsync(int flightPlanId, GoToDto dto)
+        {
+            var existing = await _context.FlightPlans.FindAsync(flightPlanId);
+            if (existing == null)
+                throw new NotFoundException($"FlightPlan with ID {flightPlanId} does not exist.");
+
+            // Llamada al ControlBackend
+            try
+            {
+                var controlBackendUrl = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://156.35.163.122:5307";
+                var httpClient = _httpClientFactory.CreateClient();
+
+                var payload = new
+                {
+                    latitude = dto.Latitude,
+                    longitude = dto.Longitude
+                };
+
+                Console.WriteLine($"[FlightPlanService] Sending manual destination to ControlBackend for drone {existing.DronId}");
+
+                var response = await httpClient.PostAsJsonAsync(
+               $"{controlBackendUrl}/api/drone/{existing.DronId}/goto",
+                         payload
+               );
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new Exception($"ControlBackend returned {response.StatusCode}");
+                }
+
+                Console.WriteLine($"[FlightPlanService] Manual destination sent successfully");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[FlightPlanService] Error sending manual destination: {ex.Message}");
+                throw;
+            }
+        }
 
         public async Task DeleteAsync(int id)
         {
-      var existing = await _context.FlightPlans
-    .Include(fp => fp.ModeChangeHistoric)
-     .Include(fp => fp.Dron)
-          .Include(fp => fp.RoutePoints)
-     .FirstOrDefaultAsync(fp => fp.Id == id);
+            var existing = await _context.FlightPlans
+            .Include(fp => fp.ModeChangeHistoric)
+            .Include(fp => fp.Dron)
+            .Include(fp => fp.RoutePoints)
+            .FirstOrDefaultAsync(fp => fp.Id == id);
 
-          if (existing == null)
- throw new NotFoundException($"FlightPlan with ID {id} does not exist.");
+            if (existing == null)
+                throw new NotFoundException($"FlightPlan with ID {id} does not exist.");
 
-        Console.WriteLine($"[FlightPlanService] Deleting FlightPlan {id}, associated with Drone {existing.DronId}");
+            Console.WriteLine($"[FlightPlanService] Deleting FlightPlan {id}, associated with Drone {existing.DronId}");
 
             // CRITICAL: Null out the drone's reference to prevent cascade delete of the drone
-      if (existing.Dron != null)
+            if (existing.Dron != null)
             {
-   Console.WriteLine($"[FlightPlanService] Clearing Drone {existing.Dron.Id} references to FlightPlan {id}");
-       existing.Dron.Actual = null;
-       existing.Dron.FlightPlanId = null;
+                Console.WriteLine($"[FlightPlanService] Clearing Drone {existing.Dron.Id} references to FlightPlan {id}");
+                existing.Dron.Actual = null;
+                existing.Dron.FlightPlanId = null;
             }
 
-    // Remove incidences that reference this flight plan
+            // Remove incidences that reference this flight plan
             var incidences = await _context.Incidences
-       .Where(i => i.FlightPlanId == id)
-        .ToListAsync();
+            .Where(i => i.FlightPlanId == id)
+            .ToListAsync();
 
- if (incidences.Any())
+            if (incidences.Any())
             {
-   Console.WriteLine($"[FlightPlanService] Removing {incidences.Count} incidences");
-         _context.Incidences.RemoveRange(incidences);
-    }
+                Console.WriteLine($"[FlightPlanService] Removing {incidences.Count} incidences");
+                _context.Incidences.RemoveRange(incidences);
+            }
 
-    // Clear RoutePoints collection (they belong to the route, not the flight plan)
-       if (existing.RoutePoints != null && existing.RoutePoints.Any())
- {
-         Console.WriteLine($"[FlightPlanService] Clearing {existing.RoutePoints.Count} route point references");
+            // Clear RoutePoints collection (they belong to the route, not the flight plan)
+            if (existing.RoutePoints != null && existing.RoutePoints.Any())
+            {
+                Console.WriteLine($"[FlightPlanService] Clearing {existing.RoutePoints.Count} route point references");
                 existing.RoutePoints.Clear();
- }
+            }
 
-   Console.WriteLine($"[FlightPlanService] Removing FlightPlan {id} from database");
+            Console.WriteLine($"[FlightPlanService] Removing FlightPlan {id} from database");
             _context.FlightPlans.Remove(existing);
-         await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync();
 
-        Console.WriteLine($"[FlightPlanService] FlightPlan {id} successfully deleted. Drone {existing.DronId} is now available.");
+            Console.WriteLine($"[FlightPlanService] FlightPlan {id} successfully deleted. Drone {existing.DronId} is now available.");
         }
     }
 }

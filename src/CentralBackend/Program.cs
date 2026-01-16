@@ -41,13 +41,13 @@ public class Program
         {
             options.AddPolicy("AllowFrontend", policy =>
             {
-                policy.WithOrigins("http://156.35.163.122:5305")
-                      .AllowAnyHeader()
-                      .AllowAnyMethod()
-                      .AllowCredentials(); // IMPORTANTE: Necesario para SignalR WebSocket
-            });
+            policy.WithOrigins("http://156.35.163.122:5305")
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials(); // IMPORTANTE: Necesario para SignalR WebSocket
+             });
         });
-
+        
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
 
@@ -59,7 +59,7 @@ public class Program
             options.AbortOnConnectFail = false; // Don't crash if Redis is unavailable
             options.ConnectTimeout = 5000;
             options.SyncTimeout = 5000;
-
+            
             try
             {
                 var redis = ConnectionMultiplexer.Connect(options);
@@ -85,13 +85,13 @@ public class Program
             var cache = app.Services.GetRequiredService<RedisCacheService>();
             var status = cache.GetConnectionStatus();
             Console.WriteLine($"[Redis] Cache service status: {status}");
-
+            
             // Try a simple ping operation to verify Redis is actually working
             var testKey = "startup:test";
             var testValue = DateTime.UtcNow.ToString("O");
             await cache.SetAsync(testKey, testValue, TimeSpan.FromSeconds(10));
             var retrieved = await cache.GetAsync<string>(testKey);
-
+            
             if (retrieved == testValue)
             {
                 Console.WriteLine("[Redis] ? Cache is WORKING - successfully tested SET/GET operations");
@@ -147,14 +147,14 @@ public class Program
 
         // ErrorHandlingMiddleware AL PRINCIPIO pero ignora /droneHub
         app.UseMiddleware<ErrorHandlingMiddleware>();
-
+ 
         // CORS
         app.UseCors("AllowFrontend");
         app.UseAuthorization();
-
+  
         // Mapear el Hub de SignalR
         app.MapHub<DroneHub>("/droneHub");
-
+     
         // Controllers
         app.MapControllers();
 

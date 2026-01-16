@@ -27,12 +27,10 @@ namespace CentralBackend.Services
             _logger = logger;
         }
 
-        /// <summary>
         /// Obtiene todas las rutas con caché Redis
-        /// </summary>
         public async Task<List<Models.Route>> GetAllAsync()
         {
-            // 🔍 Intentar obtener desde caché
+            // Intentar obtener desde caché
             var cachedRoutes = await _cache.GetAsync<List<Models.Route>>(ROUTES_CACHE_KEY);
             if (cachedRoutes != null)
             {
@@ -41,14 +39,14 @@ namespace CentralBackend.Services
                 return cachedRoutes;
             }
 
-            // 💾 Si no está en caché, consultar BD
+            // Si no está en caché, consultar BD
             _logger.LogInformation("⚠️ [RouteService] Cache MISS - Querying database for routes");
             Console.WriteLine("⚠️ [RouteService] Cache MISS - Querying database for routes");
             var routes = await _context.Routes
                 .Include(r => r.Coords)
                 .ToListAsync();
 
-            // 💾 Guardar en caché
+            // Guardar en caché
             if (routes.Any())
             {
                 await _cache.SetAsync(ROUTES_CACHE_KEY, routes, CacheExpiration);
@@ -60,9 +58,7 @@ namespace CentralBackend.Services
             return routes;
         }
 
-        /// <summary>
         /// Elimina una ruta e invalida la caché
-        /// </summary>
         public async Task<bool> DeleteAsync(int id)
         {
             // 1. Comprobar si algún Plan de Vuelo usa esta ruta
@@ -81,16 +77,14 @@ namespace CentralBackend.Services
             _context.Routes.Remove(route);
             await _context.SaveChangesAsync();
 
-            // 🗑️ Invalidar caché
+            // Invalidar caché
             await InvalidateRoutesCache("Route deleted");
             _logger.LogInformation("Route {RouteId} deleted and cache invalidated", id);
 
             return true;
         }
 
-        /// <summary>
         /// Importa rutas desde CSV e invalida la caché
-        /// </summary>
         public async Task<int> ImportFromCsvAsync(Stream fileStream, string fileName)
         {
             if (!fileName.EndsWith(".csv", StringComparison.OrdinalIgnoreCase))
@@ -199,7 +193,7 @@ namespace CentralBackend.Services
                 _context.Routes.AddRange(rutasParaGuardar);
                 await _context.SaveChangesAsync();
 
-                // 🗑️ Invalidar caché tras importar
+                // Invalidar caché tras importar
                 await InvalidateRoutesCache($"Imported {rutasParaGuardar.Count} routes from CSV");
                 _logger.LogInformation("{Count} routes imported from CSV and cache invalidated", rutasParaGuardar.Count);
             }
@@ -207,9 +201,7 @@ namespace CentralBackend.Services
             return rutasParaGuardar.Count;
         }
 
-        /// <summary>
         /// Invalida todas las cachés relacionadas con rutas
-        /// </summary>
         private async Task InvalidateRoutesCache(string reason)
         {
             await _cache.RemoveAsync(ROUTES_CACHE_KEY);

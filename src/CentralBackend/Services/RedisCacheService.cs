@@ -4,16 +4,14 @@ using System.Text.Json.Serialization;
 
 namespace CentralBackend.Services
 {
-    /// <summary>
     /// Servicio de caché distribuida con Redis para mejorar el rendimiento
     /// del sistema evitando consultas repetidas a la base de datos.
-    /// </summary>
     public class RedisCacheService
     {
         private readonly IConnectionMultiplexer _redis;
         private readonly IDatabase _db;
         private readonly ILogger<RedisCacheService> _logger;
-	private readonly JsonSerializerOptions _jsonOptions;
+        private readonly JsonSerializerOptions _jsonOptions;
 
 
         public RedisCacheService(IConnectionMultiplexer redis, ILogger<RedisCacheService> logger)
@@ -22,7 +20,7 @@ namespace CentralBackend.Services
             _db = _redis.GetDatabase();
             _logger = logger;
 
-	    _jsonOptions = new JsonSerializerOptions
+            _jsonOptions = new JsonSerializerOptions
             {
                 ReferenceHandler = ReferenceHandler.Preserve,
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -30,9 +28,7 @@ namespace CentralBackend.Services
             };
         }
 
-        /// <summary>
         /// Obtiene un valor de la caché deserializado al tipo especificado
-        /// </summary>
         public async Task<T?> GetAsync<T>(string key)
         {
             try
@@ -54,9 +50,7 @@ namespace CentralBackend.Services
             }
         }
 
-        /// <summary>
         /// Almacena un valor serializado en la caché con tiempo de expiración opcional
-        /// </summary>
         public async Task SetAsync<T>(string key, T value, TimeSpan? expiry = null)
         {
             try
@@ -81,9 +75,7 @@ namespace CentralBackend.Services
             }
         }
 
-        /// <summary>
         /// Elimina una clave específica de la caché
-        /// </summary>
         public async Task RemoveAsync(string key)
         {
             try
@@ -97,10 +89,8 @@ namespace CentralBackend.Services
             }
         }
 
-        /// <summary>
         /// Elimina todas las claves que coincidan con un patrón
         /// Útil para invalidar grupos de cachés relacionados
-        /// </summary>
         public async Task RemoveByPatternAsync(string pattern)
         {
             try
@@ -127,9 +117,7 @@ namespace CentralBackend.Services
             }
         }
 
-        /// <summary>
         /// Verifica si una clave existe en la caché
-        /// </summary>
         public async Task<bool> ExistsAsync(string key)
         {
             try
@@ -143,9 +131,8 @@ namespace CentralBackend.Services
             }
         }
 
-        /// <summary>
+
         /// Obtiene información de conexión de Redis para monitoreo
-        /// </summary>
         public string GetConnectionStatus()
         {
             try

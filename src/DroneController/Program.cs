@@ -46,13 +46,13 @@ namespace DroneController
             var connection = await factory.CreateConnectionAsync();
 
             var host = Host.CreateDefaultBuilder()
-                            .ConfigureServices(services =>
-                            {
-                                services.AddSingleton(options);           // Configuración
-                                services.AddSingleton(connection);        // Conexión singleton
-                                services.AddHostedService(provider =>     // Registrar dron como BackgroundService
-                                    new Drone.DroneController(DroneID, DroneDriver, connection, options));
-                            }).Build();
+            .ConfigureServices(services =>
+            {
+                services.AddSingleton(options);           // Configuración
+                services.AddSingleton(connection);        // Conexión singleton
+                services.AddHostedService(provider =>     // Registrar dron como BackgroundService
+                    new Drone.DroneController(DroneID, DroneDriver, connection, options));
+            }).Build();
             await host.RunAsync();
         }
     }
