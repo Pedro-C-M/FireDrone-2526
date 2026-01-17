@@ -50,6 +50,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:5307
+      CentralBackend__BaseUrl: http://firedrone-central-backend:5306
       RABBITMQ_HOST: 156.35.163.122
       RABBITMQ_USER: admin
       RABBITMQ_PASSWORD: admin
