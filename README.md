@@ -4,8 +4,8 @@ Nuestro puerto de frontend es el 5305
 
 #### Para clonar y desplegar:
 
-URL de clonar: https://github.com/UO287758/FireDrone-2526-3.git
-Comando de compose: docker compose up --build
+##### URL de clonar: https://github.com/UO287758/FireDrone-2526-3.git
+##### Comando de compose: docker compose up --build
 
 | Nombre | Usuario GitHub | Correo universitario |
 |----------|-------------|------------------------|
