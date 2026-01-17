@@ -39,13 +39,13 @@ public class Program
 
         builder.Services.AddCors(options =>
         {
-            options.AddPolicy("AllowFrontend", policy =>
+            options.AddPolicy("AllowAll", policy =>
             {
-            policy.WithOrigins("http://156.35.163.122:5305")
-                .AllowAnyHeader()
-                .AllowAnyMethod()
-                .AllowCredentials(); // IMPORTANTE: Necesario para SignalR WebSocket
-             });
+                policy.SetIsOriginAllowed(origin => true) // Permite cualquier IP origen dinámicamente
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .AllowCredentials(); // OBLIGATORIO para SignalR
+            });
         });
         
         builder.Services.AddEndpointsApiExplorer();
@@ -54,7 +54,7 @@ public class Program
         // Redis Connection Configuration
         builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
         {
-            var configuration = builder.Configuration["Redis:ConnectionString"] ?? "156.35.163.122:6379";
+            var configuration = builder.Configuration["Redis:ConnectionString"] ?? "localhost:6379";
             var options = ConfigurationOptions.Parse(configuration);
             options.AbortOnConnectFail = false; // Don't crash if Redis is unavailable
             options.ConnectTimeout = 5000;
@@ -149,7 +149,7 @@ public class Program
         app.UseMiddleware<ErrorHandlingMiddleware>();
  
         // CORS
-        app.UseCors("AllowFrontend");
+        app.UseCors("AllowAll");
         app.UseAuthorization();
   
         // Mapear el Hub de SignalR
@@ -161,6 +161,7 @@ public class Program
         Console.WriteLine("[Program] SignalR Hub configured at /droneHub");
         Console.WriteLine("[Program] Real-time drone updates enabled");
         Console.WriteLine("[Program] Redis caching enabled for improved performance");
+        Console.WriteLine("[Program] CORS Policy 'AllowAll' active for External IPs");
 
         app.Run();
     }
