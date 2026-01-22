@@ -12,7 +12,7 @@ dotnet ef database update
  * Solo necesario una vez:
 dotnet tool install --global dotnet-ef
 
-Para poder copiarlo más rápido:
+Para poder copiarlo mÃ¡s rÃ¡pido:
 *
 dotnet restore
 dotnet build
@@ -38,7 +38,7 @@ public class FireDrone : DbContext
 
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
-    => options.UseSqlite("Data Source=data/FireDrone-2526-3.db");//Ruta relativa normal, si se va a ejecutar desde tests, poner vuestra ruta fija, siempre dejar esta de nuevo
+    => options.UseSqlite("Data Source=../../FireDrone-2526-3.db");//Ruta relativa normal, si se va a ejecutar desde tests, poner vuestra ruta fija, siempre dejar esta de nuevo
     //=> options.UseSqlite("Data Source=C:\\Users\\Pedro\\source\\repos\\FireDrone-2526-3\\FireDrone-2526-3.db");//Ruta fija Pedro
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
