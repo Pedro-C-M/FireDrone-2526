@@ -34,7 +34,8 @@ namespace Models
     {
         OnCourse,
         Completed,
-        Cancelled
+        Cancelled,
+        Manual
     }
 
     public enum FlightMode

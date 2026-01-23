@@ -430,6 +430,9 @@ namespace CentralBackend.Services
             if (existing == null)
                 throw new NotFoundException($"FlightPlan with ID {id} does not exist.");
 
+            // Update flight plan status to Manual
+            existing.State = FlightStatus.Manual;
+
             // Add a new mode change record to manual
             var modeChange = new ChangeMode
             {
@@ -440,21 +443,21 @@ namespace CentralBackend.Services
 
             await _context.SaveChangesAsync();
 
-            Console.WriteLine($"[FlightPlanService] FlightPlan {id} switched to Manual mode in database");
+            Console.WriteLine($"[FlightPlanService] FlightPlan {id} switched to Manual mode in database, status updated to Manual");
 
             // Call ControlBackend to notify the mode change
-            try
-            {
-                var controlBackendUrl = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://localhost:5307";
-                var httpClient = _httpClientFactory.CreateClient();
+   try
+       {
+     var controlBackendUrl = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://localhost:5307";
+  var httpClient = _httpClientFactory.CreateClient();
 
-                Console.WriteLine($"[FlightPlanService] Notifying ControlBackend of manual mode for drone {existing.DronId}");
-                Console.WriteLine($"[FlightPlanService] Manual mode activated for FlightPlan {id}, Drone {existing.DronId}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[FlightPlanService] Error notifying manual mode change: {ex.Message}");
-            }
+      Console.WriteLine($"[FlightPlanService] Notifying ControlBackend of manual mode for drone {existing.DronId}");
+        Console.WriteLine($"[FlightPlanService] Manual mode activated for FlightPlan {id}, Drone {existing.DronId}");
+    }
+      catch (Exception ex)
+   {
+      Console.WriteLine($"[FlightPlanService] Error notifying manual mode change: {ex.Message}");
+     }
 
             return existing;
         }
