@@ -482,15 +482,16 @@ function _displayFlightPlans(data) {
 
 function getStatusClass(state) {
     switch (state) {
-        case 0: return 'bg-primary text-white';
-        case 1: return 'bg-success text-white';
-        case 2: return 'bg-danger text-white';
+        case 0: return 'bg-primary text-white';   // OnCourse
+        case 1: return 'bg-success text-white';   // Completed
+        case 2: return 'bg-danger text-white';    // Cancelled
+        case 3: return 'bg-warning text-dark';    // Manual
         default: return 'bg-secondary text-white';
     }
 }
 
 function getStatusText(state) {
-    const s = ['On Course', 'Completed', 'Cancelled'];
+    const s = ['On Course', 'Completed', 'Cancelled', 'Manual'];
     return s[state] || 'Unknown';
 }
 // === EXPOSICIÓN GLOBAL ===

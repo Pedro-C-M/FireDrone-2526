@@ -212,26 +212,69 @@ function getStateText(state) {
 }
 
 /**
+ * Get battery display string with icon
+ * Battery values range from 0-1000, convert to percentage
+ */
+function getBatteryDisplay(battery) {
+    if (battery === undefined || battery === null) return '❓ Unknown';
+    
+    // Convert from 0-1000 scale to percentage (0-100)
+    const batteryPercent = Math.round((battery / 1000) * 100);
+    let icon = '🔋';
+ 
+ if (batteryPercent <= 10) {
+        icon = '🪫'; // Low battery icon
+    }
+    
+    return `${icon} ${batteryPercent}%`;
+}
+
+/**
+ * Get battery CSS class based on level
+ * Battery values range from 0-1000
+ */
+function getBatteryClass(battery) {
+    if (battery === undefined || battery === null) return 'battery-unknown';
+  
+    // Convert from 0-1000 scale to percentage (0-100)
+    const batteryPercent = (battery / 1000) * 100;
+    
+    if (batteryPercent <= 10) {
+  return 'battery-critical';
+    } else if (batteryPercent <= 25) {
+ return 'battery-low';
+ } else if (batteryPercent <= 50) {
+ return 'battery-medium';
+    } else {
+   return 'battery-high';
+    }
+}
+
+/**
  * Create popup content for drone
  */
 function createPopupContent(drone) {
     const statusClass = getStatusClass(drone.state);
     const stateText = getStateText(drone.state);
+ const batteryDisplay = getBatteryDisplay(drone.battery);
 
     return `
     <div style="min-width: 200px;">
-        <h6 style="color: #d32f2f; font-size: 16px; margin-bottom: 10px; border-bottom: 2px solid #d32f2f; padding-bottom: 5px;">Drone #${drone.id}</h6>
+     <h6 style="color: #d32f2f; font-size: 16px; margin-bottom: 10px; border-bottom: 2px solid #d32f2f; padding-bottom: 5px;">Drone #${drone.id}</h6>
         <div style="font-size: 13px;">
             <div style="margin: 5px 0;">
                 <strong>Status:</strong> 
                 <span class="status-badge ${statusClass}">${stateText}</span>
             </div>
-            <div style="margin: 5px 0;">
-                <strong>Position:</strong> ${drone.lat?.toFixed(5)}, ${drone.lon?.toFixed(5)}
-            </div>
-            <div style="margin: 5px 0;">
-                <strong>Flight Plan:</strong> ${drone.flightPlanId ? `#${drone.flightPlanId}` : 'None'}
-            </div>
+        <div style="margin: 5px 0;">
+            <strong>Position:</strong> ${drone.lat?.toFixed(5)}, ${drone.lon?.toFixed(5)}
+        </div>
+        <div style="margin: 5px 0;">
+            <strong>Battery:</strong> ${batteryDisplay}
+        </div>
+        <div style="margin: 5px 0;">
+            <strong>Flight Plan:</strong> ${drone.flightPlanId ? `#${drone.flightPlanId}` : 'None'}
+        </div>
         </div>
     </div>
     `;
@@ -243,6 +286,8 @@ function createPopupContent(drone) {
 function addDroneToList(drone, list) {
     const statusClass = getStatusClass(drone.state);
     const stateText = getStateText(drone.state);
+    const batteryDisplay = getBatteryDisplay(drone.battery);
+    const batteryClass = getBatteryClass(drone.battery);
 
     const droneItem = document.createElement('div');
     droneItem.className = 'drone-item';
@@ -250,18 +295,19 @@ function addDroneToList(drone, list) {
         map.setView([drone.lat, drone.lon], 16);
         // Find and open popup for this drone
         droneLayer.eachLayer(layer => {
-            if (layer instanceof L.Marker) {
-                const latLng = layer.getLatLng();
-                if (latLng.lat === drone.lat && latLng.lng === drone.lon) {
-                    layer.openPopup();
-                }
+     if (layer instanceof L.Marker) {
+          const latLng = layer.getLatLng();
+          if (latLng.lat === drone.lat && latLng.lng === drone.lon) {
+        layer.openPopup();
+      }
             }
         });
     };
 
     droneItem.innerHTML = `
-        <h5>Drone #${drone.id}</h5>
+    <h5>Drone #${drone.id}</h5>
         <p><strong>Lat:</strong> ${drone.lat?.toFixed(6)}, <strong>Lon:</strong> ${drone.lon?.toFixed(6)}</p>
+        <p><strong>Battery:</strong> <span class="${batteryClass}">${batteryDisplay}</span></p>
         <span class="status-badge ${statusClass}">${stateText}</span>`;
 
     list.appendChild(droneItem);

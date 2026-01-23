@@ -157,6 +157,44 @@ body, html {
 }
 
 /* =========================================
+   5.5 BATTERY INDICATORS
+   ========================================= */
+.battery-critical {
+  color: #dc3545;
+    font-weight: 700;
+    animation: blink 1s infinite;
+}
+
+.battery-low {
+    color: #fd7e14;
+    font-weight: 600;
+}
+
+.battery-medium {
+    color: #ffc107;
+    font-weight: 500;
+}
+
+.battery-high {
+    color: #28a745;
+    font-weight: 500;
+}
+
+.battery-unknown {
+    color: #6c757d;
+    font-style: italic;
+}
+
+@keyframes blink {
+    0%, 50% {
+        opacity: 1;
+    }
+    51%, 100% {
+        opacity: 0.5;
+    }
+}
+
+/* =========================================
    6. LEAFLET & MAP CUSTOMIZATION
    ========================================= */
 /* Asegurar que los marcadores se vean */
