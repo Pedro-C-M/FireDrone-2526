@@ -213,17 +213,17 @@ function getStateText(state) {
 
 /**
  * Get battery display string with icon
+ * Battery values range from 0-1000, convert to percentage
  */
 function getBatteryDisplay(battery) {
     if (battery === undefined || battery === null) return '❓ Unknown';
     
-  const batteryPercent = Math.round(battery);
+    // Convert from 0-1000 scale to percentage (0-100)
+    const batteryPercent = Math.round((battery / 1000) * 100);
     let icon = '🔋';
  
-    if (batteryPercent <= 10) {
+ if (batteryPercent <= 10) {
         icon = '🪫'; // Low battery icon
-    } else if (batteryPercent <= 25) {
-        icon = '🔋';
     }
     
     return `${icon} ${batteryPercent}%`;
@@ -231,18 +231,22 @@ function getBatteryDisplay(battery) {
 
 /**
  * Get battery CSS class based on level
+ * Battery values range from 0-1000
  */
 function getBatteryClass(battery) {
     if (battery === undefined || battery === null) return 'battery-unknown';
+  
+    // Convert from 0-1000 scale to percentage (0-100)
+    const batteryPercent = (battery / 1000) * 100;
     
-    if (battery <= 10) {
-        return 'battery-critical';
-    } else if (battery <= 25) {
-        return 'battery-low';
-    } else if (battery <= 50) {
-        return 'battery-medium';
+    if (batteryPercent <= 10) {
+  return 'battery-critical';
+    } else if (batteryPercent <= 25) {
+ return 'battery-low';
+ } else if (batteryPercent <= 50) {
+ return 'battery-medium';
     } else {
-        return 'battery-high';
+   return 'battery-high';
     }
 }
 
