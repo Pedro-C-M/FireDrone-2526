@@ -220,7 +220,7 @@ function getBatteryDisplay(battery) {
   const batteryPercent = Math.round(battery);
     let icon = '🔋';
  
- if (batteryPercent <= 10) {
+    if (batteryPercent <= 10) {
         icon = '🪫'; // Low battery icon
     } else if (batteryPercent <= 25) {
         icon = '🔋';
@@ -241,7 +241,7 @@ function getBatteryClass(battery) {
         return 'battery-low';
     } else if (battery <= 50) {
         return 'battery-medium';
- } else {
+    } else {
         return 'battery-high';
     }
 }
@@ -256,21 +256,21 @@ function createPopupContent(drone) {
 
     return `
     <div style="min-width: 200px;">
-  <h6 style="color: #d32f2f; font-size: 16px; margin-bottom: 10px; border-bottom: 2px solid #d32f2f; padding-bottom: 5px;">Drone #${drone.id}</h6>
-   <div style="font-size: 13px;">
+     <h6 style="color: #d32f2f; font-size: 16px; margin-bottom: 10px; border-bottom: 2px solid #d32f2f; padding-bottom: 5px;">Drone #${drone.id}</h6>
+        <div style="font-size: 13px;">
             <div style="margin: 5px 0;">
                 <strong>Status:</strong> 
-   <span class="status-badge ${statusClass}">${stateText}</span>
+                <span class="status-badge ${statusClass}">${stateText}</span>
             </div>
         <div style="margin: 5px 0;">
-  <strong>Position:</strong> ${drone.lat?.toFixed(5)}, ${drone.lon?.toFixed(5)}
-            </div>
-     <div style="margin: 5px 0;">
-                <strong>Battery:</strong> ${batteryDisplay}
-            </div>
-     <div style="margin: 5px 0;">
-        <strong>Flight Plan:</strong> ${drone.flightPlanId ? `#${drone.flightPlanId}` : 'None'}
-            </div>
+            <strong>Position:</strong> ${drone.lat?.toFixed(5)}, ${drone.lon?.toFixed(5)}
+        </div>
+        <div style="margin: 5px 0;">
+            <strong>Battery:</strong> ${batteryDisplay}
+        </div>
+        <div style="margin: 5px 0;">
+            <strong>Flight Plan:</strong> ${drone.flightPlanId ? `#${drone.flightPlanId}` : 'None'}
+        </div>
         </div>
     </div>
     `;
@@ -303,7 +303,7 @@ function addDroneToList(drone, list) {
     droneItem.innerHTML = `
     <h5>Drone #${drone.id}</h5>
         <p><strong>Lat:</strong> ${drone.lat?.toFixed(6)}, <strong>Lon:</strong> ${drone.lon?.toFixed(6)}</p>
-    <p><strong>Battery:</strong> <span class="${batteryClass}">${batteryDisplay}</span></p>
+        <p><strong>Battery:</strong> <span class="${batteryClass}">${batteryDisplay}</span></p>
         <span class="status-badge ${statusClass}">${stateText}</span>`;
 
     list.appendChild(droneItem);
