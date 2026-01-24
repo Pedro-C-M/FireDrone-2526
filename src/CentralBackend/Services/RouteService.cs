@@ -237,7 +237,7 @@ namespace CentralBackend.Services
                 sb.AppendLine(line);
             }
 
-            return Encoding.UTF8.GetBytes(sb.ToString());//Esto deberia descargarse solo
+            return Encoding.UTF8.GetBytes(sb.ToString());
         }
 
         /// Invalida todas las cachés relacionadas con rutas
