@@ -1,4 +1,5 @@
 ﻿// js/routes.js
+import { ENDPOINTS } from './config.js';
 import { getAllRoutes, importRoutes, deleteRoute } from './services/RouteService.js';
 
 let map;
@@ -55,15 +56,25 @@ function renderTable(routes) {
         const typeName = isPeriodic ? 'Periodic' : 'Simple';
         const name = route.id ? `Route #${route.id}` : 'Unnamed Route'; // O route.name si lo tienes
 
-        // Añadimos el botón de borrar (btn-delete)
+        // Añadimos el botón de borrar y exportar 
         tr.innerHTML = `
             <td class="fw-bold">${name}</td>
             <td><span class="badge ${badgeClass}">${typeName}</span></td>
             <td class="text-end">
-                <button class="btn btn-sm btn-light border me-1 btn-view" title="Ver">👁️</button>
+                <button class="btn btn-sm btn-outline-success border me-1 btn-export" title="Download CSV">⬇️</button>
+                <button class="btn btn-sm btn-light border me-1 btn-view" title="Ver">👁️</button> 
                 <button class="btn btn-sm btn-outline-danger btn-delete" title="Borrar">🗑️</button>
             </td>
         `;
+
+        //Lógica del botón EXPORTAR
+        const exportBtn = tr.querySelector('.btn-export');
+        exportBtn.onclick = (e) => {
+            e.stopPropagation();//Que no se pinte la ruta al hacer clic en el botón
+            const exportUrl = `${ENDPOINTS.ROUTES}/export/${route.id}`;
+            // Forzamos al navegador a ir a esa URL, lo que iniciará la descarga automáticamente
+            window.location.href = exportUrl;
+        };
 
         // Lógica del botón Borrar
         const deleteBtn = tr.querySelector('.btn-delete');
