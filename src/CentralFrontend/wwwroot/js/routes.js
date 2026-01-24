@@ -62,7 +62,6 @@ function renderTable(routes) {
             <td><span class="badge ${badgeClass}">${typeName}</span></td>
             <td class="text-end">
                 <button class="btn btn-sm btn-outline-success border me-1 btn-export" title="Download CSV">⬇️</button>
-                <button class="btn btn-sm btn-light border me-1 btn-view" title="Ver">👁️</button> 
                 <button class="btn btn-sm btn-outline-danger btn-delete" title="Borrar">🗑️</button>
             </td>
         `;
