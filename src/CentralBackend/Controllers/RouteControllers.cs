@@ -60,6 +60,9 @@ namespace CentralBackend.Controllers
                 return StatusCode(500, new { error = ex.Message });
             }
         }
+
+
+
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {

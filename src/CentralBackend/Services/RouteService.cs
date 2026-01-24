@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace CentralBackend.Services
@@ -199,6 +200,44 @@ namespace CentralBackend.Services
             }
 
             return rutasParaGuardar.Count;
+        }
+
+        public async Task<byte[]> ExportRouteToCsvAsync(int id)
+        {
+            var route = await _context.Routes
+                .Include(r => r.Coords)
+                .FirstOrDefaultAsync(r => r.Id == id);
+
+            if (route == null)
+            {
+                throw new Exception($"La ruta con ID {id} no existe.");
+            }
+
+            var sb = new StringBuilder(); //Esto escribe el CSV
+
+            sb.AppendLine("Nombre;Tipo;Orden;Lat;Lon;Altura;Velocidad");
+
+            string routeName = $"Ruta_{route.Id}";
+
+            int order = 1;
+
+            // 4. Iterar sobre los puntos de ESA ruta
+            foreach (var point in route.Coords)
+            {
+                var line = string.Format(CultureInfo.InvariantCulture, "{0};{1};{2};{3:F6};{4:F6};{5:F2};{6:F2}",
+                    routeName,           
+                    (int)route.Type,     
+                    order++,             
+                    point.Lat,           
+                    point.Long,          
+                    point.Height,        
+                    point.Velocity       
+                );
+
+                sb.AppendLine(line);
+            }
+
+            return Encoding.UTF8.GetBytes(sb.ToString());//Esto deberia descargarse solo
         }
 
         /// Invalida todas las cachés relacionadas con rutas
