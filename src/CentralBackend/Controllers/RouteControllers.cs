@@ -60,6 +60,32 @@ namespace CentralBackend.Controllers
                 return StatusCode(500, new { error = ex.Message });
             }
         }
+
+        [HttpGet("export/{id}")]
+        public async Task<IActionResult> ExportRoute(int id)
+        {
+            try
+            {
+                var csvData = await _service.ExportRouteToCsvAsync(id);
+
+                //Nombre de archivo con ruta y timestamp
+                string fileName = $"ruta_{id}_{DateTime.Now:yyyyMMdd_HHmm}.csv";
+
+                //Esto es lo que se descarga
+                return File(csvData, "text/csv", fileName);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[RouteController] Error exporting route {id}: {ex.Message}");
+
+                if (ex.Message.Contains("no existe"))
+                {
+                    return NotFound(new { error = ex.Message });
+                }
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
