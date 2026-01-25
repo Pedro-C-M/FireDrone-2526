@@ -474,7 +474,8 @@ namespace CentralBackend.Services
                 var payload = new
                 {
                     latitude = dto.Latitude,
-                    longitude = dto.Longitude
+                    longitude = dto.Longitude,
+                    speed = dto.Speed
                 };
 
                 Console.WriteLine($"[FlightPlanService] Sending manual destination to ControlBackend for drone {existing.DronId}");
