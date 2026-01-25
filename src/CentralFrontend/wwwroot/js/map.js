@@ -152,8 +152,11 @@ function updateTrail(drone) {
             ];
             L.polyline(pts, {
                 color: "#3388ff",
-                weight: 2,
-                opacity: 0.7
+                weight: 3,
+                opacity: 0.8,
+                dashArray: '10, 10',
+                lineJoin: 'round',   
+                lineCap: 'round'     
             }).addTo(lineLayer);
         }
     }
@@ -296,6 +299,12 @@ function createPopupContent(drone) {
  * Add drone to sidebar list (following example pattern)
  */
 function addDroneToList(drone, list) {
+    // Si ya existe en la lista, no lo duplicamos, lo actualizamos
+    if (document.getElementById(`drone-item-${drone.id}`)) {
+        updateDroneInSidePanel(drone);
+        return;
+    }
+
     const statusClass = getStatusClass(drone.state);
     const stateText = getStateText(drone.state);
     const batteryDisplay = getBatteryDisplay(drone.battery);
@@ -303,17 +312,14 @@ function addDroneToList(drone, list) {
 
     const droneItem = document.createElement('div');
     droneItem.className = 'drone-item';
+    droneItem.id = `drone-item-${drone.id}`;
+
     droneItem.onclick = () => {
-        map.setView([drone.lat, drone.lon], 16);
-        // Find and open popup for this drone
-        droneLayer.eachLayer(layer => {
-     if (layer instanceof L.Marker) {
-          const latLng = layer.getLatLng();
-          if (latLng.lat === drone.lat && latLng.lng === drone.lon) {
-        layer.openPopup();
-      }
-            }
-        });
+        centerOnDrone(drone.id);
+        // Abrir popup si existe el marcador
+        if (droneMarkers[drone.id]) {
+            droneMarkers[drone.id].openPopup();
+        }
     };
 
     droneItem.innerHTML = `
@@ -323,6 +329,33 @@ function addDroneToList(drone, list) {
         <span class="status-badge ${statusClass}">${stateText}</span>`;
 
     list.appendChild(droneItem);
+}
+
+function updateDroneInSidePanel(drone) {
+    const item = document.getElementById(`drone-item-${drone.id}`);
+
+    // Si el elemento no existe en la lista (ej: carga inicial diferida), lo creamos
+    if (!item) {
+        const list = document.getElementById('drone-list');
+        if (list) addDroneToList(drone, list);
+        return;
+    }
+
+    // Calculamos valores nuevos
+    const statusClass = getStatusClass(drone.state);
+    const stateText = getStateText(drone.state);
+    const batteryDisplay = getBatteryDisplay(drone.battery);
+    const batteryClass = getBatteryClass(drone.battery);
+
+    // Actualizamos el HTML interno con los nuevos datos
+    item.innerHTML = `
+        <h5>Drone #${drone.id}</h5>
+        <div class="drone-info-content">
+            <p><strong>Lat:</strong> <span class="val-lat">${drone.lat?.toFixed(6)}</span>, 
+               <strong>Lon:</strong> <span class="val-lon">${drone.lon?.toFixed(6)}</span></p>
+            <p><strong>Battery:</strong> <span class="val-bat ${batteryClass}">${batteryDisplay}</span></p>
+            <span class="val-status status-badge ${statusClass}">${stateText}</span>
+        </div>`;
 }
 
 /**
@@ -446,6 +479,7 @@ async function initializeSignalR() {
 function updateSingleDroneOnMap(droneData) {
     console.log(`[Map] Updating drone ${droneData.id} in real-time`);
     updateOrCreateMarker(droneData);
+    updateDroneInSidePanel(droneData);
 }
 
 /**
