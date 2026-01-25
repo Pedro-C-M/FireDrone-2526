@@ -11,6 +11,7 @@ let droneLayer;
 let lineLayer;
 let updateInterval;
 let lastPositions = {};
+let droneMarkers = {};
 
 // Drone state enum values (matching backend C# enum)
 const DroneState = {
@@ -97,48 +98,19 @@ async function loadDrones() {
         // Update drone count
         updateDroneCount(drones.length);
 
-        // Clear current markers (like the example)
-        droneLayer.clearLayers();
 
         // Get drone list container
         const list = document.getElementById('drone-list');
         list.replaceChildren();
 
-        // Draw drones on the map
+        // Obtenemos la lista del panel lateral
+        const list = document.getElementById('drone-list');
+        // Limpiamos la lista lateral (esto sí está bien recrearlo o podrías optimizarlo también)
+        list.replaceChildren();
+
         drones.forEach(drone => {
-            if (drone.lat && drone.lon) {
-                // Draw icon over drone position
-                const marker = L.marker([drone.lat, drone.lon], {
-                    icon: createDroneIcon(drone.state),
-                    draggable: false
-                })
-                    .addTo(droneLayer)
-                    .bindPopup(createPopupContent(drone));
-
-                // Add click event to center on drone
-                marker.on('click', () => {
-                    map.setView([drone.lat, drone.lon], 15);
-                });
-
-                // Draw line from last known position (like the example)
-                if (lastPositions[drone.id] !== undefined) {
-                    const pts = [
-                        [lastPositions[drone.id].lat, lastPositions[drone.id].lon],
-                        [drone.lat, drone.lon]
-                    ];
-                    const polyline = L.polyline(pts, {
-                        color: "#3388ff",
-                        weight: 2,
-                        opacity: 0.7
-                    }).addTo(lineLayer);
-                }
-
-                // Store current position
-                lastPositions[drone.id] = drone;
-
-                // Add to sidebar list
-                addDroneToList(drone, list);
-            }
+            updateOrCreateMarker(drone); // Usamos una función auxiliar nueva
+            addDroneToList(drone, list); // Recreamos la lista lateral
         });
 
         console.log('Drones updated on map');
@@ -147,6 +119,51 @@ async function loadDrones() {
         document.getElementById('drone-count').textContent = 'Error loading';
     }
 }
+
+function updateOrCreateMarker(drone) {
+    if (!drone.lat || !drone.lon) return;
+    if (droneMarkers[drone.id]) {//SI  EXISTE ACTUALIZAMOS
+        const marker = droneMarkers[drone.id];
+
+        marker.setLatLng([drone.lat, drone.lon]);
+        marker.setIcon(createDroneIcon(drone.state));
+        marker.setPopupContent(createPopupContent(drone));
+
+        updateTrail(drone);
+
+    } else {//SI NO EXISTE CREAMOS
+        const marker = L.marker([drone.lat, drone.lon], {
+            icon: createDroneIcon(drone.state),
+            draggable: false
+        }).addTo(droneLayer);
+        marker.bindPopup(createPopupContent(drone));
+        marker.on('click', () => {
+            map.setView([drone.lat, drone.lon], 15);
+        });
+        droneMarkers[drone.id] = marker;
+        updateTrail(drone);
+    }
+    lastPositions[drone.id] = drone;
+}
+
+// Función auxiliar para dibujar la línea
+function updateTrail(drone) {
+    if (lastPositions[drone.id] !== undefined) {
+        // Solo dibujamos línea si se ha movido
+        if (lastPositions[drone.id].lat !== drone.lat || lastPositions[drone.id].lon !== drone.lon) {
+            const pts = [
+                [lastPositions[drone.id].lat, lastPositions[drone.id].lon],
+                [drone.lat, drone.lon]
+            ];
+            L.polyline(pts, {
+                color: "#3388ff",
+                weight: 2,
+                opacity: 0.7
+            }).addTo(lineLayer);
+        }
+    }
+}
+
 
 /**
  * Create drone icon with color based on state
@@ -433,17 +450,7 @@ async function initializeSignalR() {
  */
 function updateSingleDroneOnMap(droneData) {
     console.log(`[Map] Updating drone ${droneData.id} in real-time`);
-
-    // Update lastPositions
-    if (lastPositions[droneData.id]) {
-        // Store previous position for drawing line
-        const prevPosition = { ...lastPositions[droneData.id] };
-    }
-
-    lastPositions[droneData.id] = droneData;
-
-    // Redraw all drones (simplest approach)
-    loadDrones();
+    updateOrCreateMarker(droneData);
 }
 
 /**
