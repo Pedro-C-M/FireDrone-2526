@@ -103,11 +103,6 @@ async function loadDrones() {
         const list = document.getElementById('drone-list');
         list.replaceChildren();
 
-        // Obtenemos la lista del panel lateral
-        const list = document.getElementById('drone-list');
-        // Limpiamos la lista lateral (esto sí está bien recrearlo o podrías optimizarlo también)
-        list.replaceChildren();
-
         drones.forEach(drone => {
             updateOrCreateMarker(drone); // Usamos una función auxiliar nueva
             addDroneToList(drone, list); // Recreamos la lista lateral
