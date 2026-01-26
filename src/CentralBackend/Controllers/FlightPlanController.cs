@@ -73,9 +73,10 @@ namespace CentralBackend.Controllers
         [HttpPost("{id}/goto")]
         public async Task<IActionResult> SendManualDestination(int id, [FromBody] GoToDto dto)
         {
+	    Console.WriteLine($"DEBUG RAW DTO: Latitude={dto.Latitude}, Longitude={dto.Longitude}, Speed={dto.Speed}");
             await _service.SendManualDestinationAsync(id, dto);
             return Ok(new { message = "Manual destination sent successfully" });
-        }
+	}
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)

@@ -120,6 +120,9 @@ namespace DroneController
 
                 deltaSeconds = deltaSeconds / (_updateInterval / 1000.0);
 
+		int minSteps = 5;
+		deltaSeconds = Math.Max(deltaSeconds, minSteps);
+
                 // Rate of change for each update 
                 _currentRateLatitude = deltaLat / deltaSeconds / KM_IN_DEGREE;
                 _currentRateLongitude = deltaLon / deltaSeconds / KM_IN_DEGREE;

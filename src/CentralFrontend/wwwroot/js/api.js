@@ -295,7 +295,7 @@ function _displayFlightPlans(data) {
                 <div class="d-flex gap-2 mt-2">
                     <input type="number" step="any" class="form-control manual-y" placeholder="Latitude">
                     <input type="number" step="any" class="form-control manual-x" placeholder="Longitude">
-                    <input type="number" step="any" min="1" class="form-control manual-speed" placeholder="Speed (km/h) – default 10"">
+                    <input type="number" step="any" min="1" class="form-control manual-speed" placeholder="Speed (km/h)">
                     <button class="btn btn-primary btn-sm send-manual">Send</button>
                     <button class="btn btn-secondary btn-sm cancel-manual">Cancel</button>
                 </div>
@@ -461,7 +461,7 @@ function _displayFlightPlans(data) {
                 return; // Detiene todo
             }
             if (isNaN(speed) || speed <= 0) {
-                alert('Speed must be a positive number (m/s)');
+                alert('Speed must be a positive number');
                 return;
             }
 

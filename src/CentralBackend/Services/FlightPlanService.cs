@@ -465,7 +465,7 @@ namespace CentralBackend.Services
             if (existing == null)
                 throw new NotFoundException($"FlightPlan with ID {flightPlanId} does not exist.");
 
-            // Llamada al ControlBackend
+	    // Llamada al ControlBackend
             try
             {
                 var controlBackendUrl = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://localhost:5307";
@@ -478,7 +478,7 @@ namespace CentralBackend.Services
                     speed = dto.Speed
                 };
 
-                Console.WriteLine($"[FlightPlanService] Sending manual destination to ControlBackend for drone {existing.DronId}");
+		Console.WriteLine($"[FlightPlanService] Sending manual destination to ControlBackend for drone {existing.DronId}");
 
                 var response = await httpClient.PostAsJsonAsync(
                $"{controlBackendUrl}/api/drone/{existing.DronId}/goto",
