@@ -4,7 +4,7 @@
     {
         void StartFlightPlan(Waypoint[] plan, bool isPeriodic = false);
         void StopFlightPlan();
-        void GoTo(double latitude, double longitude);
+        void GoTo(double latitude, double longitude, double speed);
         public DroneStatus GetStatus();
         void SetUpdateCallback(IDroneCallback callback);
     }

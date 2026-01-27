@@ -120,6 +120,7 @@ namespace DroneController.Drone
         public void StartSimulation(Waypoint[] waypoints, bool isPeriodic = false)
         {
             _flightSimulator = new FlightSimulator(waypoints, UpdateIntervalMs, isPeriodic);
+	    Console.WriteLine($"[DroneSimulator] Waypoint speed received: {waypoints[0].Speed}");
             _status.Battery = InitialBattery;
             _status.State = DroneState.Flying;
         }
@@ -176,9 +177,15 @@ namespace DroneController.Drone
         }
 
         // Ir a una coordenada específica (modo manual)
-        public void GoTo(double latitude, double longitude)
+        public void GoTo(double latitude, double longitude, double speed)
         {
-            Console.WriteLine($"[DroneSimulator] GoTo called: Lat={latitude}, Lon={longitude}");
+            Console.WriteLine($"[DroneSimulator] GoTo called: Lat={latitude}, Lon={longitude}, Speed={speed}");
+
+		if (speed <= 0)
+    		{
+        		Console.WriteLine("[DroneSimulator] ⚠ Speed invalid, using default 20");
+        		speed = 20; 
+    		}
 
             // Stop any existing flight before starting manual movement
             if (_task != null && !_task.IsCompleted)
@@ -210,15 +217,15 @@ namespace DroneController.Drone
                     Latitude = currentStatus.Latitude,
                     Longitude = currentStatus.Longitude,
                     Altitude = currentStatus.Altitude > 0 ? currentStatus.Altitude : 50, // Use current altitude or default
-					Speed = 20     // Default speed
-				},
+		    Speed = speed
+                },
                 new Waypoint
                 {
                     Latitude = latitude,
                     Longitude = longitude,
                     Altitude = 50, // Default altitude
-					Speed = 20     // Default speed
-				}
+		    Speed= speed
+                }
             };
 
             // Start a new flight plan from current position to target coordinate

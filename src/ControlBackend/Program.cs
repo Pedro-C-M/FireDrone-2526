@@ -21,6 +21,11 @@ public class Program
         builder.Services.AddHostedService<DroneStatusConsumer>();
         builder.Services.AddHttpClient<HttpForwarder>(); // HttpClient Registration
 
+	builder.Services.AddControllers().AddJsonOptions(options =>
+	{
+    		options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+	});
+
 
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddEndpointsApiExplorer();

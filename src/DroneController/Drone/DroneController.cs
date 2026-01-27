@@ -215,8 +215,14 @@ namespace DroneController.Drone
                     double lat = commandObj.lat;
                     double lng = commandObj.lng;
 
-                    Console.WriteLine($"[DroneController] Calling GoTo with Lat={lat}, Lng={lng}");
-                    _drone.GoTo(lat, lng);
+                    double speed = 20; //Velocidad por defecto
+                    if (commandObj.speed != null)
+                    {
+                        speed = (double)commandObj.speed; //Velocidad que pasa el usuario
+                    }
+
+                    Console.WriteLine($"[DroneController] Calling GoTo with Lat={lat}, Lng={lng}, Speed={speed}");
+                    _drone.GoTo(lat, lng, speed);
                 }
                 catch (Exception ex)
                 {

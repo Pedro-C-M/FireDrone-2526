@@ -65,7 +65,8 @@ namespace ControlBackend.Controllers
                 command = "goto",
                 droneId = id,
                 lat = dto.Latitude,
-                lng = dto.Longitude
+                lng = dto.Longitude,
+                speed = dto.Speed
             };
 
             var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(msg));

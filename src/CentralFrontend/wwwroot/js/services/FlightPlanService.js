@@ -107,7 +107,7 @@ export async function assignDrone(planId, droneId, restartFromBeginning = false)
 /**
  * Envía comando goto para modo manual
  */
-export async function sendGotoCommand(planId, latitude, longitude) {
+export async function sendGotoCommand(planId, latitude, longitude, speed) {
     const response = await fetch(`${ENDPOINTS.FLIGHT_PLANS}/${planId}/goto`, {
         method: 'POST',
         headers: {
@@ -116,9 +116,11 @@ export async function sendGotoCommand(planId, latitude, longitude) {
         },
         body: JSON.stringify({
             Latitude: parseFloat(latitude),
-            Longitude: parseFloat(longitude)
+            Longitude: parseFloat(longitude),
+	    Speed: parseFloat(speed)
         })
     });
+
     if (!response.ok) throw new Error(`Error sending goto command: ${response.status}`);
     return await response.json();
 }

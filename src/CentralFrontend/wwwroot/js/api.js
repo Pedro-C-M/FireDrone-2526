@@ -295,6 +295,7 @@ function _displayFlightPlans(data) {
                 <div class="d-flex gap-2 mt-2">
                     <input type="number" step="any" class="form-control manual-y" placeholder="Latitude">
                     <input type="number" step="any" class="form-control manual-x" placeholder="Longitude">
+                    <input type="number" step="any" min="1" class="form-control manual-speed" placeholder="Speed (km/h)">
                     <button class="btn btn-primary btn-sm send-manual">Send</button>
                     <button class="btn btn-secondary btn-sm cancel-manual">Cancel</button>
                 </div>
@@ -438,14 +439,17 @@ function _displayFlightPlans(data) {
             // 1. Obtenemos el VALOR EN TEXTO primero
             let lonStr = manualRow.querySelector('.manual-x').value;
             let latStr = manualRow.querySelector('.manual-y').value;
+            let speedStr = manualRow.querySelector('.manual-speed').value;
 
             // 2. TRUCO DE SEGURIDAD: Reemplazar coma por punto
             lonStr = lonStr.replace(',', '.');
             latStr = latStr.replace(',', '.');
+            speedStr = speedStr.replace(',', '.');
 
             // 3. Convertimos a número
             const longitude = parseFloat(lonStr);
             const latitude = parseFloat(latStr);
+            const speed = isNaN(speedStr) ? 10 : parseFloat(speedStr); //REVISAR
 
             // 4. VALIDACIÓN ESTRICTA
             if (isNaN(longitude) || isNaN(latitude) ||
@@ -456,12 +460,16 @@ function _displayFlightPlans(data) {
                     `Valid range:\nLat: -90 a 90\nLon: -180 a 180`);
                 return; // Detiene todo
             }
+            if (isNaN(speed) || speed <= 0) {
+                alert('Speed must be a positive number');
+                return;
+            }
 
             try {
-                console.log(`Switching to manual mode for plan ${flightplan.id} with coords: ${latitude}, ${longitude}`);
+                console.log(`Switching to manual mode for plan ${flightplan.id} with coords: ${latitude}, ${longitude} and speed: ${speed}`);
 
                 await FlightPlanService.setManualMode(flightplan.id);
-                await FlightPlanService.sendGotoCommand(flightplan.id, latitude, longitude);
+                await FlightPlanService.sendGotoCommand(flightplan.id, latitude, longitude, speed);
 
                 alert(`FlightPlan #${flightplan.id} is now in MANUAL mode. Drone heading to coordinates.`);
                 manualRow.style.display = 'none';
