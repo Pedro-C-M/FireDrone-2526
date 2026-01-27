@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<SonarQubeAnalysisProperties xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://www.sonarsource.com/msbuild/integration/2015/1">
+	<Property Name="sonar.projectVersion">1.0</Property>
+	<!-- Las exclusiones son relativas a cada proyecto, para excluir proyectos completos usar la macrodef sonar.exclude de ant.net.xml -->
+	<Property Name="sonar.exclusions">reports/**,**/Migrations/*,**/Properties/*,**/wwwroot/lib/**/*,**/wwwroot/Bootstrap/**/*,**/wwwroot/js/jquery*.js,**/MasterSEU*/**/*,**/MAVLink*/**/*,**/mavlink*/**/*,**/Mavlink*/**/*</Property>
+
+	<Property Name="sonar.cs.vstest.reportsPaths">reports/*.trx</Property>
+  	<Property Name="sonar.coverageReportPaths">reports/coverage-ut/SonarQube.xml</Property>
+ 	<Property Name="sonar.cpd.exclusions">***/wwwroot/appConfig.js</Property>
+
+	<!-- _Usar esta si se tambien genera cobertura para js
+	<Property Name="sonar.coverageReportPaths">reports/coverage-ut/SonarQube.xml,reports/coverage-js/SonarQube.xml</Property
+	-->
+
+	<!-- Para incluir en sonar los reports de OWASP dependency check
+   	<Property Name="sonar.dependencyCheck.jsonReportPath">reports/dependency-check-report.json</Property>
+  	<Property Name="sonar.dependencyCheck.htmlReportPath">reports/dependency-check-report.html</Property>
+  	<Property Name="sonar.dependencyCheck.securityHotspot">true</Property>
+	-->
+	<!-- Exclusiones de reglas -->
+   	<Property Name="sonar.issue.ignore.multicriteria">1,2,3</Property>
+	<!--Using http protocol is insecure. Use https instead-->
+   	<Property Name="sonar.issue.ignore.multicriteria.1.resourceKey">**/*</Property>
+   	<Property Name="sonar.issue.ignore.multicriteria.1.ruleKey">csharpsquid:S5332</Property>
+   	<Property Name="sonar.issue.ignore.multicriteria.2.resourceKey">**/*</Property>
+   	<Property Name="sonar.issue.ignore.multicriteria.2.ruleKey">javascript:S5332</Property>
+	<!--Make sure this permissive CORS policy is safe here-->
+   	<Property Name="sonar.issue.ignore.multicriteria.3.resourceKey">**/*</Property>
+   	<Property Name="sonar.issue.ignore.multicriteria.3.ruleKey">csharpsquid:S5122</Property>
+</SonarQubeAnalysisProperties>

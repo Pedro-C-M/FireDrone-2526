@@ -1,0 +1,178 @@
+<project name="MII-2526-CPP-X" default="build" basedir="." xmlns:dn="antlib:org.apache.ant.dotnet" xmlns="antlib:org.apache.tools.ant" xmlns:if="ant:if" xmlns:unless="ant:unless" >
+	<description>
+    Proyecto Coordinado Master en Ingenieria Informatica.
+    Este archivo es el build.xml comun a todos los proyectos.
+    Las particularizaciones a cada equipo se realizan mediante un archivo de configuracion app.properties
+    Ver las transparencias de clase para mas informacion
+    Nota: No define dependencias entre targets
+  </description>
+	<import file="ant.util/ant.netcore.xml"/>
+  <import file="ant.util/ant.run.xml"/>
+  <import file="ant.util/ant.js.xml"/>
+  <!--Configuracion de componentes y puertos personalizada para este proyecto-->
+  <property file="app.properties" />
+  <echoproperties prefix="app." />
+ 
+  <macrodef name="patch.project" description="Realiza cambios en los proyectos para permitir el build y la integración en CI">
+    <sequential>
+      <!--borra global.json que si existe puede requerir versiones especificas del SDK-->
+      <delete file="global.json" />
+    </sequential>
+  </macrodef>
+
+	<target name="clean" description="limpia archivos temporales y generados">
+    <sequential>
+      <echo>***************** clean workspace *****************</echo>
+      <delete dir="packages" failonerror="false" />
+      <delete dir="reports" failonerror="false" />
+      <delete includeemptydirs="true"  failonerror="false">
+        <fileset dir="." includes="**/bin/**"/>
+        <fileset dir="." includes="**/obj/**"/>
+      </delete>
+    </sequential>
+  </target>
+
+	<target name="patch" description="aplica parches">
+    <patch.project />
+  </target>
+
+	<target name="build" description="compilacion de fuentes y migracion de base de datos">
+    <!--Cambios previos para permitir la ejecucion en CI, eliminar una vez que toda la infraestructura de pruebas esta incluida en el codigo del proyecto-->
+    <patch.project/>
+    <!--Antes de compilar renombra referencias a localhost (sera aplicable cuando se ejecute en un container jenkins slave)-->
+    <host.rename />
+
+    <build.netcore project.dir="." project.name="${app.solution}" />
+    <!--Preparacion: crea/actualiza la bd utilizando las migraciones.
+    NOTA: Si el proceso de migraciones falla, no siempre falla el build. Examinar la salida de la ejecucion del build
+    -->
+    <migrate.netcore project.dir="${src}/${app.data}" startup.project="${app.data.startup}" />
+  </target>
+
+  <target name="test" description="Todas las pruebas unitarias y web">
+    <testunit/>
+    <testweb/>
+  </target>
+  <target name="test.unit" description="Solo ejecucion pruebas unitarias">
+    <testunit/>
+  </target>
+  <target name="test.web" description="Solo ejecucion pruebas web">
+    <testweb/>
+  </target>
+  <target name="test.web.start" description="Solo arranque de los procesos para pruebas web manuales o durante implementación de los test">
+    <testwebstart/>
+  </target>
+  <target name="test.web.stop" description="Solo parada de los procesos para pruebas web manuales o durante implementación de los test">
+    <testwebstop/>
+  </target>
+
+  <!--Nota sobre test reports: Ademas de los .trx, genera reports en html estilo junit, que son publicados tambien como resultado en Jenkins
+  ademas de los reports que produce Jenkins
+  Jenkins pone en amarillo el restultado de un stage cuando se ejecuta el plugin junit, pero
+  como hay dos steps de test (unit y web, tambien denominados UT, IT) se necesita separar ambos reports para la ejecucion del plugin junit.
+  Tras la ejecucion de cada test se realiza un split del correspondiente .trx para ejecutar sobre estos ficheros 
+  el plugin junit en el stage correspondiente.
+  Las pruebas web juntaran en otra carpeta todos estos tests para poder generar y publicar el report completo con todos los tests.
+  -->
+  <macrodef name="testunit" description="Ejecucion de pruebas unitarias">
+    <sequential>
+      <!--Recompila los tests fuera de dotnet test para evitar mezclar mensajes de compilacion con resultados de test en los log -->
+      <build.netcore project.dir="${test}/TestUnit" project.name="TestUnit.csproj" quiet="true" />
+      <mstest.run base.dir="${test}" project.name="TestUnit" testxmlresult="TestResults-Unit.trx" splitfolder="split-ut" coverage="true" arg1="--no-build" />
+      <!--incluye reports estilo junit para publicar como html y copia la cobertura para cargar en sonar-->
+      <junit.report splitfolder="split-ut"/>
+      <copy file="reports/coverage-ut/SonarQube.xml" tofile="reports/coverage-ut-sonar.xml" />
+    </sequential>
+  </macrodef>
+
+  <macrodef name="testweb" description="Ejecucion de pruebas integradas desde el interfaz web">
+    <sequential>
+      <testwebstart/>
+      <!--Espera a que se hayan lanzado los procesos (ajustar si es preciso) y luego los test.-->
+      <sleep seconds="5" />
+      <mstest.run base.dir="${test}" project.name="TestWeb" testxmlresult="TestResults-Web.trx" splitfolder="split-it"  arg1="--no-build" />
+      <!--para el report junit consolida los test it y los ut-->
+      <junit.copyfiles from.dir="split-ut" dest.dir="split-all" />
+      <junit.copyfiles from.dir="split-it" dest.dir="split-all" />
+      <junit.report splitfolder="split-all"/>
+      <testwebstop/>
+    </sequential>
+  </macrodef>
+
+  <macrodef name="testwebstart" description="Arranque de los procesos para pruebas web manuales o durante implementación de los test">
+    <sequential>
+      <!--primero para cualquier proceso de un test anterior que se este ejecutando para evitar bloqueos -->
+      <dotnet.run.install />
+      <dotnet.kill />
+
+      <!--Instrumenta javascript en caso de que se haya definido en el parametro app.front.jscover -->
+      <!--En este curso se hace hacia un folder en src y no en dist porque hay algun frontend que tiene dependencias contra otros proyecctos-->
+      <jscover.instrument src.dir="${src}/${app.front}" dist.dir="${src}/InstrumentedFrontend" wwwroot="${app.front.www}" if:true="${app.front.jscover}" />
+      <move file="${src}/InstrumentedFrontend/${app.front}.csproj" tofile="${src}/InstrumentedFrontend/InstrumentedFrontend.csproj" if:true="${app.front.jscover}" />
+      <build.netcore project.dir="${src}/InstrumentedFrontend" project.name="InstrumentedFrontend.csproj" quiet="true" if:true="${app.front.jscover}" />
+
+      <!--Recompila los tests antes de lanzar los procesos. Si no se hace dotnet test intentara recompilar pero
+      puede encontrar bloqueados algunos componentes que ya se estan ejecutando en background -->
+      <build.netcore project.dir="${test}/TestWeb" project.name="TestWeb.csproj" quiet="true" />
+
+      <!--La ejecucion se podria hacer utilizando el tag parallel, pero esto no permite obtener los id de los procesos
+      para finalizarlos (y usar taskkill matara cualquier otro proceso net core).
+      Ejecuta en background cada proceso utilizando las macros de ant.run.xml.
+      Cuando se ha de medir la cobertura javascript, el frontend se ejectua desde otra carpeta donde se ha instrumentado.
+      Salvo los proyectos compilados en las lineas anteriores, el resto deben estar ya compilados (se ejecutan con la opcion no-build).
+      Esto evita potenciales y bloqueos producidos por las compilaciones en paralelo
+      -->
+      <echo>**** SUT start</echo>
+      <dotnet.run project.dir="InstrumentedFrontend" netarg="--no-build" if:true="${app.front.jscover}" />
+      <dotnet.run project.dir="${app.front}" netarg="--no-build" unless:true="${app.front.jscover}" />
+      <dotnet.run project.dir="${app.back}" netarg="--no-build" />
+      <dotnet.run project.dir="${app.controlback}" netarg="--no-build" />
+      <dotnet.run project.dir="${app.controller1}" name="Controller1" netarg="--no-build ${app.controller1.arg}" unless:blank="${app.controller1}"/>
+      <dotnet.run project.dir="${app.controller2}" name="Controller2" netarg="--no-build ${app.controller2.arg}" unless:blank="${app.controller2}"/>
+      <dotnet.run project.dir="${app.controller3}" name="Controller3" netarg="--no-build ${app.controller3.arg}" unless:blank="${app.controller3}"/>
+   </sequential>
+  </macrodef>
+  <macrodef name="testwebstop" description="Parada de los procesos para pruebas web manuales o durante implementación de los test">
+    <sequential>
+      <!--Finaliza todos los procesos tras las pruebas-->
+      <echo>**** SUT shutdown</echo>
+      <dotnet.run.install />
+      <dotnet.kill />
+
+      <!--Reports de jscover en caso de que se haya definido en el parametro app.front.jscover-->
+      <jscover.report src.dir="${src}/${app.front}/${app.front.www}" set.sonar.subdir="${src}/${app.front}/${app.front.www}" if:true="${app.front.jscover}" />
+      <!--<copy file="reports/coverage-js/SonarQube.xml" tofile="reports/coverage-js-sonar.xml" failonerror="false" />-->
+    </sequential>
+  </macrodef>
+
+  <macrodef name="host.rename" description="Cambia localhost para ejecucion desde jenkins slave container" >
+    <!--Cuando se ejecutan los procesos dentro del container del slave en linux, localhost no se resuelve a la ip v4 del container, 
+    sino que lo hace a una ip v6 que causa fallo
+    Con este remplazo, cambia todas las referencias a localhost por el HOSTNAME que funciona correctamente apuntando a la ip del container
+    (tambien funcionaria usando host.docker.internal)-->
+    <sequential>
+      <property environment="env" />
+      <sequential unless:set="isWindows">
+        <echo  if:set="env.JOB_NAME" >**** Replace localhost with the container HOSTNAME (${env.HOSTNAME}) in all sources</echo>
+        <replace dir="${src}/" if:set="env.JOB_NAME" summary="true">
+          <include name="**/*" />
+          <!--<exclude name="**/RabbitMQ/**/*" />-->
+          <replacefilter token="localhost" value="${env.HOSTNAME}" />
+          <!--<replacefilter token="127.0.0.1" value="${env.HOSTNAME}" />-->
+        </replace>
+      </sequential>
+    </sequential>
+  </macrodef>
+
+  <target name="sonar.build" description="compilacion necesaria para la ejecucion del sonar scanner for MSBuild">
+    <!--incluye un argumento nodereuse para evitar que queden dlls del scanner bloqueados: https://github.com/SonarSource/sonar-scanner-msbuild/issues/535 -->
+    <build.netcore project.dir="." project.name="${app.solution}" quiet="true" />
+  </target>
+
+  <target name="sonar.prepare" description="Preprocesamiento previo a la ejecucion de SonarQube" xmlns:if="ant:if" xmlns:unless="ant:unless">
+    <sonar.exclude project.filename="${test}/TestUnit/TestUnit.csproj" />
+    <sonar.exclude project.filename="${test}/TestWeb/TestWeb.csproj" />
+    <sonar.patch coverage="${app.front.jscover}" subfolder="${app.solution.folder}" />
+  </target>
+
+</project>
