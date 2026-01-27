@@ -69,3 +69,6 @@ nunit-*.xml
 *.db
 *.db-shm
 *db-wal
+
+# Ant
+.ant*/
