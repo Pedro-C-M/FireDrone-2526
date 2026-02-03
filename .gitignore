@@ -69,3 +69,18 @@ nunit-*.xml
 *.db
 *.db-shm
 *db-wal
+
+# Ant
+ant.util
+ant
+dist
+node_modules
+packages
+reports
+TestResults
+src/InstrumentedFrontend
+tests/TestUnit/Properties
+tests/TestWeb/Properties
+*.db
+*.db-shm
+*.db-wal
