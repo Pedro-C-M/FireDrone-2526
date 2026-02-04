@@ -38,7 +38,7 @@
 
 	<target name="build" description="compilacion de fuentes y migracion de base de datos">
     <!--Cambios previos para permitir la ejecucion en CI, eliminar una vez que toda la infraestructura de pruebas esta incluida en el codigo del proyecto-->
-    <patch.project/>
+    <!--<patch.project/>-->
     <!--Antes de compilar renombra referencias a localhost (sera aplicable cuando se ejecute en un container jenkins slave)-->
     <host.rename />
 
