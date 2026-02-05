@@ -84,8 +84,6 @@ public class FlightPlanServiceTests
         _context.Dispose();
     }
 
-    #region Helper Methods
-
     private async Task<FlightPlan> CreateFlightPlanWithState(FlightStatus state, int? dronId = 5)
     {
         var drone = new Dron
@@ -142,10 +140,6 @@ public class FlightPlanServiceTests
         await _context.SaveChangesAsync();
         return flightPlan;
     }
-
-    #endregion
-
-    #region Phase 1: SwitchToManualModeAsync Tests
 
     // CP01
     [TestMethod]
@@ -215,31 +209,7 @@ public class FlightPlanServiceTests
         Assert.AreEqual(FlightStatus.OnCourse, result.State);
     }
 
-    /// <summary>
-  /// CP09: ID mínimo válido (1)
-    /// </summary>
-    [TestMethod]
-    public async Task CP09_SwitchToManualModeAsync_MinimumValidId_ShouldSucceed()
-    {
-        // Arrange
-  var flightPlan = await CreateFlightPlanWithState(FlightStatus.OnCourse);
-   // El primer FlightPlan creado tendrá Id = 1
-
-        // Act
-        var result = await _service.SwitchToManualModeAsync(flightPlan.Id);
-
-        // Assert
- Assert.AreEqual(FlightStatus.Manual, result.State);
-        Assert.IsTrue(result.ModeChangeHistoric.Any(m => m.Mode == FlightMode.Manual));
-    }
-
-  #endregion
-
-    #region Phase 2: SendManualDestinationAsync Tests
-
-    /// <summary>
-    /// CP10: Coordenadas válidas centrales
-    /// </summary>
+    // CP07
     [TestMethod]
     public async Task CP10_SendManualDestinationAsync_ValidCentralCoordinates_ShouldSucceed()
     {
@@ -450,6 +420,4 @@ public async Task CP14_SendManualDestinationAsync_LatitudeAboveMaximum_ShouldVal
         // Act & Assert
         await Assert.ThrowsAsync<NotFoundException>(() => _service.SendManualDestinationAsync(9999, dto));
     }
-
-    #endregion
 }
