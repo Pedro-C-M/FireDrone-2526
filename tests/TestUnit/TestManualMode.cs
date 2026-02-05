@@ -1,34 +1,37 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
 using CentralBackend;
 using CentralBackend.Exceptions;
 using CentralBackend.Services;
 using ControlBackend.DTOs;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Models;
 using Moq;
 using Moq.Protected;
-using System.Net;
 
 namespace CentralBackend.Tests;
 
-/// <summary>
-/// Test context that uses InMemory database for testing
-/// </summary>
 public class TestFireDroneContext : FireDrone
 {
     private readonly string _databaseName;
 
   public TestFireDroneContext(string databaseName) : base()
-    {
+  {
         _databaseName = databaseName;
-    }
+  }
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
     {
-  // Don't call base - we want to use InMemory instead of SQLite
         if (!options.IsConfigured)
- {
-    options.UseInMemoryDatabase(_databaseName);
+        {
+        options.UseInMemoryDatabase(_databaseName);
         }
     }
 }
@@ -45,44 +48,41 @@ public class FlightPlanServiceTests
   [TestInitialize]
     public void Setup()
     {
-      // Create unique database name for each test to avoid data collision
         var databaseName = Guid.NewGuid().ToString();
         _context = new TestFireDroneContext(databaseName);
         _context.Database.EnsureCreated();
 
-        // Setup HTTP client factory mock
         _httpClientFactoryMock = new Mock<IHttpClientFactory>();
         _httpMessageHandlerMock = new Mock<HttpMessageHandler>();
 
-     _httpMessageHandlerMock
-        .Protected()
-      .Setup<Task<HttpResponseMessage>>(
-       "SendAsync",
-             ItExpr.IsAny<HttpRequestMessage>(),
-       ItExpr.IsAny<CancellationToken>())
-    .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK));
+        _httpMessageHandlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK));
 
         var httpClient = new HttpClient(_httpMessageHandlerMock.Object);
         _httpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>())).Returns(httpClient);
 
-      // Setup configuration using in-memory configuration
-     var inMemorySettings = new Dictionary<string, string?> {
-{"ControlBackend:Url", "http://localhost:5307"}
+        var inMemorySettings = new Dictionary<string, string?> {
+            {"ControlBackend:Url", "http://localhost:5307"}
         };
 
         _configuration = new ConfigurationBuilder()
-  .AddInMemoryCollection(inMemorySettings)
-       .Build();
+            .AddInMemoryCollection(inMemorySettings)
+        .Build();
 
-   _service = new FlightPlanService(_context, _httpClientFactoryMock.Object, _configuration);
+        _service = new FlightPlanService(_context, _httpClientFactoryMock.Object, _configuration);
     }
 
     [TestCleanup]
     public void Cleanup()
     {
         _context.Database.EnsureDeleted();
-     _context.Dispose();
-  }
+        _context.Dispose();
+    }
 
     #region Helper Methods
 
@@ -90,53 +90,53 @@ public class FlightPlanServiceTests
     {
         var drone = new Dron
         {
-         Id = dronId ?? 5,
-         State = DroneState.Flying,
+            Id = dronId ?? 5,
+            State = DroneState.Flying,
             Lat = 43.36f,
-         Lon = -5.85f
-     };
-      _context.Drones.Add(drone);
-
-   var route = new Models.Route
-        {
-        Id = 1,
-     Type = RouteType.Simple,
-     Coords = new List<RoutePoint>()
+            Lon = -5.85f
         };
- _context.Routes.Add(route);
+        _context.Drones.Add(drone);
+
+        var route = new Models.Route
+        {
+            Id = 1,
+            Type = RouteType.Simple,
+            Coords = new List<RoutePoint>()
+        };
+        _context.Routes.Add(route);
 
         var flightPlan = new FlightPlan
-      {
+        {
             DronId = dronId ?? 5,
-  RutaId = 1,
+            RutaId = 1,
             State = state,
-          StartingTime = DateTime.Now,
-         ModeChangeHistoric = new List<ChangeMode>()
+            StartingTime = DateTime.Now,
+            ModeChangeHistoric = new List<ChangeMode>()
         };
-  _context.FlightPlans.Add(flightPlan);
+        _context.FlightPlans.Add(flightPlan);
 
-   await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync();
         return flightPlan;
     }
 
     private async Task<FlightPlan> CreateFlightPlanWithoutDron(FlightStatus state)
     {
-  var route = new Models.Route
-    {
-   Id = 2,
-   Type = RouteType.Simple,
-       Coords = new List<RoutePoint>()
+        var route = new Models.Route
+        {
+            Id = 2,
+            Type = RouteType.Simple,
+            Coords = new List<RoutePoint>()
         };
         _context.Routes.Add(route);
 
         var flightPlan = new FlightPlan
-   {
- DronId = 0, // Sin dron asignado (usamos 0 ya que DronId no es nullable en el modelo)
-        RutaId = 2,
-          State = state,
-      StartingTime = DateTime.Now,
-         ModeChangeHistoric = new List<ChangeMode>()
-    };
+        {
+            DronId = 0, // Sin dron asignado (usamos 0 ya que DronId no es nullable en el modelo)
+            RutaId = 2,
+            State = state,
+            StartingTime = DateTime.Now,
+            ModeChangeHistoric = new List<ChangeMode>()
+        };
         _context.FlightPlans.Add(flightPlan);
 
         await _context.SaveChangesAsync();
@@ -147,135 +147,72 @@ public class FlightPlanServiceTests
 
     #region Phase 1: SwitchToManualModeAsync Tests
 
-    /// <summary>
-    /// CP01: ID válido, estado OnCourse
-    /// </summary>
+    // CP01
     [TestMethod]
-    public async Task CP01_SwitchToManualModeAsync_ValidId_OnCourseState_ShouldSwitchToManual()
+    public async Task SwitchToManualModeAsync_ValidId_OnCourseState_ShouldSwitchToManual()
     {
-        // Arrange
         var flightPlan = await CreateFlightPlanWithState(FlightStatus.OnCourse, dronId: 5);
 
-        // Act
         var result = await _service.SwitchToManualModeAsync(flightPlan.Id);
 
-   // Assert
         Assert.AreEqual(FlightStatus.Manual, result.State);
         Assert.IsTrue(result.ModeChangeHistoric.Any(m => m.Mode == FlightMode.Manual));
     }
 
-    /// <summary>
-    /// CP02: ID no existente
-    /// </summary>
+    // CP02
     [TestMethod]
-[ExpectedException(typeof(NotFoundException))]
-    public async Task CP02_SwitchToManualModeAsync_NonExistentId_ShouldThrowNotFoundException()
+    public async Task SwitchToManualModeAsync_NonExistentId_ShouldThrowNotFoundException()
     {
-        // Arrange - no flight plan created
+        // No se crea plan de vuelo
 
-        // Act
-        await _service.SwitchToManualModeAsync(9999);
-
-        // Assert - ExpectedException
-  }
-
-    /// <summary>
-    /// CP03: ID = 0
-    /// </summary>
-    [TestMethod]
-    [ExpectedException(typeof(NotFoundException))]
-    public async Task CP03_SwitchToManualModeAsync_ZeroId_ShouldThrowNotFoundException()
-    {
-        // Arrange - no flight plan with ID 0 exists
-
-        // Act
-        await _service.SwitchToManualModeAsync(0);
-
-        // Assert - ExpectedException
+        await Assert.ThrowsAsync<NotFoundException>(() => _service.SwitchToManualModeAsync(9999));
     }
 
-    /// <summary>
-    /// CP04: ID negativo
-    /// </summary>
- [TestMethod]
-    [ExpectedException(typeof(NotFoundException))]
-    public async Task CP04_SwitchToManualModeAsync_NegativeId_ShouldThrowNotFoundException()
-    {
-        // Arrange - no flight plan with negative ID exists
-
-        // Act
-        await _service.SwitchToManualModeAsync(-1);
-
-    // Assert - ExpectedException
-    }
-
-    /// <summary>
-    /// CP05: Estado ya es Manual (idempotente)
-    /// </summary>
+    // CP03
     [TestMethod]
-    public async Task CP05_SwitchToManualModeAsync_AlreadyManual_ShouldRemainManualOrBeIdempotent()
+    public async Task SwitchToManualModeAsync_AlreadyManual_ShouldRemainManualOrBeIdempotent()
     {
-     // Arrange
-        var flightPlan = await CreateFlightPlanWithState(FlightStatus.Manual);
-   var initialHistoryCount = flightPlan.ModeChangeHistoric.Count;
+        var flightPlan = await CreateFlightPlanWithState(FlightStatus.Manual, dronId: 5);
+        var initialHistoryCount = flightPlan.ModeChangeHistoric.Count;
 
-     // Act
-    var result = await _service.SwitchToManualModeAsync(flightPlan.Id);
-
-    // Assert - El estado permanece en Manual, puede o no añadir nuevo registro histórico
- Assert.AreEqual(FlightStatus.Manual, result.State);
-    }
-
-    /// <summary>
-    /// CP06: Estado Completed - no se puede cambiar plan completado
-    /// Nota: La implementación actual no valida esto, el test documenta el comportamiento actual
-    /// </summary>
-    [TestMethod]
-    public async Task CP06_SwitchToManualModeAsync_CompletedState_ShouldHandleCompletedPlan()
-    {
-        // Arrange
-    var flightPlan = await CreateFlightPlanWithState(FlightStatus.Completed);
-
-        // Act - La implementación actual permite el cambio
-  var result = await _service.SwitchToManualModeAsync(flightPlan.Id);
-
-      // Assert - Documenta comportamiento actual (cambia a Manual)
-        // Si se quiere que falle, se debería modificar la implementación
-        Assert.AreEqual(FlightStatus.Manual, result.State);
-    }
-
-    /// <summary>
-    /// CP07: Estado Cancelled - no se puede cambiar plan cancelado
-  /// Nota: La implementación actual no valida esto, el test documenta el comportamiento actual
-    /// </summary>
-    [TestMethod]
-    public async Task CP07_SwitchToManualModeAsync_CancelledState_ShouldHandleCancelledPlan()
-    {
-        // Arrange
-  var flightPlan = await CreateFlightPlanWithState(FlightStatus.Cancelled);
-
-  // Act - La implementación actual permite el cambio
         var result = await _service.SwitchToManualModeAsync(flightPlan.Id);
 
-        // Assert - Documenta comportamiento actual (cambia a Manual)
-        // Si se quiere que falle, se debería modificar la implementación
-      Assert.AreEqual(FlightStatus.Manual, result.State);
+        Assert.AreEqual(FlightStatus.Manual, result.State);
+        Assert.AreNotEqual(initialHistoryCount, result.ModeChangeHistoric.Count);
     }
 
-    /// <summary>
-    /// CP08: Plan sin dron asignado
-    /// </summary>
+    // CP04
     [TestMethod]
-    public async Task CP08_SwitchToManualModeAsync_NoDroneAssigned_ShouldHandleNoDrone()
+    public async Task SwitchToManualModeAsync_CompletedState_ShouldHandleCompletedPlan()
     {
-   // Arrange
+        var flightPlan = await CreateFlightPlanWithState(FlightStatus.Completed, dronId: 5);
+
+        var result = await _service.SwitchToManualModeAsync(flightPlan.Id);
+
+        Assert.AreEqual(FlightStatus.Completed, result.State);
+    }
+
+    // CP05
+    [TestMethod]
+    public async Task SwitchToManualModeAsync_CancelledState_ShouldHandleCancelledPlan()
+    {
+
+        var flightPlan = await CreateFlightPlanWithState(FlightStatus.Cancelled, dronId: 5);
+
+        var result = await _service.SwitchToManualModeAsync(flightPlan.Id);
+
+        Assert.AreEqual(FlightStatus.Cancelled, result.State);
+    }
+
+    // CP06
+    [TestMethod]
+    public async Task SwitchToManualModeAsync_NoDroneAssigned_ShouldHandleNoDrone()
+    {
         var flightPlan = await CreateFlightPlanWithoutDron(FlightStatus.OnCourse);
 
-        // Act - La implementación actual permite el cambio aunque no haya dron
         var result = await _service.SwitchToManualModeAsync(flightPlan.Id);
 
-        // Assert - El estado cambia aunque no haya dron asignado
-        Assert.AreEqual(FlightStatus.Manual, result.State);
+        Assert.AreEqual(FlightStatus.OnCourse, result.State);
     }
 
     /// <summary>
@@ -505,17 +442,14 @@ public async Task CP14_SendManualDestinationAsync_LatitudeAboveMaximum_ShouldVal
     /// CP24: Plan no existente
     /// </summary>
     [TestMethod]
-    [ExpectedException(typeof(NotFoundException))]
-public async Task CP24_SendManualDestinationAsync_NonExistentPlan_ShouldThrowNotFoundException()
+    public async Task CP24_SendManualDestinationAsync_NonExistentPlan_ShouldThrowNotFoundException()
     {
-   // Arrange
+        // Arrange
         var dto = new GoToDto { Latitude = 43.36, Longitude = -5.85, Speed = 20 };
 
-   // Act
-    await _service.SendManualDestinationAsync(9999, dto);
-
-   // Assert - ExpectedException
-  }
+        // Act & Assert
+        await Assert.ThrowsAsync<NotFoundException>(() => _service.SendManualDestinationAsync(9999, dto));
+    }
 
     #endregion
 }
