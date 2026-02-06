@@ -36,14 +36,19 @@ namespace TestUnit
             base.TearDown();
         }
 
+        private static MemoryStream GenerateStreamFromFileName(string fileName)
+        {
+            string csvContent = GeneralTestUtil.GetCsvContent(fileName);
+            return new MemoryStream(Encoding.UTF8.GetBytes(csvContent));
+        }
+
 
         [TestMethod]
         [DataRow("cp1.1.csv","0;43.5450;-5.6600;50.0;10.0", 1)]
         [DataRow("cp1.2.csv", "0;43.5450;-5.6600;50.0;10.0\n0;43.6450;-5.7600;50.0;10.0\n0;43.7450;-5.8600;50.0;10.0", 3)]
-        public async Task PruebaImport(string fileName,string expectedString , int expectedCreatedRoutes)
+        public async Task Importar_DiferentesNPuntosRuta_Correcto(string fileName,string expectedString , int expectedCreatedRoutes)
         {
-            string csvContent = GeneralTestUtil.GetCsvContent(fileName);
-            var stream = new MemoryStream(Encoding.UTF8.GetBytes(csvContent));
+            var stream = GenerateStreamFromFileName(fileName);
 
             util.CleanTables(new[] { "RoutePoints", "Routes" }, true);//Esto puede ser quitable
 
@@ -60,5 +65,22 @@ namespace TestUnit
             Assert.AreEqual(expectedString, actualData, "Los datos importados no coinciden con lo esperado");
             //Console.WriteLine("Datos de la bd: "+ actualData);
         }
+
+        [TestMethod]
+        [DataRow("cp2.csv", "No hay puntos en la ruta.")]
+        public async Task Importar_SinPuntosRuta_Fallo(string fileName, string expectedExceptionMessage)
+        {
+            var stream = GenerateStreamFromFileName(fileName);
+
+            util.CleanTables(new[] { "RoutePoints", "Routes" }, true);//Esto puede ser quitable
+
+            Exception e = await Assert.ThrowsAsync<Exception>(async () =>
+            {
+                await _routeService.ImportFromCsvAsync(stream, fileName);
+            });
+
+            Assert.AreEqual(expectedExceptionMessage, e.Message);
+        }
+
     }
 }

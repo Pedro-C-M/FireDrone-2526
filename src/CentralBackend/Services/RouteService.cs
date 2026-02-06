@@ -182,6 +182,11 @@ namespace CentralBackend.Services
                 }
             }
 
+            if (numeroLinea <= 1)
+            {
+                throw new Exception("No hay puntos en la ruta.");
+            }
+
             // 4. GUARDADO FINAL
             var rutasParaGuardar = rutasDict.Values.ToList();
             if (rutasParaGuardar.Any())

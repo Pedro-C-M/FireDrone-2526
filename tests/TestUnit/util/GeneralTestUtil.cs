@@ -20,7 +20,7 @@ namespace TestUnit.util
                 {
                     "cp1.1.csv" => $"{header}\nRuta Prueba;0;43.5450;-5.6600;50;10",
                     "cp1.2.csv" => $"{header}\nRuta Prueba;0;43.5450;-5.6600;50;10\nRuta Prueba;0;43.6450;-5.7600;50;10\nRuta Prueba;0;43.7450;-5.8600;50;10",
-                    "cp1.3.csv" => $"{header}\nRuta Prueba;0;43.5450;-5.6600;50;10\nRuta Prueba;0;43.7450;-5.8600;50;10\nRuta Prueba;0;43.6450;-5.7600;50;10",
+                    "cp2.csv" => $"{header}\n",
 
                     _ => throw new Exception("CaseID no definido")
                 };
