@@ -28,6 +28,8 @@ namespace CentralBackend.Services
             };
         }
 
+        protected RedisCacheService() { }//Para los moqs
+
         /// Obtiene un valor de la caché deserializado al tipo especificado
         public async Task<T?> GetAsync<T>(string key)
         {
@@ -76,7 +78,7 @@ namespace CentralBackend.Services
         }
 
         /// Elimina una clave específica de la caché
-        public async Task RemoveAsync(string key)
+        public async virtual Task RemoveAsync(string key)
         {
             try
             {
