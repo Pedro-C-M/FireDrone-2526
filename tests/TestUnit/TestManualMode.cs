@@ -1,11 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
-using CentralBackend;
 using CentralBackend.Exceptions;
 using CentralBackend.Services;
 using ControlBackend.DTOs;
@@ -15,6 +7,13 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Models;
 using Moq;
 using Moq.Protected;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace CentralBackend.Tests;
 
@@ -22,16 +21,16 @@ public class TestFireDroneContext : FireDrone
 {
     private readonly string _databaseName;
 
-  public TestFireDroneContext(string databaseName) : base()
-  {
+    public TestFireDroneContext(string databaseName) : base()
+    {
         _databaseName = databaseName;
-  }
+    }
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
     {
         if (!options.IsConfigured)
         {
-        options.UseInMemoryDatabase(_databaseName);
+            options.UseInMemoryDatabase(_databaseName);
         }
     }
 }
@@ -45,7 +44,7 @@ public class FlightPlanServiceTests
     private FlightPlanService _service = null!;
     private Mock<HttpMessageHandler> _httpMessageHandlerMock = null!;
 
-  [TestInitialize]
+    [TestInitialize]
     public void Setup()
     {
         var databaseName = Guid.NewGuid().ToString();
@@ -58,10 +57,10 @@ public class FlightPlanServiceTests
         _httpMessageHandlerMock
             .Protected()
             .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK));
+            "SendAsync",
+            ItExpr.IsAny<HttpRequestMessage>(),
+            ItExpr.IsAny<CancellationToken>())
+       .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK));
 
         var httpClient = new HttpClient(_httpMessageHandlerMock.Object);
         _httpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>())).Returns(httpClient);
@@ -71,8 +70,8 @@ public class FlightPlanServiceTests
         };
 
         _configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(inMemorySettings)
-        .Build();
+          .AddInMemoryCollection(inMemorySettings)
+       .Build();
 
         _service = new FlightPlanService(_context, _httpClientFactoryMock.Object, _configuration);
     }
@@ -89,7 +88,7 @@ public class FlightPlanServiceTests
         var drone = new Dron
         {
             Id = dronId ?? 5,
-            State = DroneState.Flying,
+            State = Models.DroneState.Flying,
             Lat = 43.36f,
             Lon = -5.85f
         };
@@ -129,7 +128,7 @@ public class FlightPlanServiceTests
 
         var flightPlan = new FlightPlan
         {
-            DronId = 0, // Sin dron asignado (usamos 0 ya que DronId no es nullable en el modelo)
+            DronId = 0,
             RutaId = 2,
             State = state,
             StartingTime = DateTime.Now,
@@ -146,9 +145,7 @@ public class FlightPlanServiceTests
     public async Task SwitchToManualModeAsync_ValidId_OnCourseState_ShouldSwitchToManual()
     {
         var flightPlan = await CreateFlightPlanWithState(FlightStatus.OnCourse, dronId: 5);
-
         var result = await _service.SwitchToManualModeAsync(flightPlan.Id);
-
         Assert.AreEqual(FlightStatus.Manual, result.State);
         Assert.IsTrue(result.ModeChangeHistoric.Any(m => m.Mode == FlightMode.Manual));
     }
@@ -157,45 +154,34 @@ public class FlightPlanServiceTests
     [TestMethod]
     public async Task SwitchToManualModeAsync_NonExistentId_ShouldThrowNotFoundException()
     {
-        // No se crea plan de vuelo
-
         await Assert.ThrowsAsync<NotFoundException>(() => _service.SwitchToManualModeAsync(9999));
     }
 
     // CP03
     [TestMethod]
-    public async Task SwitchToManualModeAsync_AlreadyManual_ShouldRemainManualOrBeIdempotent()
+    public async Task SwitchToManualModeAsync_AlreadyManual_ShouldThrowException()
     {
         var flightPlan = await CreateFlightPlanWithState(FlightStatus.Manual, dronId: 5);
-        var initialHistoryCount = flightPlan.ModeChangeHistoric.Count;
 
-        var result = await _service.SwitchToManualModeAsync(flightPlan.Id);
-
-        Assert.AreEqual(FlightStatus.Manual, result.State);
-        Assert.AreNotEqual(initialHistoryCount, result.ModeChangeHistoric.Count);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _service.SwitchToManualModeAsync(1));
     }
 
     // CP04
     [TestMethod]
-    public async Task SwitchToManualModeAsync_CompletedState_ShouldHandleCompletedPlan()
+    public async Task SwitchToManualModeAsync_CompletedState_ShouldThrowException()
     {
         var flightPlan = await CreateFlightPlanWithState(FlightStatus.Completed, dronId: 5);
 
-        var result = await _service.SwitchToManualModeAsync(flightPlan.Id);
-
-        Assert.AreEqual(FlightStatus.Completed, result.State);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _service.SwitchToManualModeAsync(1));
     }
 
     // CP05
     [TestMethod]
-    public async Task SwitchToManualModeAsync_CancelledState_ShouldHandleCancelledPlan()
+    public async Task SwitchToManualModeAsync_CancelledState_ShouldThrowException()
     {
-
         var flightPlan = await CreateFlightPlanWithState(FlightStatus.Cancelled, dronId: 5);
 
-        var result = await _service.SwitchToManualModeAsync(flightPlan.Id);
-
-        Assert.AreEqual(FlightStatus.Cancelled, result.State);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _service.SwitchToManualModeAsync(flightPlan.Id));
     }
 
     // CP06
@@ -204,220 +190,227 @@ public class FlightPlanServiceTests
     {
         var flightPlan = await CreateFlightPlanWithoutDron(FlightStatus.OnCourse);
 
-        var result = await _service.SwitchToManualModeAsync(flightPlan.Id);
-
-        Assert.AreEqual(FlightStatus.OnCourse, result.State);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _service.SwitchToManualModeAsync(flightPlan.Id));
     }
 
     // CP07
     [TestMethod]
-    public async Task CP10_SendManualDestinationAsync_ValidCentralCoordinates_ShouldSucceed()
+    public async Task SendManualDestinationAsync_ValidCentralCoordinates_ShouldSendHttpRequest()
     {
-        // Arrange
-        var flightPlan = await CreateFlightPlanWithState(FlightStatus.Manual);
-        var dto = new GoToDto { Latitude = 43.36, Longitude = -5.85, Speed = 20 };
+        var flightPlan = await CreateFlightPlanWithState(FlightStatus.OnCourse, dronId: 11);
+        var dto = new GoToDto { Latitude = 43.36, Longitude = 5.85, Speed = 20 };
 
-     // Act & Assert - No debe lanzar excepción
         await _service.SendManualDestinationAsync(flightPlan.Id, dto);
+
+        _httpMessageHandlerMock.Protected().Verify(
+            "SendAsync",
+            Times.Once(),
+            ItExpr.Is<HttpRequestMessage>(req =>
+                req.Method == HttpMethod.Post &&
+                req.RequestUri != null &&
+                req.RequestUri.ToString().Contains("/api/drone/11/goto")),
+            ItExpr.IsAny<CancellationToken>());
     }
 
-    /// <summary>
-    /// CP11: Latitud límite inferior (-90.0)
-    /// </summary>
+    // CP08
     [TestMethod]
-    public async Task CP11_SendManualDestinationAsync_LatitudeLowerBound_ShouldSucceed()
+    public async Task SendManualDestinationAsync_LatitudeLowerBound_ShouldSucceed()
     {
-        // Arrange
-        var flightPlan = await CreateFlightPlanWithState(FlightStatus.Manual);
+        var flightPlan = await CreateFlightPlanWithState(FlightStatus.OnCourse, dronId: 8);
         var dto = new GoToDto { Latitude = -90.0, Longitude = 0, Speed = 20 };
 
-        // Act & Assert - No debe lanzar excepción
         await _service.SendManualDestinationAsync(flightPlan.Id, dto);
+
+        _httpMessageHandlerMock.Protected().Verify(
+            "SendAsync",
+            Times.Once(),
+            ItExpr.Is<HttpRequestMessage>(req =>
+                req.Method == HttpMethod.Post &&
+                req.RequestUri != null &&
+                req.RequestUri.ToString().Contains("/api/drone/8/goto")),
+            ItExpr.IsAny<CancellationToken>());
     }
 
-    /// <summary>
-    /// CP12: Latitud límite superior (90.0)
-    /// </summary>
+    // CP09
     [TestMethod]
-    public async Task CP12_SendManualDestinationAsync_LatitudeUpperBound_ShouldSucceed()
+    public async Task SendManualDestinationAsync_LatitudeUpperBound_ShouldSucceed()
     {
-     // Arrange
-        var flightPlan = await CreateFlightPlanWithState(FlightStatus.Manual);
-      var dto = new GoToDto { Latitude = 90.0, Longitude = 0, Speed = 20 };
+        var flightPlan = await CreateFlightPlanWithState(FlightStatus.OnCourse, dronId: 9);
+        var dto = new GoToDto { Latitude = 90.0, Longitude = 0, Speed = 20 };
 
-        // Act & Assert - No debe lanzar excepción
         await _service.SendManualDestinationAsync(flightPlan.Id, dto);
+
+        _httpMessageHandlerMock.Protected().Verify(
+            "SendAsync",
+            Times.Once(),
+            ItExpr.Is<HttpRequestMessage>(req =>
+                req.Method == HttpMethod.Post &&
+                req.RequestUri != null &&
+                req.RequestUri.ToString().Contains("/api/drone/9/goto")),
+            ItExpr.IsAny<CancellationToken>());
     }
 
-    /// <summary>
-    /// CP13: Latitud debajo del mínimo (-90.0001)
-    /// Nota: La validación debe estar en el servicio o DTO
-    /// </summary>
+    // CP10
     [TestMethod]
-    public async Task CP13_SendManualDestinationAsync_LatitudeBelowMinimum_ShouldValidate()
+    public async Task SendManualDestinationAsync_LatitudeBelowMinimum_ShouldThrowException()
     {
-        // Arrange
-        var flightPlan = await CreateFlightPlanWithState(FlightStatus.Manual);
+        var flightPlan = await CreateFlightPlanWithState(FlightStatus.OnCourse, dronId: 10);
         var dto = new GoToDto { Latitude = -90.0001, Longitude = 0, Speed = 20 };
 
-        // Act - La implementación actual no valida coordenadas
-        // Si se implementa validación, este test debería esperar una excepción
-        await _service.SendManualDestinationAsync(flightPlan.Id, dto);
-
-        // Nota: Si se requiere validación, descomentar:
-        // Assert.ThrowsException<ArgumentException>(...) o similar
+        await Assert.ThrowsAsync<ArgumentException>(() => 
+            _service.SendManualDestinationAsync(flightPlan.Id, dto));
     }
 
-    /// <summary>
-    /// CP14: Latitud encima del máximo (90.0001)
-    /// </summary>
+    // CP11
     [TestMethod]
-public async Task CP14_SendManualDestinationAsync_LatitudeAboveMaximum_ShouldValidate()
+    public async Task SendManualDestinationAsync_LatitudeAboveMaximum_ShouldThrowException()
     {
-        // Arrange
-        var flightPlan = await CreateFlightPlanWithState(FlightStatus.Manual);
+        var flightPlan = await CreateFlightPlanWithState(FlightStatus.OnCourse, dronId: 14);
         var dto = new GoToDto { Latitude = 90.0001, Longitude = 0, Speed = 20 };
 
-        // Act - La implementación actual no valida coordenadas
-      await _service.SendManualDestinationAsync(flightPlan.Id, dto);
+        await Assert.ThrowsAsync<ArgumentException>(() => 
+            _service.SendManualDestinationAsync(flightPlan.Id, dto));
     }
 
-    /// <summary>
-    /// CP15: Longitud límite inferior (-180.0)
-    /// </summary>
+    // CP12
     [TestMethod]
-    public async Task CP15_SendManualDestinationAsync_LongitudeLowerBound_ShouldSucceed()
+    public async Task SendManualDestinationAsync_LongitudeLowerBound_ShouldSucceed()
     {
-     // Arrange
-        var flightPlan = await CreateFlightPlanWithState(FlightStatus.Manual);
+        var flightPlan = await CreateFlightPlanWithState(FlightStatus.OnCourse, dronId: 15);
         var dto = new GoToDto { Latitude = 0, Longitude = -180.0, Speed = 20 };
 
-        // Act & Assert - No debe lanzar excepción
- await _service.SendManualDestinationAsync(flightPlan.Id, dto);
+        await _service.SendManualDestinationAsync(flightPlan.Id, dto);
+
+      _httpMessageHandlerMock.Protected().Verify(
+        "SendAsync",
+        Times.Once(),
+        ItExpr.Is<HttpRequestMessage>(req =>
+            req.Method == HttpMethod.Post &&
+            req.RequestUri != null &&
+            req.RequestUri.ToString().Contains("/api/drone/15/goto")),
+        ItExpr.IsAny<CancellationToken>());
     }
 
-    /// <summary>
-    /// CP16: Longitud límite superior (180.0)
-    /// </summary>
+    // CP13
     [TestMethod]
-  public async Task CP16_SendManualDestinationAsync_LongitudeUpperBound_ShouldSucceed()
+    public async Task SendManualDestinationAsync_LongitudeUpperBound_ShouldSucceed()
     {
-        // Arrange
-        var flightPlan = await CreateFlightPlanWithState(FlightStatus.Manual);
+        var flightPlan = await CreateFlightPlanWithState(FlightStatus.OnCourse, dronId: 16);
         var dto = new GoToDto { Latitude = 0, Longitude = 180.0, Speed = 20 };
 
-        // Act & Assert - No debe lanzar excepción
         await _service.SendManualDestinationAsync(flightPlan.Id, dto);
+
+        _httpMessageHandlerMock.Protected().Verify(
+            "SendAsync",
+            Times.Once(),
+            ItExpr.Is<HttpRequestMessage>(req =>
+                req.Method == HttpMethod.Post &&
+                req.RequestUri != null &&
+                req.RequestUri.ToString().Contains("/api/drone/16/goto")),
+            ItExpr.IsAny<CancellationToken>());
     }
 
-    /// <summary>
-    /// CP17: Longitud debajo del mínimo (-180.0001)
-    /// </summary>
+    // CP14
     [TestMethod]
-    public async Task CP17_SendManualDestinationAsync_LongitudeBelowMinimum_ShouldValidate()
+    public async Task SendManualDestinationAsync_LongitudeBelowMinimum_ShouldThrowException()
     {
-        // Arrange
-        var flightPlan = await CreateFlightPlanWithState(FlightStatus.Manual);
+        var flightPlan = await CreateFlightPlanWithState(FlightStatus.OnCourse, dronId: 17);
         var dto = new GoToDto { Latitude = 0, Longitude = -180.0001, Speed = 20 };
 
-        // Act - La implementación actual no valida coordenadas
-     await _service.SendManualDestinationAsync(flightPlan.Id, dto);
+        await Assert.ThrowsAsync<ArgumentException>(() => 
+            _service.SendManualDestinationAsync(flightPlan.Id, dto));
     }
 
-    /// <summary>
-    /// CP18: Longitud encima del máximo (180.0001)
-    /// </summary>
+    // CP15
     [TestMethod]
-    public async Task CP18_SendManualDestinationAsync_LongitudeAboveMaximum_ShouldValidate()
+    public async Task SendManualDestinationAsync_LongitudeAboveMaximum_ShouldThrowException()
     {
-        // Arrange
-   var flightPlan = await CreateFlightPlanWithState(FlightStatus.Manual);
+        var flightPlan = await CreateFlightPlanWithState(FlightStatus.OnCourse, dronId: 18);
         var dto = new GoToDto { Latitude = 0, Longitude = 180.0001, Speed = 20 };
 
-        // Act - La implementación actual no valida coordenadas
-        await _service.SendManualDestinationAsync(flightPlan.Id, dto);
+        await Assert.ThrowsAsync<ArgumentException>(() => 
+            _service.SendManualDestinationAsync(flightPlan.Id, dto));
     }
 
-    /// <summary>
-    /// CP19: Velocidad mínima válida (0.1)
-    /// </summary>
+    // CP16
     [TestMethod]
-    public async Task CP19_SendManualDestinationAsync_MinimumValidSpeed_ShouldSucceed()
+    public async Task SendManualDestinationAsync_MinimumValidSpeed_ShouldSucceed()
     {
-  // Arrange
-        var flightPlan = await CreateFlightPlanWithState(FlightStatus.Manual);
-   var dto = new GoToDto { Latitude = 43, Longitude = -5, Speed = 0.1 };
+        var flightPlan = await CreateFlightPlanWithState(FlightStatus.OnCourse, dronId: 19);
+        var dto = new GoToDto { Latitude = 43, Longitude = -5, Speed = 0.1 };
 
-   // Act & Assert - No debe lanzar excepción
         await _service.SendManualDestinationAsync(flightPlan.Id, dto);
+
+        _httpMessageHandlerMock.Protected().Verify(
+            "SendAsync",
+            Times.Once(),
+            ItExpr.Is<HttpRequestMessage>(req =>
+                req.Method == HttpMethod.Post &&
+                req.RequestUri != null &&
+                req.RequestUri.ToString().Contains("/api/drone/19/goto")),
+            ItExpr.IsAny<CancellationToken>());
     }
 
-    /// <summary>
-    /// CP20: Velocidad cero
-    /// </summary>
+    // CP17
     [TestMethod]
-    public async Task CP20_SendManualDestinationAsync_ZeroSpeed_ShouldValidate()
+    public async Task SendManualDestinationAsync_ZeroSpeed_ShouldThrowException()
     {
-        // Arrange
-    var flightPlan = await CreateFlightPlanWithState(FlightStatus.Manual);
+        var flightPlan = await CreateFlightPlanWithState(FlightStatus.OnCourse, dronId: 20);
         var dto = new GoToDto { Latitude = 43, Longitude = -5, Speed = 0 };
 
-        // Act - La implementación actual no valida velocidad
-        await _service.SendManualDestinationAsync(flightPlan.Id, dto);
+        await Assert.ThrowsAsync<ArgumentException>(() => 
+            _service.SendManualDestinationAsync(flightPlan.Id, dto));
     }
 
-    /// <summary>
- /// CP21: Velocidad negativa
-    /// </summary>
+    // CP18
     [TestMethod]
-    public async Task CP21_SendManualDestinationAsync_NegativeSpeed_ShouldValidate()
+    public async Task SendManualDestinationAsync_NegativeSpeed_ShouldThrowException()
     {
-        // Arrange
-        var flightPlan = await CreateFlightPlanWithState(FlightStatus.Manual);
+        var flightPlan = await CreateFlightPlanWithState(FlightStatus.OnCourse, dronId: 21);
         var dto = new GoToDto { Latitude = 43, Longitude = -5, Speed = -1 };
 
-        // Act - La implementación actual no valida velocidad
-        await _service.SendManualDestinationAsync(flightPlan.Id, dto);
-  }
+        await Assert.ThrowsAsync<ArgumentException>(() => 
+            _service.SendManualDestinationAsync(flightPlan.Id, dto));
+    }
 
-    /// <summary>
-    /// CP22: Velocidad máxima válida (100)
-    /// </summary>
+    // CP19
     [TestMethod]
-    public async Task CP22_SendManualDestinationAsync_MaximumValidSpeed_ShouldSucceed()
+    public async Task SendManualDestinationAsync_MaximumValidSpeed_ShouldSucceed()
     {
-        // Arrange
-        var flightPlan = await CreateFlightPlanWithState(FlightStatus.Manual);
+        var flightPlan = await CreateFlightPlanWithState(FlightStatus.OnCourse, dronId: 22);
         var dto = new GoToDto { Latitude = 43, Longitude = -5, Speed = 100 };
 
-     // Act & Assert - No debe lanzar excepción
         await _service.SendManualDestinationAsync(flightPlan.Id, dto);
+
+        _httpMessageHandlerMock.Protected().Verify(
+            "SendAsync",
+            Times.Once(),
+            ItExpr.Is<HttpRequestMessage>(req =>
+                req.Method == HttpMethod.Post &&
+                req.RequestUri != null &&
+                req.RequestUri.ToString().Contains("/api/drone/22/goto")),
+            ItExpr.IsAny<CancellationToken>());
     }
 
-    /// <summary>
-    /// CP23: Velocidad excesiva (100.1)
-    /// </summary>
+    // CP20
     [TestMethod]
-    public async Task CP23_SendManualDestinationAsync_ExcessiveSpeed_ShouldValidate()
+    public async Task SendManualDestinationAsync_SlightHighSpeed_ShouldThrowException()
     {
-  // Arrange
-   var flightPlan = await CreateFlightPlanWithState(FlightStatus.Manual);
-        var dto = new GoToDto { Latitude = 43, Longitude = -5, Speed = 100.1 };
+        var flightPlan = await CreateFlightPlanWithState(FlightStatus.OnCourse, dronId: 23);
+        var dto = new GoToDto { Latitude = 43, Longitude = -5, Speed = 100.01 };
 
-        // Act - La implementación actual no valida velocidad
-      await _service.SendManualDestinationAsync(flightPlan.Id, dto);
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            _service.SendManualDestinationAsync(flightPlan.Id, dto));
     }
 
-    /// <summary>
-    /// CP24: Plan no existente
-    /// </summary>
+    // CP21
     [TestMethod]
-    public async Task CP24_SendManualDestinationAsync_NonExistentPlan_ShouldThrowNotFoundException()
+    public async Task SendManualDestinationAsync_VeryHighSpeed_ShouldThrowException()
     {
-        // Arrange
-        var dto = new GoToDto { Latitude = 43.36, Longitude = -5.85, Speed = 20 };
+        var flightPlan = await CreateFlightPlanWithState(FlightStatus.OnCourse, dronId: 23);
+        var dto = new GoToDto { Latitude = 43, Longitude = -5, Speed = 1000 };
 
-        // Act & Assert
-        await Assert.ThrowsAsync<NotFoundException>(() => _service.SendManualDestinationAsync(9999, dto));
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            _service.SendManualDestinationAsync(flightPlan.Id, dto));
     }
 }
