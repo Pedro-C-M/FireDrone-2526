@@ -9,6 +9,7 @@ namespace TestUnit.util
         ///</summary>
         public static class GeneralTestUtil
         {
+
             ///<summary>
             ///Clase para generar los CSV en memoria según el diccionario, así me ahorro necesitar una carpeta de CSV y aquí queda reusable
             ///</summary>

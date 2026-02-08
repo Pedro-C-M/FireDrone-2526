@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using TestUnit;
 
 namespace TestUnit
 {
@@ -67,6 +68,9 @@ namespace TestUnit
 
             string resultCsv = Encoding.UTF8.GetString(resultBytes);
 
+            expectedCsv = expectedCsv.Replace("\r", "");
+            resultCsv = resultCsv.Replace("\r", "");
+
             Assert.AreEqual(expectedCsv, resultCsv, "Los datos importados no coinciden con lo esperado");
         }
 
@@ -124,6 +128,9 @@ namespace TestUnit
             byte[] resultBytes = await _routeService.ExportRouteToCsvAsync(routeId);
 
             string resultCsv = Encoding.UTF8.GetString(resultBytes);
+
+            expectedCsv = expectedCsv.Replace("\r", "");
+            resultCsv = resultCsv.Replace("\r", "");
 
             Assert.AreEqual(expectedCsv, resultCsv, "Los datos importados no coinciden con lo esperado");
         }

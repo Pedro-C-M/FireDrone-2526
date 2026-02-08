@@ -62,8 +62,13 @@ namespace TestUnit
                 ORDER BY p.id";
 
             string actualData = util.ExecuteQueryToCsv(sql,";");
+
+            actualData = actualData.Replace("\r", "");
+            expectedString = expectedString.Replace("\r", "");
+
             Assert.AreEqual(expectedString, actualData, "Los datos importados no coinciden con lo esperado");
             //Console.WriteLine("Datos de la bd: "+ actualData);
+
         }
 
         [TestMethod]
