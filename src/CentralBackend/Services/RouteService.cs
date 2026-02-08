@@ -90,7 +90,7 @@ namespace CentralBackend.Services
         {
             if (!fileName.EndsWith(".csv", StringComparison.OrdinalIgnoreCase))
             {
-                throw new Exception($"Formato no válido. El archivo '{fileName}' no es un CSV.");
+                throw new Exception($"Formato no valido. El archivo '{fileName}' no es un CSV.");
             }
 
             var puntosTemp = new Dictionary<int, Models.RoutePoint>();
@@ -101,7 +101,7 @@ namespace CentralBackend.Services
             {
                 // Leer cabecera
                 var header = await reader.ReadLineAsync();
-                if (header == null) throw new Exception("El archivo CSV está vacío.");
+                if (header == null) throw new Exception("El archivo CSV esta vacio.");
 
                 string line;
                 while ((line = await reader.ReadLineAsync()) != null)
@@ -116,38 +116,38 @@ namespace CentralBackend.Services
                     // 1. VALIDACIÓN DE COLUMNAS
                     if (values.Length != 6)
                     {
-                        throw new ArgumentException($"Error en línea {numeroLinea}: Faltan columnas. Se esperaban 6 valores (Nombre;Tipo;Lat;Lon;Altura;Velocidad).");
+                        throw new ArgumentException($"Error en linea {numeroLinea}: Faltan columnas. Se esperaban 6 valores (Nombre;Tipo;Lat;Lon;Altura;Velocidad).");
                     }
 
                     // 2. PARSEO Y VALIDACIÓN DE TIPOS
                     string nombre = values[0].Trim();
-                    if (string.IsNullOrEmpty(nombre)) throw new Exception($"Error en línea {numeroLinea}: El 'Nombre' de la ruta no puede estar vacío.");
+                    if (string.IsNullOrEmpty(nombre)) throw new Exception($"Error en linea {numeroLinea}: El 'Nombre' de la ruta no puede estar vacio.");
 
                     // Validar Tipo (0 o 1)
                     if (!int.TryParse(values[1], out int tipoInt) || (tipoInt != 0 && tipoInt != 1))
                     {
-                        throw new ArgumentException($"Error en línea {numeroLinea}: El 'Tipo' debe ser 0 (Simple) o 1 (Periódica). Valor encontrado: '{values[1]}'");
+                        throw new ArgumentException($"Error en linea {numeroLinea}: El 'Tipo' debe ser 0 (Simple) o 1 (Periodica). Valor encontrado: '{values[1]}'");
                     }
 
                     // Validar Floats (Lat, Lon, Alt, Vel) con CultureInfo.InvariantCulture
                     if (!float.TryParse(values[2], NumberStyles.Float, CultureInfo.InvariantCulture, out float lat) || lat < -90 || lat > 90)
                     {
-                        throw new ArgumentException($"Error en línea {numeroLinea}: 'Latitud' inválida ({values[2]}). Debe estar entre -90 y 90.");
+                        throw new ArgumentException($"Error en linea {numeroLinea}: 'Latitud' invalida ({values[2]}). Debe estar entre -90 y 90.");
                     }
 
                     if (!float.TryParse(values[3], NumberStyles.Float, CultureInfo.InvariantCulture, out float lon) || lon < -180 || lon > 180)
                     {
-                        throw new ArgumentException($"Error en línea {numeroLinea}: 'Longitud' inválida ({values[3]}). Debe estar entre -180 y 180.");
+                        throw new ArgumentException($"Error en linea {numeroLinea}: 'Longitud' invalida ({values[3]}). Debe estar entre -180 y 180.");
                     }
 
                     if (!float.TryParse(values[4], NumberStyles.Float, CultureInfo.InvariantCulture, out float altura) || altura < 0)
                     {
-                        throw new ArgumentException($"Error en línea {numeroLinea}: 'Altura' inválida ({values[4]}).");
+                        throw new ArgumentException($"Error en linea {numeroLinea}: 'Altura' invalida ({values[4]}).");
                     }
 
                     if (!float.TryParse(values[5], NumberStyles.Float, CultureInfo.InvariantCulture, out float velocidad) || velocidad < 0)
                     {
-                        throw new ArgumentException($"Error en línea {numeroLinea}: 'Velocidad' inválida ({values[5]}). No puede ser negativa.");
+                        throw new ArgumentException($"Error en linea {numeroLinea}: 'Velocidad' invalida ({values[5]}). No puede ser negativa.");
                     }
 
                     // 3. LOGICA DE NEGOCIO (Agrupar)
@@ -167,7 +167,7 @@ namespace CentralBackend.Services
                         // Validación extra: Si la ruta ya existe, ¿el tipo coincide?
                         if ((int)rutasDict[nombre].Type != tipoInt)
                         {
-                            throw new Exception($"Error en línea {numeroLinea}: La ruta '{nombre}' se definió antes con otro TIPO. Todas las filas de una misma ruta deben tener el mismo tipo.");
+                            throw new Exception($"Error en linea {numeroLinea}: La ruta '{nombre}' se definio antes con otro TIPO. Todas las filas de una misma ruta deben tener el mismo tipo.");
                         }
                     }
 

@@ -53,7 +53,7 @@ namespace TestUnit
             util.CleanTables(new[] { "RoutePoints", "Routes" }, true);//Esto puede ser quitable
 
             int count = await _routeService.ImportFromCsvAsync(stream, fileName);
-            Assert.AreEqual(1, count, "Debería haber importado "+ expectedCreatedRoutes +" ruta/s");
+            Assert.AreEqual(1, count, "Deberia haber importado "+ expectedCreatedRoutes +" ruta/s");
 
             string sql = @"
                 SELECT r.Type, printf('%.4f', p.Lat), printf('%.4f', p.Long), ROUND(p.Height,2), ROUND(p.Velocity,2) as Velocity
@@ -88,7 +88,7 @@ namespace TestUnit
         }
 
         [TestMethod]
-        [DataRow("cp3.csv", "se definió antes con otro TIPO.")]
+        [DataRow("cp3.csv", "se definio antes con otro TIPO.")]
         public async Task Import_OneDifferetnTypePoint_Fail(string fileName, string expectedExceptionMessage)
         {
             var stream = GenerateStreamFromFileName(fileName);
@@ -104,12 +104,12 @@ namespace TestUnit
         }
 
         [TestMethod]
-        [DataRow("cp4.1.csv", "El 'Nombre' de la ruta no puede estar vacío.")]
+        [DataRow("cp4.1.csv", "El 'Nombre' de la ruta no puede estar vacio.")]
         [DataRow("cp4.2.csv", "El 'Tipo' debe ser")]
-        [DataRow("cp4.3.csv", "'Latitud' inválida")]
-        [DataRow("cp4.4.csv", "'Longitud' inválida")]
-        [DataRow("cp4.5.csv", "'Altura' inválida")]
-        [DataRow("cp4.6.csv", "'Velocidad' inválida")]
+        [DataRow("cp4.3.csv", "'Latitud' invalida")]
+        [DataRow("cp4.4.csv", "'Longitud' invalida")]
+        [DataRow("cp4.5.csv", "'Altura' invalida")]
+        [DataRow("cp4.6.csv", "'Velocidad' invalida")]
         public async Task Import_NullValues_Fail(string fileName, string expectedExceptionMessage)
         {
             var stream = GenerateStreamFromFileName(fileName);
@@ -141,10 +141,10 @@ namespace TestUnit
         }
 
         [TestMethod]
-        [DataRow("cp6.1.csv", "'Latitud' inválida")]
-        [DataRow("cp6.2.csv", "'Longitud' inválida")]
-        [DataRow("cp6.3.csv", "'Altura' inválida")]
-        [DataRow("cp6.4.csv", "'Velocidad' inválida")]
+        [DataRow("cp6.1.csv", "'Latitud' invalida")]
+        [DataRow("cp6.2.csv", "'Longitud' invalida")]
+        [DataRow("cp6.3.csv", "'Altura' invalida")]
+        [DataRow("cp6.4.csv", "'Velocidad' invalida")]
         public async Task Import_NotFloat_Fail(string fileName, string expectedExceptionMessage)
         {
             var stream = GenerateStreamFromFileName(fileName);
@@ -176,8 +176,8 @@ namespace TestUnit
         }
 
         [TestMethod]
-        [DataRow("cp8.1.csv", "'Velocidad' inválida")]
-        [DataRow("cp8.2.csv", "'Altura' inválida")]
+        [DataRow("cp8.1.csv", "'Velocidad' invalida")]
+        [DataRow("cp8.2.csv", "'Altura' invalida")]
         public async Task Import_NegativeValue_Fail(string fileName, string expectedExceptionMessage)
         {
             var stream = GenerateStreamFromFileName(fileName);
@@ -193,8 +193,8 @@ namespace TestUnit
         }
 
         [TestMethod]
-        [DataRow("cp9.1.csv", "'Latitud' inválida")]
-        [DataRow("cp9.2.csv", "'Longitud' inválida")]
+        [DataRow("cp9.1.csv", "'Latitud' invalida")]
+        [DataRow("cp9.2.csv", "'Longitud' invalida")]
         public async Task Import_CoordBadFormat_Fail(string fileName, string expectedExceptionMessage)
         {
             var stream = GenerateStreamFromFileName(fileName);
@@ -227,7 +227,7 @@ namespace TestUnit
         }
 
         [TestMethod]
-        [DataRow("cp11.txt", "Formato no válido")]
+        [DataRow("cp11.txt", "Formato no valido")]
         public async Task Import_DifferentFileType_Fail(string fileName, string expectedExceptionMessage)
         {
             var stream = GenerateStreamFromFileName(fileName);
@@ -243,7 +243,7 @@ namespace TestUnit
         }
 
         [TestMethod]
-        [DataRow("cp12", "Formato no válido")]        
+        [DataRow("cp12", "Formato no valido")]        
         public async Task Import_NoFileType_Fail(string fileName, string expectedExceptionMessage)
         {
             var stream = GenerateStreamFromFileName(fileName);
