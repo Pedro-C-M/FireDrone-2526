@@ -19,5 +19,17 @@ namespace DroneController.Drone
             // Se impreme, pero se podría usar para publicar
             Log.Debug($"Drone Update: lat: {status.Latitude} long: {status.Longitude}, alt: {status.Altitude}, spd: {status.Speed}");
         }
+
+        public void OnAlarm(DroneStatus status, AlarmType alarmType)
+        {
+            string alarmMessage = alarmType switch
+            {
+                AlarmType.BatteryDepleted => "CRITICAL: Battery depleted!",
+                AlarmType.LowBattery => "WARNING: Low battery!",
+                _ => "Unknown alarm"
+            };
+
+            Log.Debug($"[ALARM] {alarmMessage} - Battery: {status.Battery}, Position: ({status.Latitude}, {status.Longitude})");
+        }
     }
 }
