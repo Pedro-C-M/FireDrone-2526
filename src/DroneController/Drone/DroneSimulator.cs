@@ -128,6 +128,7 @@ namespace DroneController.Drone
         // Ejecuta una tarea para simular el plan de vuelo entre la lista de coordenadas
         public void StartFlightPlan(Waypoint[] waypoints, bool isPeriodic = false)
         {
+            _status.State = DroneState.Flying;
             _tokenSource = new CancellationTokenSource();
             CancellationToken token = _tokenSource.Token;
 
