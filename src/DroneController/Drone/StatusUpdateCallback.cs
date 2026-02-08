@@ -19,5 +19,33 @@ namespace DroneController.Drone
             // Enviar por RabbitMQ
             _controller.SendStatus(statusJson);
         }
+
+        public void OnAlarm(DroneStatus status, AlarmType alarmType)
+        {
+            // Log the alarm
+            string alarmMessage = alarmType switch
+            {
+                AlarmType.BatteryDepleted => "CRITICAL: Battery depleted!",
+                AlarmType.LowBattery => "WARNING: Low battery!",
+                _ => "Unknown alarm"
+            };
+
+            Log.Debug($"[ALARM] {alarmMessage} - Battery: {status.Battery}");
+
+            // Create alarm notification message
+            var alarmData = new
+            {
+                Type = "Alarm",
+                AlarmType = alarmType.ToString(),
+                Message = alarmMessage,
+                Status = status,
+                Timestamp = System.DateTime.UtcNow
+            };
+
+            string alarmJson = JsonConvert.SerializeObject(alarmData);
+
+            // Send alarm via RabbitMQ (same channel as status, but could use dedicated alarm queue)
+            _controller.SendStatus(alarmJson);
+        }
     }
 }

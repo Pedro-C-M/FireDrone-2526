@@ -47,6 +47,20 @@ namespace CentralBackend.Controllers
                     return NotFound($"Drone {droneId} not found");
                 }
 
+                // Check if this is an alarm message
+                bool isAlarm = false;
+                AlarmType alarmType = AlarmType.None;
+
+                if (content.TryGetProperty("IsAlarm", out var isAlarmProp))
+                {
+                    isAlarm = isAlarmProp.GetBoolean();
+                }
+
+                if (content.TryGetProperty("AlarmType", out var alarmTypeProp))
+                {
+                    alarmType = (AlarmType)alarmTypeProp.GetInt32();
+                }
+
                 // Extraer los valores del JSON y actualizar el dron
                 if (content.TryGetProperty("Latitude", out var latitude))
                 {
@@ -78,7 +92,7 @@ namespace CentralBackend.Controllers
                     drone.State = (DroneState)state.GetInt32();
                 }
 
-                Console.WriteLine($"[DroneController] Updating Drone {droneId}: Lat={drone.Lat}, Lon={drone.Lon}, Alt={drone.Altitude}, State={drone.State}");
+                Console.WriteLine($"[DroneController] Updating Drone {droneId}: Lat={drone.Lat}, Lon={drone.Lon}, Alt={drone.Altitude}, State={drone.State}, IsAlarm={isAlarm}");
 
                 // Guardar cambios en la base de datos
                 await _service.UpdateAsync(droneId, drone);
@@ -86,9 +100,16 @@ namespace CentralBackend.Controllers
                 // Hacer broadcast a través de SignalR para actualización en tiempo real
                 await _signalRService.BroadcastDroneUpdate(drone);
 
+                // If this is an alarm, broadcast the alarm separately
+                if (isAlarm && alarmType != AlarmType.None)
+                {
+                    Console.WriteLine($"[DroneController] Broadcasting ALARM for Drone {droneId}: {alarmType}");
+                    await _signalRService.BroadcastDroneAlarm(droneId, alarmType, drone.Lat, drone.Lon, drone.Battery);
+                }
+
                 Console.WriteLine($"[DroneController] Drone {droneId} status updated and broadcasted via SignalR");
 
-                return Ok(new { message = "Status updated successfully", droneId });
+                return Ok(new { message = "Status updated successfully", droneId, isAlarm, alarmType = alarmType.ToString() });
             }
             catch (Exception ex)
             {

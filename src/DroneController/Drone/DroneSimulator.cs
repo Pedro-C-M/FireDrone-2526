@@ -21,6 +21,9 @@ namespace DroneController.Drone
     {
         const int DEFAULT_UPDATE_INTERVAL_MS = 1000;
         const int DEFAULT_INITIAL_BATTERY = 1000;
+      const int LOW_BATTERY_THRESHOLD = 100; // 10% of 1000
+      const int MAX_BATTERY = 1000;
+        const int MIN_BATTERY = 0;
 
         public int UpdateIntervalMs { get; set; }
         public int InitialBattery { get; set; }
@@ -32,6 +35,7 @@ namespace DroneController.Drone
 
         private object _statusLock = new object();
         private DroneStatus _status;
+        private bool _lowBatteryAlarmTriggered = false; // Track if low battery alarm was already sent
 
         public DroneSimulator()
         {
@@ -45,7 +49,9 @@ namespace DroneController.Drone
                 Altitude = 0,
                 Speed = 0,
                 Battery = 0,
-                State = DroneState.Stopped
+                State = DroneState.Stopped,
+                IsAlarm = false,
+                AlarmType = AlarmType.None
             };
         }
 
@@ -65,6 +71,15 @@ namespace DroneController.Drone
         // Retorna true si la simulación debe continuar
         public bool StepSimulation()
         {
+            // Check if drone is in a terminal state (Landed or Stopped) - don't process updates
+            lock (_statusLock)
+            {
+                if (_status.State == DroneState.Landed || _status.State == DroneState.Stopped)
+                {
+                    return false;
+                }
+            }
+
             // Actualiza la posición
             bool arrived = _flightSimulator.StepSimulation();
 
@@ -75,54 +90,105 @@ namespace DroneController.Drone
             return continueSimulation;
         }
 
-        // Actualiza el estado
-        private bool UpdateStatus(bool arrived)
+    // Actualiza el estado
+    private bool UpdateStatus(bool arrived)
+    {
+        bool continueSimulation = true;
+        AlarmType alarmToTrigger = AlarmType.None;
+
+        // Actualización del estado de forma sincronizada (variable compartida)
+        lock (_statusLock)
         {
-            bool continueSimulation = true;
-
-            // Actualización del estado de forma sincronizada (variable compartida)
-            lock (_statusLock)
+            // Don't process updates if drone is Landed or Stopped
+            if (_status.State == DroneState.Landed || _status.State == DroneState.Stopped)
             {
-                _status.Latitude = _flightSimulator.GetCurrentLatitude();
-                _status.Longitude = _flightSimulator.GetCurrentLongitude();
-                _status.Altitude = _flightSimulator.GetCurrentAltitude();
-                _status.Speed = _flightSimulator.GetCurrentSpeed();
+                return false;
+            }
 
-                // Se reduce la batería en una unidad
+            _status.Latitude = _flightSimulator.GetCurrentLatitude();
+            _status.Longitude = _flightSimulator.GetCurrentLongitude();
+            _status.Altitude = _flightSimulator.GetCurrentAltitude();
+            _status.Speed = _flightSimulator.GetCurrentSpeed();
+
+            // Reset alarm state for this update
+            _status.IsAlarm = false;
+            _status.AlarmType = AlarmType.None;
+
+            // Se reduce la batería en una unidad, but don't go below 0
+            if (_status.Battery > MIN_BATTERY)
+            {
                 _status.Battery--;
+            }
 
-                if (arrived)
+            if (arrived)
+            {
+                if (!_flightSimulator.IsPeriodic)
                 {
-                    if (!_flightSimulator.IsPeriodic)
-                    {
-                        _status.State = DroneState.Landed;
-                        continueSimulation = false;
-                    }
-                }
-
-                if (_status.Battery == 0)
-                {
-                    _status.Altitude = 0;
-                    _status.Speed = 0;
-
+                    _status.State = DroneState.Landed;
                     continueSimulation = false;
-                }
-                if (_updateCallback != null)
-                {
-                    _updateCallback.Update(_status);
                 }
             }
 
-            return continueSimulation;
+            // Check for battery depleted (critical alarm)
+            if (_status.Battery <= MIN_BATTERY)
+            {
+                _status.Battery = MIN_BATTERY; // Ensure battery is exactly 0
+                _status.Altitude = 0;
+                _status.Speed = 0;
+                _status.State = DroneState.Landed; // Set state to Landed when battery depleted
+                _status.IsAlarm = true;
+                _status.AlarmType = AlarmType.BatteryDepleted;
+                alarmToTrigger = AlarmType.BatteryDepleted;
+
+                continueSimulation = false;
+            }
+            // Check for low battery warning (only trigger once)
+            else if (_status.Battery <= LOW_BATTERY_THRESHOLD && !_lowBatteryAlarmTriggered)
+            {
+                _status.IsAlarm = true;
+                _status.AlarmType = AlarmType.LowBattery;
+                alarmToTrigger = AlarmType.LowBattery;
+                _lowBatteryAlarmTriggered = true;
+            }
+
+            // Always call Update callback
+            if (_updateCallback != null)
+            {
+                _updateCallback.Update(_status);
+
+                // Trigger alarm callback if an alarm condition was detected
+                if (alarmToTrigger != AlarmType.None)
+                {
+                    _updateCallback.OnAlarm(_status, alarmToTrigger);
+                }
+            }
         }
+
+            return continueSimulation;
+    }
 
         // Inicializa la simulación
         public void StartSimulation(Waypoint[] waypoints, bool isPeriodic = false)
         {
             _flightSimulator = new FlightSimulator(waypoints, UpdateIntervalMs, isPeriodic);
-	    Console.WriteLine($"[DroneSimulator] Waypoint speed received: {waypoints[0].Speed}");
-            _status.Battery = InitialBattery;
+	        Console.WriteLine($"[DroneSimulator] Waypoint speed received: {waypoints[0].Speed}");
+       
+            // Validate and clamp InitialBattery to valid range [0, 1000]
+            int validatedBattery = InitialBattery;
+            if (validatedBattery < MIN_BATTERY)
+            {
+                validatedBattery = MIN_BATTERY;
+            }
+            else if (validatedBattery > MAX_BATTERY)
+            {
+                validatedBattery = MAX_BATTERY;
+            }
+        
+            _status.Battery = validatedBattery;
             _status.State = DroneState.Flying;
+            _status.IsAlarm = false;
+            _status.AlarmType = AlarmType.None;
+	        _lowBatteryAlarmTriggered = false; // Reset low battery alarm flag
         }
 
         // Ejecuta una tarea para simular el plan de vuelo entre la lista de coordenadas

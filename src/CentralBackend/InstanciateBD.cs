@@ -115,17 +115,39 @@ namespace CentralBackend
 
                     for (int i = 1; i <= NUM_DRONES; i++)
                     {
+                        // First drone (i=1) gets 10% battery (100 out of 1000) to test alarms
+                        // Second drone (i=2) gets 5% battery (50 out of 1000) for critical alarm
+                        int batteryValue;
+                        DroneState droneState;
+                        
+                        if (i == 1)
+                        {
+                            batteryValue = 110; // 10% - Low battery warning threshold
+                            droneState = DroneState.Flying; // Flying to trigger alarm
+                            Console.WriteLine($"[TEST] Drone 1 initialized with LOW BATTERY (10%) for alarm testing");
+                        }
+                        else if (i == 2)
+                        {
+                            batteryValue = 50; // 5% - Critical battery
+                            droneState = DroneState.Flying;
+                            Console.WriteLine($"[TEST] Drone 2 initialized with CRITICAL BATTERY (5%) for alarm testing");
+                        }
+                        else
+                        {
+                            batteryValue = random.Next(300, 1000); // 30-100% for other drones
+                            droneState = (DroneState)0;
+                        }
+
                         var dron = new Dron
                         {
                             Base = baseStationsList[i % baseStationsList.Count],
-
                             ControlStation = controlStation,
                             Lat = BASE_LAT + (float)(random.NextDouble() * 0.03 - 0.015),
                             Lon = BASE_LON + (float)(random.NextDouble() * 0.03 - 0.015),
-                            State = (DroneState) 0,
+                            State = droneState,
                             Altitude = random.Next(0, 120),
                             Speed = random.Next(0, 60),
-                            Battery = random.Next(10, 100)
+                            Battery = batteryValue
                         };
                         var dronChar = new DronCharacteristics
                         {

@@ -398,9 +398,9 @@ namespace CentralBackend.Services
                 Console.WriteLine($"[FlightPlanService] Calling ControlBackend at {controlBackendUrl}/api/drone/{existing.DronId}/stop");
 
                 var response = await httpClient.PostAsync(
-        $"{controlBackendUrl}/api/drone/{existing.DronId}/stop",
-          null
-              );
+                    $"{controlBackendUrl}/api/drone/{existing.DronId}/stop",
+                    null
+                );
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -424,11 +424,25 @@ namespace CentralBackend.Services
             Console.WriteLine($"[FlightPlanService] SwitchToManualModeAsync called: FlightPlanId={id}");
 
             var existing = await _context.FlightPlans
-     .Include(fp => fp.ModeChangeHistoric)
-            .FirstOrDefaultAsync(fp => fp.Id == id);
+                .Include(fp => fp.ModeChangeHistoric)
+                .FirstOrDefaultAsync(fp => fp.Id == id);
 
             if (existing == null)
                 throw new NotFoundException($"FlightPlan with ID {id} does not exist.");
+
+            // Only allow switching to manual mode if the flight plan is OnCourse
+            if (existing.State != FlightStatus.OnCourse)
+            {
+                Console.WriteLine($"[FlightPlanService] FlightPlan {id} is in {existing.State} state, cannot switch to manual mode");
+                throw new InvalidOperationException($"Cannot switch to manual mode: FlightPlan {id} is in {existing.State} state. Only flight plans with OnCourse status can be switched to manual mode.");
+            }
+
+            // Check if drone is assigned (DronId must be a valid non-zero value)
+            if (existing.DronId == null || existing.DronId == 0)
+            {
+                Console.WriteLine($"[FlightPlanService] FlightPlan {id} has no drone assigned, cannot switch to manual mode");
+                throw new InvalidOperationException($"Cannot switch to manual mode: FlightPlan {id} has no drone assigned.");
+            }
 
             // Update flight plan status to Manual
             existing.State = FlightStatus.Manual;
@@ -446,18 +460,18 @@ namespace CentralBackend.Services
             Console.WriteLine($"[FlightPlanService] FlightPlan {id} switched to Manual mode in database, status updated to Manual");
 
             // Call ControlBackend to notify the mode change
-   try
-       {
-     var controlBackendUrl = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://localhost:5307";
-  var httpClient = _httpClientFactory.CreateClient();
+            try
+            {
+                var controlBackendUrl = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://localhost:5307";
+                var httpClient = _httpClientFactory.CreateClient();
 
-      Console.WriteLine($"[FlightPlanService] Notifying ControlBackend of manual mode for drone {existing.DronId}");
-        Console.WriteLine($"[FlightPlanService] Manual mode activated for FlightPlan {id}, Drone {existing.DronId}");
-    }
-      catch (Exception ex)
-   {
-      Console.WriteLine($"[FlightPlanService] Error notifying manual mode change: {ex.Message}");
-     }
+                Console.WriteLine($"[FlightPlanService] Notifying ControlBackend of manual mode for drone {existing.DronId}");
+                Console.WriteLine($"[FlightPlanService] Manual mode activated for FlightPlan {id}, Drone {existing.DronId}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[FlightPlanService] Error notifying manual mode change: {ex.Message}");
+            }
 
             return existing;
         }
@@ -468,7 +482,22 @@ namespace CentralBackend.Services
             if (existing == null)
                 throw new NotFoundException($"FlightPlan with ID {flightPlanId} does not exist.");
 
-	    // Llamada al ControlBackend
+            // Validate latitude (-90 to 90)
+            if (dto.Latitude < -90.0 || dto.Latitude > 90.0)
+                throw new ArgumentException($"Latitude must be between -90 and 90. Received: {dto.Latitude}");
+
+            // Validate longitude (-180 to 180)
+            if (dto.Longitude < -180.0 || dto.Longitude > 180.0)
+                throw new ArgumentException($"Longitude must be between -180 and 180. Received: {dto.Longitude}");
+
+            // Validate speed (must be positive and not exceed maximum)
+            if (dto.Speed <= 0.0)
+                 throw new ArgumentException($"Speed must be greater than 0. Received: {dto.Speed}");
+
+            if (dto.Speed > 100.0)
+                throw new ArgumentException($"Speed must not exceed 100. Received: {dto.Speed}");
+
+            // Llamada al ControlBackend
             try
             {
                 var controlBackendUrl = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://localhost:5307";
@@ -481,12 +510,12 @@ namespace CentralBackend.Services
                     speed = dto.Speed
                 };
 
-		Console.WriteLine($"[FlightPlanService] Sending manual destination to ControlBackend for drone {existing.DronId}");
+		        Console.WriteLine($"[FlightPlanService] Sending manual destination to ControlBackend for drone {existing.DronId}");
 
                 var response = await httpClient.PostAsJsonAsync(
-               $"{controlBackendUrl}/api/drone/{existing.DronId}/goto",
+                    $"{controlBackendUrl}/api/drone/{existing.DronId}/goto",
                          payload
-               );
+                );
 
                 if (!response.IsSuccessStatusCode)
                 {
