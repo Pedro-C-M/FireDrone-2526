@@ -114,9 +114,9 @@ namespace CentralBackend.Services
                     var values = line.Split(';');
 
                     // 1. VALIDACIÓN DE COLUMNAS
-                    if (values.Length < 6)
+                    if (values.Length != 6)
                     {
-                        throw new Exception($"Error en línea {numeroLinea}: Faltan columnas. Se esperaban 6 valores (Nombre;Tipo;Lat;Lon;Altura;Velocidad).");
+                        throw new ArgumentException($"Error en línea {numeroLinea}: Faltan columnas. Se esperaban 6 valores (Nombre;Tipo;Lat;Lon;Altura;Velocidad).");
                     }
 
                     // 2. PARSEO Y VALIDACIÓN DE TIPOS
@@ -126,28 +126,28 @@ namespace CentralBackend.Services
                     // Validar Tipo (0 o 1)
                     if (!int.TryParse(values[1], out int tipoInt) || (tipoInt != 0 && tipoInt != 1))
                     {
-                        throw new Exception($"Error en línea {numeroLinea}: El 'Tipo' debe ser 0 (Simple) o 1 (Periódica). Valor encontrado: '{values[1]}'");
+                        throw new ArgumentException($"Error en línea {numeroLinea}: El 'Tipo' debe ser 0 (Simple) o 1 (Periódica). Valor encontrado: '{values[1]}'");
                     }
 
                     // Validar Floats (Lat, Lon, Alt, Vel) con CultureInfo.InvariantCulture
                     if (!float.TryParse(values[2], NumberStyles.Float, CultureInfo.InvariantCulture, out float lat) || lat < -90 || lat > 90)
                     {
-                        throw new Exception($"Error en línea {numeroLinea}: 'Latitud' inválida ({values[2]}). Debe estar entre -90 y 90.");
+                        throw new ArgumentException($"Error en línea {numeroLinea}: 'Latitud' inválida ({values[2]}). Debe estar entre -90 y 90.");
                     }
 
                     if (!float.TryParse(values[3], NumberStyles.Float, CultureInfo.InvariantCulture, out float lon) || lon < -180 || lon > 180)
                     {
-                        throw new Exception($"Error en línea {numeroLinea}: 'Longitud' inválida ({values[3]}). Debe estar entre -180 y 180.");
+                        throw new ArgumentException($"Error en línea {numeroLinea}: 'Longitud' inválida ({values[3]}). Debe estar entre -180 y 180.");
                     }
 
-                    if (!float.TryParse(values[4], NumberStyles.Float, CultureInfo.InvariantCulture, out float altura))
+                    if (!float.TryParse(values[4], NumberStyles.Float, CultureInfo.InvariantCulture, out float altura) || altura < 0)
                     {
-                        throw new Exception($"Error en línea {numeroLinea}: 'Altura' inválida ({values[4]}).");
+                        throw new ArgumentException($"Error en línea {numeroLinea}: 'Altura' inválida ({values[4]}).");
                     }
 
                     if (!float.TryParse(values[5], NumberStyles.Float, CultureInfo.InvariantCulture, out float velocidad) || velocidad < 0)
                     {
-                        throw new Exception($"Error en línea {numeroLinea}: 'Velocidad' inválida ({values[5]}). No puede ser negativa.");
+                        throw new ArgumentException($"Error en línea {numeroLinea}: 'Velocidad' inválida ({values[5]}). No puede ser negativa.");
                     }
 
                     // 3. LOGICA DE NEGOCIO (Agrupar)

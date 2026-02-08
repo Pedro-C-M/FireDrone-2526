@@ -46,7 +46,7 @@ namespace TestUnit
         [TestMethod]
         [DataRow("cp1.1.csv","0;43.5450;-5.6600;50.0;10.0", 1)]
         [DataRow("cp1.2.csv", "0;43.5450;-5.6600;50.0;10.0\n0;43.6450;-5.7600;50.0;10.0\n0;43.7450;-5.8600;50.0;10.0", 3)]
-        public async Task Importar_DiferentesNPuntosRuta_Correcto(string fileName,string expectedString , int expectedCreatedRoutes)
+        public async Task Import_DifferentNPoints_Correct(string fileName,string expectedString , int expectedCreatedRoutes)
         {
             var stream = GenerateStreamFromFileName(fileName);
 
@@ -68,7 +68,7 @@ namespace TestUnit
 
         [TestMethod]
         [DataRow("cp2.csv", "No hay puntos en la ruta.")]
-        public async Task Importar_SinPuntosRuta_Fallo(string fileName, string expectedExceptionMessage)
+        public async Task Import_NoRoutePoints_Fail(string fileName, string expectedExceptionMessage)
         {
             var stream = GenerateStreamFromFileName(fileName);
 
@@ -82,5 +82,175 @@ namespace TestUnit
             Assert.AreEqual(expectedExceptionMessage, e.Message);
         }
 
+        [TestMethod]
+        [DataRow("cp3.csv", "se definió antes con otro TIPO.")]
+        public async Task Import_OneDifferetnTypePoint_Fail(string fileName, string expectedExceptionMessage)
+        {
+            var stream = GenerateStreamFromFileName(fileName);
+
+            util.CleanTables(new[] { "RoutePoints", "Routes" }, true);//Esto puede ser quitable
+
+            Exception e = await Assert.ThrowsAsync<Exception>(async () =>
+            {
+                await _routeService.ImportFromCsvAsync(stream, fileName);
+            });
+
+            Assert.Contains(expectedExceptionMessage, e.Message);
+        }
+
+        [TestMethod]
+        [DataRow("cp4.1.csv", "El 'Nombre' de la ruta no puede estar vacío.")]
+        [DataRow("cp4.2.csv", "El 'Tipo' debe ser")]
+        [DataRow("cp4.3.csv", "'Latitud' inválida")]
+        [DataRow("cp4.4.csv", "'Longitud' inválida")]
+        [DataRow("cp4.5.csv", "'Altura' inválida")]
+        [DataRow("cp4.6.csv", "'Velocidad' inválida")]
+        public async Task Import_NullValues_Fail(string fileName, string expectedExceptionMessage)
+        {
+            var stream = GenerateStreamFromFileName(fileName);
+
+            util.CleanTables(new[] { "RoutePoints", "Routes" }, true);//Esto puede ser quitable
+
+            Exception e = await Assert.ThrowsAsync<Exception>(async () =>
+            {
+                await _routeService.ImportFromCsvAsync(stream, fileName);
+            });
+
+            Assert.Contains(expectedExceptionMessage, e.Message);
+        }
+
+        [TestMethod]
+        [DataRow("cp5.csv", "El 'Tipo' debe ser")]
+        public async Task Import_TypeNotInteger_Fail(string fileName, string expectedExceptionMessage)
+        {
+            var stream = GenerateStreamFromFileName(fileName);
+
+            util.CleanTables(new[] { "RoutePoints", "Routes" }, true);//Esto puede ser quitable
+
+            Exception e = await Assert.ThrowsAsync<Exception>(async () =>
+            {
+                await _routeService.ImportFromCsvAsync(stream, fileName);
+            });
+
+            Assert.Contains(expectedExceptionMessage, e.Message);
+        }
+
+        [TestMethod]
+        [DataRow("cp6.1.csv", "'Latitud' inválida")]
+        [DataRow("cp6.2.csv", "'Longitud' inválida")]
+        [DataRow("cp6.3.csv", "'Altura' inválida")]
+        [DataRow("cp6.4.csv", "'Velocidad' inválida")]
+        public async Task Import_NotFloat_Fail(string fileName, string expectedExceptionMessage)
+        {
+            var stream = GenerateStreamFromFileName(fileName);
+
+            util.CleanTables(new[] { "RoutePoints", "Routes" }, true);//Esto puede ser quitable
+
+            Exception e = await Assert.ThrowsAsync<Exception>(async () =>
+            {
+                await _routeService.ImportFromCsvAsync(stream, fileName);
+            });
+
+            Assert.Contains(expectedExceptionMessage, e.Message);
+        }
+
+        [TestMethod]
+        [DataRow("cp7.csv", "El 'Tipo' debe ser")]
+        public async Task Import_TypeNotCorrect_Fail(string fileName, string expectedExceptionMessage)
+        {
+            var stream = GenerateStreamFromFileName(fileName);
+
+            util.CleanTables(new[] { "RoutePoints", "Routes" }, true);//Esto puede ser quitable
+
+            Exception e = await Assert.ThrowsAsync<Exception>(async () =>
+            {
+                await _routeService.ImportFromCsvAsync(stream, fileName);
+            });
+
+            Assert.Contains(expectedExceptionMessage, e.Message);
+        }
+
+        [TestMethod]
+        [DataRow("cp8.1.csv", "'Velocidad' inválida")]
+        [DataRow("cp8.2.csv", "'Altura' inválida")]
+        public async Task Import_NegativeValue_Fail(string fileName, string expectedExceptionMessage)
+        {
+            var stream = GenerateStreamFromFileName(fileName);
+
+            util.CleanTables(new[] { "RoutePoints", "Routes" }, true);//Esto puede ser quitable
+
+            Exception e = await Assert.ThrowsAsync<Exception>(async () =>
+            {
+                await _routeService.ImportFromCsvAsync(stream, fileName);
+            });
+
+            Assert.Contains(expectedExceptionMessage, e.Message);
+        }
+
+        [TestMethod]
+        [DataRow("cp9.1.csv", "'Latitud' inválida")]
+        [DataRow("cp9.2.csv", "'Longitud' inválida")]
+        public async Task Import_CoordBadFormat_Fail(string fileName, string expectedExceptionMessage)
+        {
+            var stream = GenerateStreamFromFileName(fileName);
+
+            util.CleanTables(new[] { "RoutePoints", "Routes" }, true);//Esto puede ser quitable
+
+            Exception e = await Assert.ThrowsAsync<Exception>(async () =>
+            {
+                await _routeService.ImportFromCsvAsync(stream, fileName);
+            });
+
+            Assert.Contains(expectedExceptionMessage, e.Message);
+        }
+
+        [TestMethod]
+        [DataRow("cp10.1.csv", "Se esperaban 6 valores")]
+        [DataRow("cp10.2.csv", "Se esperaban 6 valores")]
+        public async Task Import_BadCsvFields_Fail(string fileName, string expectedExceptionMessage)
+        {
+            var stream = GenerateStreamFromFileName(fileName);
+
+            util.CleanTables(new[] { "RoutePoints", "Routes" }, true);//Esto puede ser quitable
+
+            Exception e = await Assert.ThrowsAsync<Exception>(async () =>
+            {
+                await _routeService.ImportFromCsvAsync(stream, fileName);
+            });
+
+            Assert.Contains(expectedExceptionMessage, e.Message);
+        }
+
+        [TestMethod]
+        [DataRow("cp11.txt", "Formato no válido")]
+        public async Task Import_DifferentFileType_Fail(string fileName, string expectedExceptionMessage)
+        {
+            var stream = GenerateStreamFromFileName(fileName);
+
+            util.CleanTables(new[] { "RoutePoints", "Routes" }, true);//Esto puede ser quitable
+
+            Exception e = await Assert.ThrowsAsync<Exception>(async () =>
+            {
+                await _routeService.ImportFromCsvAsync(stream, fileName);
+            });
+
+            Assert.Contains(expectedExceptionMessage, e.Message);
+        }
+
+        [TestMethod]
+        [DataRow("cp12", "Formato no válido")]        
+        public async Task Import_NoFileType_Fail(string fileName, string expectedExceptionMessage)
+        {
+            var stream = GenerateStreamFromFileName(fileName);
+
+            util.CleanTables(new[] { "RoutePoints", "Routes" }, true);//Esto puede ser quitable
+
+            Exception e = await Assert.ThrowsAsync<Exception>(async () =>
+            {
+                await _routeService.ImportFromCsvAsync(stream, fileName);
+            });
+
+            Assert.Contains(expectedExceptionMessage, e.Message);
+        }
     }
 }
