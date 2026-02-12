@@ -5,6 +5,7 @@ namespace TestLoad
 {
     class Program
     {
+        const int DEFAULT_DRONES = 50;
         // Este programa es un menú simple para poblar o limpiar la base de datos antes o después de las pruebas de carga.
         static async Task Main(string[] args)
         {
@@ -25,11 +26,16 @@ namespace TestLoad
                 switch (key.KeyChar)
                 {
                     case '1':
-                        Console.WriteLine(" - Cargando la base de datos...");
+                        int nDrones = AskForNumber("¿Cuántos drones quieres crear?: ");
+                        Console.WriteLine(" - Cargando la base de datos para "+ nDrones +" drones...");
+                        await DataLoader.Run(nDrones);
+                        Console.WriteLine("Base de datos cargada");
                         Pause();
                         break;
                     case '2':
                         Console.WriteLine("Limpiando la base de datos...");
+                        await DataCleaner.Run();
+                        Console.WriteLine("Base de datos limpiada");
                         Pause();
                         break;
                     case '3':
@@ -40,6 +46,17 @@ namespace TestLoad
                         break;
                 }
             }
+        }
+        static int AskForNumber(string message)
+        {
+            Console.Write(message);
+            string input = Console.ReadLine();
+            if (int.TryParse(input, out int result) && result > 0)
+            {
+                return result;
+            }
+            Console.WriteLine("Número inválido, usando valor por defecto: "+ DEFAULT_DRONES);
+            return DEFAULT_DRONES;
         }
 
         static void Pause()
