@@ -12,6 +12,8 @@ namespace TestLoad
             {
                 Console.Clear();
                 Console.WriteLine("==========================================");
+                Console.WriteLine("=========== PRUEBAS DE CARGA =============");
+                Console.WriteLine("==========================================");
                 Console.WriteLine("1. Poblar BD para pruebas de carga");
                 Console.WriteLine("2. Limpiar BD tras acabar pruebas de carga");
                 Console.WriteLine("3. Salir");
@@ -23,11 +25,11 @@ namespace TestLoad
                 switch (key.KeyChar)
                 {
                     case '1':
-                        Console.WriteLine("Cargamos la base de datos");
+                        Console.WriteLine(" - Cargando la base de datos...");
                         Pause();
                         break;
                     case '2':
-                        Console.WriteLine("Limpiamos la base de datos");
+                        Console.WriteLine("Limpiando la base de datos...");
                         Pause();
                         break;
                     case '3':
