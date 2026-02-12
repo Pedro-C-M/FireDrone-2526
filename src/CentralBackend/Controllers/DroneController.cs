@@ -18,6 +18,31 @@ namespace CentralBackend.Controllers
             _signalRService = signalRService;
         }
 
+        [HttpPost]
+        public async Task<ActionResult<Dron>> Create(Dron drone)
+        {
+            try
+            {
+                var existing = await _service.GetByIdAsync(drone.Id);
+                //Si existe
+                if (existing != null)
+                {
+                    return Ok(existing);
+                }
+                //Si no existe
+                await _service.CreateAsync(drone);
+
+                Console.WriteLine($"[DroneController] Created new drone: {drone.Id}");
+                return CreatedAtAction(nameof(GetAll), new { id = drone.Id }, drone);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[DroneController] Error creating drone: {ex.Message}");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Dron>>> GetAll()
         {

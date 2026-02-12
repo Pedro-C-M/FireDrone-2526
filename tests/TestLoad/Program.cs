@@ -6,6 +6,9 @@ namespace TestLoad
     class Program
     {
         const int DEFAULT_DRONES = 50;
+        private static readonly HttpClient client = new HttpClient();
+        private const string BackendUrl = "http://localhost:5306";
+
         // Este programa es un menú simple para poblar o limpiar la base de datos antes o después de las pruebas de carga.
         static async Task Main(string[] args)
         {
@@ -28,13 +31,13 @@ namespace TestLoad
                     case '1':
                         int nDrones = AskForNumber("¿Cuántos drones quieres crear?: ");
                         Console.WriteLine(" - Cargando la base de datos para "+ nDrones +" drones...");
-                        await DataLoader.Run(nDrones);
+                        await CleanDatabase(nDrones);
                         Console.WriteLine("Base de datos cargada");
                         Pause();
                         break;
                     case '2':
                         Console.WriteLine("Limpiando la base de datos...");
-                        await DataCleaner.Run();
+                        await CleanDatabase();
                         Console.WriteLine("Base de datos limpiada");
                         Pause();
                         break;
@@ -63,6 +66,40 @@ namespace TestLoad
         {
             Console.WriteLine("\nPresiona cualquier tecla para continuar...");
             Console.ReadKey();
+        }
+
+        private static async Task CleanDatabase(int? nDrones = null)
+        {
+            Console.WriteLine($"Iniciando limpieza de base de datos{(nDrones.HasValue ? $" con {nDrones} drones" : "")}...");
+            try
+            {
+                string url = $"{BackendUrl}/api/database/clean";
+                if (nDrones.HasValue)
+                {
+                    url += $"?drones={nDrones.Value}";
+                }
+
+                HttpResponseMessage response = await client.PostAsync(url, null);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    string result = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"Éxito: {result}");
+                }
+                else
+                {
+                    Console.WriteLine($"Error: {response.StatusCode} - {await response.Content.ReadAsStringAsync()}");
+                }
+            }
+            catch (HttpRequestException e)
+            {
+                Console.WriteLine($"Error de conexión: {e.Message}");
+                Console.WriteLine($"Asegúrese de que el backend esté ejecutándose en {BackendUrl}");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Error inesperado: {e.Message}");
+            }
         }
     }
 }

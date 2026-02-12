@@ -56,5 +56,11 @@ namespace CentralBackend.Services
                 .Where(d => !_context.FlightPlans.Any(fp => fp.DronId == d.Id))
                 .ToListAsync();
         }
+
+        public async Task CreateAsync(Dron drone)
+        {
+            _context.Drones.Add(drone);
+            await _context.SaveChangesAsync();
+        }
     }
 }

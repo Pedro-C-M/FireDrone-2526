@@ -13,14 +13,15 @@ namespace CentralBackend
         private const int NUM_BASE_STATIONS = 3;
         private const int NUM_ROUTES = 5;
         private const int NUM_DRONES = 11; // Generaremos 11 drones (1 sin plan de vuelo)
-        private const int NUM_FLIGHT_PLANS = 10; // Un plan por dron (el ultimo dron no tendra plan)
 
         // Coordenadas base (Gijón) para generar variaciones
         private const float BASE_LAT = 43.5322f;
         private const float BASE_LON = -5.6611f;
 
-        public static void FormaBaseDeBD()
+        public static void FormaBaseDeBD(int nDrones = NUM_DRONES)
         {
+            int nFlightPlans = nDrones; 
+
             using (var db = new FireDrone())
             {
                 try
@@ -113,7 +114,7 @@ namespace CentralBackend
                     var drones = new List<Dron>();
                     var baseStationsList = controlStation.BaseStations.ToList();
 
-                    for (int i = 1; i <= NUM_DRONES; i++)
+                    for (int i = 1; i <= nDrones; i++)
                     {
                         // First drone (i=1) gets 10% battery (100 out of 1000) to test alarms
                         // Second drone (i=2) gets 5% battery (50 out of 1000) for critical alarm
@@ -164,8 +165,10 @@ namespace CentralBackend
                     db.SaveChanges();
 
                     // 7. Generar Planes de Vuelo (Asignar 1 a cada dron para simplificar, o aleatorio)
-                    for (int i = 0; i < NUM_FLIGHT_PLANS; i++)
+                    for (int i = 0; i < nFlightPlans; i++)
                     {
+                        if (drones.Count == 0) break;
+
                         // Asegurarnos de no salirnos del índice si hay menos rutas/drones que planes
                         var assignedDron = drones[i % drones.Count];
                         var assignedRoute = routes[i % routes.Count];
