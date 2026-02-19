@@ -2,16 +2,16 @@
 CHULETA DE COMANDOS - PRUEBAS DE CARGA FIREDRONE
 ========================================================
 
-1. DAR PERMISOS A LOS SCRIPTS (Solo necesario la primera vez):
+1. DAR PERMISOS A LOS SCRIPTS (Si no tienen):
 --------------------------------------------------------
-chmod +x lanzar_drones.sh
-chmod +x borrar_contenedores.sh
+sudo chmod +x lanzar_drones.sh
+sudo chmod +x borrar_contenedores.sh
 
 
 2. PREPARAR TODO (Despliegue de Drones):
 --------------------------------------------------------
-Asegúrate de haber poblado la BD con TestLoad primero.
-Luego, ejecuta el script pasándole el número TOTAL de drones a lanzar que creaste antes.
+Asegúrate de haber poblado la BD con TestLoad primero con n drones.
+Luego, ejecuta el script pasándole ese n de drones a lanzar que creaste antes.
 (Ejemplo para 50 drones)
 
 ./lanzar_drones.sh 50
