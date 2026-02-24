@@ -9,7 +9,7 @@ fi
 
 END=$1
 IMAGE="firedrone-drone-controller"
-NETWORK="firedrone-network"
+NETWORK="firedrone-2526-3_firedrone-network"
 
 echo "========================================"
 echo "REINICIANDO Y DESPLEGANDO $END DRONES"
