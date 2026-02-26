@@ -27,7 +27,6 @@ do
    docker run -d \
         --name $NAME \
         --network $NETWORK \
-        --restart unless-stopped \
         -e RABBITMQ_HOST=156.35.163.122 \
         -e RABBITMQ_USER=equipo3-777 \
         -e RABBITMQ_PASSWORD=shhh-777 \
