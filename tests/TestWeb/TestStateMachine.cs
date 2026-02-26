@@ -44,7 +44,13 @@ namespace TestWeb
         private const double TEST_LON_1 = -5.6611;
         private const double TEST_LAT_2 = 43.5400;
         private const double TEST_LON_2 = -5.6700;
-        private const double TEST_SPEED = 1000.0;
+        private const double TEST_LAT_3 = 43.5422;
+        private const double TEST_LON_3 = -5.6711;
+        private const double TEST_LAT_4 = 43.5500;
+        private const double TEST_LON_4 = -5.6800;
+        private const double TEST_LAT_5 = 43.5622;
+        private const double TEST_LON_5 = -5.6911;
+        private const double TEST_SPEED = 100.0;
 
         [TestInitialize]
         public override void SetUp()
@@ -70,9 +76,9 @@ namespace TestWeb
             util.ExecuteSqlCommand($"INSERT INTO ControlStations (Id, Lat, Lon) VALUES (1, {TEST_LAT_1.ToString(System.Globalization.CultureInfo.InvariantCulture)}, {TEST_LON_1.ToString(System.Globalization.CultureInfo.InvariantCulture)})");
             util.ExecuteSqlCommand($"INSERT INTO BaseStations (Id, ControlStationId) VALUES (1, 1)");
 
-            // Inserta dron de prueba con estado inicial Stopped (0)
+            // Inserta dron de prueba con estado inicial Stopped (0) and sufficient battery
             util.ExecuteSqlCommand($"INSERT INTO Drones (Id, Lat, Lon, Battery, State, BaseStationId, ControlStationId, Speed) " +
-                                   $"VALUES ({TEST_DRONE_ID}, {TEST_LAT_1.ToString(System.Globalization.CultureInfo.InvariantCulture)}, {TEST_LON_1.ToString(System.Globalization.CultureInfo.InvariantCulture)}, 800, 0, 1, 1, {TEST_SPEED.ToString(System.Globalization.CultureInfo.InvariantCulture)})");
+                                   $"VALUES ({TEST_DRONE_ID}, {TEST_LAT_1.ToString(System.Globalization.CultureInfo.InvariantCulture)}, {TEST_LON_1.ToString(System.Globalization.CultureInfo.InvariantCulture)}, 5000, 0, 1, 1, {TEST_SPEED.ToString(System.Globalization.CultureInfo.InvariantCulture)})");
 
             // Inserta ruta de prueba
             util.ExecuteSqlCommand($"INSERT INTO Routes (Id, Type) VALUES ({TEST_ROUTE_ID}, 0)");
@@ -82,6 +88,12 @@ namespace TestWeb
                                    $"VALUES ({TEST_ROUTE_ID}, {TEST_LAT_1.ToString(System.Globalization.CultureInfo.InvariantCulture)}, {TEST_LON_1.ToString(System.Globalization.CultureInfo.InvariantCulture)}, 10.0, {TEST_SPEED.ToString(System.Globalization.CultureInfo.InvariantCulture)})");
             util.ExecuteSqlCommand($"INSERT INTO RoutePoints (RouteId, Lat, Long, Height, Velocity) " +
                                    $"VALUES ({TEST_ROUTE_ID}, {TEST_LAT_2.ToString(System.Globalization.CultureInfo.InvariantCulture)}, {TEST_LON_2.ToString(System.Globalization.CultureInfo.InvariantCulture)}, 10.0, {TEST_SPEED.ToString(System.Globalization.CultureInfo.InvariantCulture)})");
+            util.ExecuteSqlCommand($"INSERT INTO RoutePoints (RouteId, Lat, Long, Height, Velocity) " +
+                                   $"VALUES ({TEST_ROUTE_ID}, {TEST_LAT_3.ToString(System.Globalization.CultureInfo.InvariantCulture)}, {TEST_LON_3.ToString(System.Globalization.CultureInfo.InvariantCulture)}, 10.0, {TEST_SPEED.ToString(System.Globalization.CultureInfo.InvariantCulture)})");
+            util.ExecuteSqlCommand($"INSERT INTO RoutePoints (RouteId, Lat, Long, Height, Velocity) " +
+                                   $"VALUES ({TEST_ROUTE_ID}, {TEST_LAT_4.ToString(System.Globalization.CultureInfo.InvariantCulture)}, {TEST_LON_4.ToString(System.Globalization.CultureInfo.InvariantCulture)}, 10.0, {TEST_SPEED.ToString(System.Globalization.CultureInfo.InvariantCulture)})");
+            util.ExecuteSqlCommand($"INSERT INTO RoutePoints (RouteId, Lat, Long, Height, Velocity) " +
+                                   $"VALUES ({TEST_ROUTE_ID}, {TEST_LAT_5.ToString(System.Globalization.CultureInfo.InvariantCulture)}, {TEST_LON_5.ToString(System.Globalization.CultureInfo.InvariantCulture)}, 10.0, {TEST_SPEED.ToString(System.Globalization.CultureInfo.InvariantCulture)})");
         }
 
         /// <summary>
@@ -193,18 +205,34 @@ namespace TestWeb
             sm.GetLogger().Info($"-- Waiting for drone {droneId} to reach state {expectedState}");
             
             DateTime startTime = DateTime.Now;
+            string lastState = "";
             while ((DateTime.Now - startTime).TotalSeconds < timeoutSeconds)
             {
                 string currentState = util.ExecuteQueryToCsv($"SELECT State FROM Drones WHERE Id = {droneId}").Trim();
+                
+                // Log state changes to help diagnose issues
+                if (currentState != lastState)
+                {
+                    sm.GetLogger().Info($"-- Drone {droneId} state changed: {lastState} -> {currentState}");
+                    lastState = currentState;
+                }
+                
                 if (currentState == expectedState.ToString())
                 {
                     sm.GetLogger().Info($"-- Drone {droneId} reached state {expectedState}");
                     return;
                 }
-                Thread.Sleep(2000); // Verifica cada 2 segundos
+                Thread.Sleep(1000); // Check every second instead of every 2 seconds
             }
             
-            Assert.Fail($"Timeout: Drone {droneId} did not reach state {expectedState} within {timeoutSeconds} seconds");
+            // Provide detailed failure information
+            string finalState = util.ExecuteQueryToCsv($"SELECT State FROM Drones WHERE Id = {droneId}").Trim();
+            string battery = util.ExecuteQueryToCsv($"SELECT Battery FROM Drones WHERE Id = {droneId}").Trim();
+            string lat = util.ExecuteQueryToCsv($"SELECT Lat FROM Drones WHERE Id = {droneId}").Trim();
+            string lon = util.ExecuteQueryToCsv($"SELECT Lon FROM Drones WHERE Id = {droneId}").Trim();
+            
+            Assert.Fail($"Timeout: Drone {droneId} did not reach state {expectedState} within {timeoutSeconds} seconds. " +
+                       $"Final state: {finalState}, Battery: {battery}, Position: ({lat}, {lon})");
         }
 
         /// <summary>
@@ -378,10 +406,11 @@ namespace TestWeb
         //     sm.Screenshot("Path_2_Final");
         // }
 
+        // Path: 1,2,4,5,1,2,3
         // [TestMethod()]
         // public void TestPath_1_2_4_5_1_2_3()
         // {
-        //     int planId = CreateTestFlightPlan(state: 2);
+        //     int planId = CreateTestFlightPla n(state: 2);
         //     NavigateToDashboard();
         //     sm.Screenshot("Path_3_Initial");
 
@@ -389,8 +418,9 @@ namespace TestWeb
         //     restartBtn.Click();
         //     Thread.Sleep(1000);
         //     ManageAlert(true, false, null);
+        //     ManageAlert(true, false, null);
         //     Thread.Sleep(3000);
-        //     sm.Screenshot("Path_3_Step1");
+        //     sm.Screenshot("Path_3_Launch_Drone_Auto");
 
         //     var manualBtn = GetManualButton(planId);
         //     manualBtn.Click();
@@ -398,28 +428,28 @@ namespace TestWeb
         //     ManageAlert(true, false, null);
         //     Thread.Sleep(1000);
         //     SendManualCoordinates(TEST_LAT_2, TEST_LON_2, TEST_SPEED);
-        //     sm.Screenshot("Path_3_Step2");
+        //     sm.Screenshot("Path_3_Launch_Drone_Manual");
 
         //     var resumeBtn = GetResumeButton(planId);
         //     resumeBtn.Click();
         //     Thread.Sleep(1000);
         //     ManageAlert(true, false, null);
         //     Thread.Sleep(3000);
-        //     sm.Screenshot("Path_3_Step4");
+        //     sm.Screenshot("Path_3_Make_Dron_Resume_Auto_Mode");
 
         //     var stopBtn = GetStopButton(planId);
         //     stopBtn.Click();
         //     Thread.Sleep(1000);
         //     ManageAlert(true, false, null);
         //     Thread.Sleep(3000);
-        //     sm.Screenshot("Path_3_Step5");
+        //     sm.Screenshot("Path_3_Stop_Drone");
 
         //     restartBtn = GetRestartButton(planId);
         //     restartBtn.Click();
         //     Thread.Sleep(1000);
         //     ManageAlert(true, false, null);
         //     Thread.Sleep(3000);
-        //     sm.Screenshot("Path_3_Step1_2");
+        //     sm.Screenshot("Path_3_Launch_Drone_Auto_Again");
 
         //     manualBtn = GetManualButton(planId);
         //     manualBtn.Click();
@@ -427,35 +457,46 @@ namespace TestWeb
         //     ManageAlert(true, false, null);
         //     Thread.Sleep(1000);
         //     SendManualCoordinates(TEST_LAT_1, TEST_LON_1, TEST_SPEED);
-        //     sm.Screenshot("Path_3_Step2_2");
+        //     sm.Screenshot("Path_3_Send_Manual_Coords_Again");
 
-        //     sm.Screenshot("Path_3_Final");
-        // }
+        //     WaitForDroneState(TEST_DRONE_ID, 2, timeoutSeconds: 300);
+        //     sm.Screenshot("Path_3_Drone_Landed");
 
-        // Camino 1,6
+        //     AssertDroneState(TEST_DRONE_ID, 2);
+        //     sm.Screenshot("Path_3_Make_Sure_Drone_Landed");
+            
+        //     // Pause to observe the landed drone
+        //     Thread.Sleep(60000);
+
+        }
+
+        // Path: 1,6
         [TestMethod()]
         public void TestAutomaticRouteCompleted()
         {
             int planId = CreateTestFlightPlan(state: 2);
             NavigateToDashboard();
-            sm.Screenshot("Path_4_Initial");
+            sm.Screenshot("Path_4_Start");
 
             var restartBtn = GetRestartButton(planId);
             restartBtn.Click();
             Thread.Sleep(1000);
+            
             ManageAlert(true, false, null);
             ManageAlert(true, false, null);
+            
             var liveMapBtn = GetLiveMapButton();
             liveMapBtn.Click();
-            sm.Screenshot("Path_4_Step1");
+            sm.Screenshot("Path_4_Launch_Drone_Auto");
 
-            // Espera a que el flight plan complete (estado Completed = 1)
-            WaitForFlightPlanState(planId, 1, timeoutSeconds: 180);
-            sm.Screenshot("Path_4_Completed");
+            WaitForDroneState(TEST_DRONE_ID, 2, timeoutSeconds: 300);
+            sm.Screenshot("Path_4_Drone_Landed");
 
-            // Verifica el estado final
-            AssertFlightPlanState(planId, 1);
-            sm.Screenshot("Path_4_Final");
+            AssertDroneState(TEST_DRONE_ID, 2);
+            sm.Screenshot("Path_4_Make_Sure_Drone_Landed");
+            
+            // Pause to observe the landed drone
+            Thread.Sleep(60000);
         }
     }
 }
