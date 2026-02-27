@@ -182,32 +182,77 @@ namespace TestWeb
             return FindBy(By.XPath("//a[@href='/views/map.html']"));
         }
 
+        private void WaitForButtonEnabled(IWebElement button, int timeoutSeconds = 30)
+        {
+            sm.GetLogger().Info($"-- Waiting for button to become enabled");
+            DateTime startTime = DateTime.Now;
+            
+            while ((DateTime.Now - startTime).TotalSeconds < timeoutSeconds)
+            {
+                try
+                {
+                    if (button.Enabled && button.GetAttribute("disabled") == null)
+                    {
+                        sm.GetLogger().Info($"-- Button is now enabled");
+                        return;
+                    }
+                }
+                catch (StaleElementReferenceException)
+                {
+                    sm.GetLogger().Warn("-- Button reference is stale, will retry");
+                }
+                Thread.Sleep(500);
+            }
+            
+            sm.GetLogger().Warn($"-- Button did not become enabled within {timeoutSeconds} seconds");
+        }
+
+        private void ClickButtonWhenEnabled(IWebElement button, int timeoutSeconds = 30)
+        {
+            WaitForButtonEnabled(button, timeoutSeconds);
+            button.Click();
+        }
+
         private void SendManualCoordinates(double lat, double lon, double speed)
         {
             sm.GetLogger().Info($"-- Sending manual coordinates: Lat={lat}, Lon={lon}, Speed={speed}");
             
-            // Wait for manual controls to become visible and enabled
-            Thread.Sleep(2000);
+            // Wait longer for manual controls to become visible and enabled
+            Thread.Sleep(3000);
             
-            var wait = new OpenQA.Selenium.Support.UI.WebDriverWait(sm.Driver, TimeSpan.FromSeconds(30));
+            var wait = new OpenQA.Selenium.Support.UI.WebDriverWait(sm.Driver, TimeSpan.FromSeconds(60));
             
-            var latInput = wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementToBeClickable(By.CssSelector(".manual-y")));
-            var lonInput = wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementToBeClickable(By.CssSelector(".manual-x")));
-            var speedInput = wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementToBeClickable(By.CssSelector(".manual-speed")));
-            
-            latInput.Clear();
-            latInput.SendKeys(lat.ToString("F6"));
-            lonInput.Clear();
-            lonInput.SendKeys(lon.ToString("F6"));
-            speedInput.Clear();
-            speedInput.SendKeys(speed.ToString("F1"));
-            
-            Thread.Sleep(2000);
-            
-            // Re-find the send button just before clicking to avoid stale element reference
-            var sendBtn = wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementToBeClickable(By.CssSelector(".send-manual")));
-            sendBtn.Click();
-            Thread.Sleep(2000); 
+            try
+            {
+                sm.GetLogger().Info("-- Waiting for manual control inputs to appear");
+                var latInput = wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementToBeClickable(By.CssSelector(".manual-y")));
+                var lonInput = wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementToBeClickable(By.CssSelector(".manual-x")));
+                var speedInput = wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementToBeClickable(By.CssSelector(".manual-speed")));
+                sm.GetLogger().Info("-- Manual control inputs are available");
+                
+                latInput.Clear();
+                latInput.SendKeys(lat.ToString("F6"));
+                lonInput.Clear();
+                lonInput.SendKeys(lon.ToString("F6"));
+                speedInput.Clear();
+                speedInput.SendKeys(speed.ToString("F1"));
+                
+                Thread.Sleep(2000);
+                
+                // Re-find the send button just before clicking to avoid stale element reference
+                var sendBtn = wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementToBeClickable(By.CssSelector(".send-manual")));
+                sendBtn.Click();
+                sm.GetLogger().Info("-- Manual coordinates sent");
+                Thread.Sleep(3000);
+            }
+            catch (Exception ex)
+            {
+                sm.GetLogger().Error($"-- Failed to send manual coordinates: {ex.Message}");
+                // Check drone state for debugging
+                string droneState = util.ExecuteQueryToCsv($"SELECT State FROM Drones WHERE Id = {TEST_DRONE_ID}").Trim();
+                sm.GetLogger().Error($"-- Current drone state: {droneState}");
+                throw;
+            }
         }
 
         private void WaitForDroneState(int droneId, int expectedState, int timeoutSeconds = 180)
@@ -279,7 +324,7 @@ namespace TestWeb
             manualBtn.Click();
             Thread.Sleep(1000);
             ManageAlert(true, false, null);
-            Thread.Sleep(1000);
+            Thread.Sleep(2000);
             SendManualCoordinates(TEST_LAT_2, TEST_LON_2, TEST_SPEED);
             ManageAlert(true, false, null);
             sm.Screenshot("Path_1_Launch_Drone_Manual");
@@ -295,7 +340,7 @@ namespace TestWeb
             manualBtn.Click();
             Thread.Sleep(1000);
             ManageAlert(true, false, null);
-            Thread.Sleep(1000);
+            Thread.Sleep(2000);
             SendManualCoordinates(TEST_LAT_1, TEST_LON_1, TEST_SPEED);
             ManageAlert(true, false, null);
             sm.Screenshot("Path_1_Launch_Drone_Manual_Again");
@@ -312,7 +357,7 @@ namespace TestWeb
             manualBtn.Click();
             Thread.Sleep(1000);
             ManageAlert(true, false, null);
-            Thread.Sleep(1000);
+            Thread.Sleep(2000);
             SendManualCoordinates(TEST_LAT_2, TEST_LON_1, TEST_SPEED);
             ManageAlert(true, false, null);
             sm.Screenshot("Path_1_Launch_Drone_Manual_Again_2");
@@ -339,7 +384,7 @@ namespace TestWeb
             manualBtn.Click();
             Thread.Sleep(1000);
             ManageAlert(true, false, null);
-            Thread.Sleep(1000);
+            Thread.Sleep(2000);
             SendManualCoordinates(TEST_LAT_3, TEST_LON_2, TEST_SPEED);
             ManageAlert(true, false, null);
             Thread.Sleep(5000);
@@ -365,13 +410,18 @@ namespace TestWeb
             manualBtn.Click();
             Thread.Sleep(1000);
             ManageAlert(true, false, null);
-            Thread.Sleep(1000);
+            Thread.Sleep(2000);
             SendManualCoordinates(TEST_LAT_1, TEST_LON_1, TEST_SPEED);
             ManageAlert(true, false, null);
             Thread.Sleep(5000);
             sm.Screenshot("Path_2_Launch_Drone_Manual_Again");
 
+            // Wait for drone to complete manual movement before resuming auto mode
+            sm.GetLogger().Info("-- Waiting for drone to stop before resuming");
+            Thread.Sleep(10000);
+            
             var resumeBtn = GetResumeButton(planId);
+            WaitForButtonEnabled(resumeBtn, 60);
             resumeBtn.Click();
             Thread.Sleep(1000);
             ManageAlert(true, false, null);
@@ -409,12 +459,13 @@ namespace TestWeb
             manualBtn.Click();
             Thread.Sleep(1000);
             ManageAlert(true, false, null);
-            Thread.Sleep(1000);
+            Thread.Sleep(2000);
             SendManualCoordinates(TEST_LAT_2, TEST_LON_2, TEST_SPEED);
             ManageAlert(true, false, null);
             sm.Screenshot("Path_3_Launch_Drone_Manual");
 
             var resumeBtn = GetResumeButton(planId);
+            WaitForButtonEnabled(resumeBtn, 30);
             resumeBtn.Click();
             Thread.Sleep(1000);
             ManageAlert(true, false, null);
@@ -442,7 +493,7 @@ namespace TestWeb
             manualBtn.Click();
             Thread.Sleep(1000);
             ManageAlert(true, false, null);
-            Thread.Sleep(1000);
+            Thread.Sleep(2000);
             SendManualCoordinates(TEST_LAT_3, TEST_LON_1, TEST_SPEED);
             ManageAlert(true, false, null);
             sm.Screenshot("Path_3_Send_Manual_Coords_Again");
