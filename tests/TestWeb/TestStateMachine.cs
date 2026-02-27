@@ -348,91 +348,24 @@ namespace TestWeb
         //     sm.Screenshot("Path_1_Final");
         // }
 
-        // [TestMethod()]
-        // public void TestPath_7_8_1_2_4_6()
-        // {
-        //     int planId = CreateTestFlightPlan(state: 2);
-        //     NavigateToDashboard();
-        //     sm.Screenshot("Path_2_Initial");
-
-        //     var restartBtn = GetRestartButton(planId);
-        //     restartBtn.Click();
-        //     Thread.Sleep(1000);
-        //     ManageAlert(true, false, null);
-        //     Thread.Sleep(3000);
-
-        //     var manualBtn = GetManualButton(planId);
-        //     manualBtn.Click();
-        //     Thread.Sleep(1000);
-        //     ManageAlert(true, false, null);
-        //     Thread.Sleep(1000);
-        //     SendManualCoordinates(TEST_LAT_2, TEST_LON_2, TEST_SPEED);
-        //     sm.Screenshot("Path_2_Step7");
-
-        //     var stopBtn = GetStopButton(planId);
-        //     stopBtn.Click();
-        //     Thread.Sleep(1000);
-        //     ManageAlert(true, false, null);
-        //     Thread.Sleep(3000);
-        //     sm.Screenshot("Path_2_Step8");
-
-        //     restartBtn = GetRestartButton(planId);
-        //     restartBtn.Click();
-        //     Thread.Sleep(1000);
-        //     ManageAlert(true, false, null);
-        //     Thread.Sleep(3000);
-        //     sm.Screenshot("Path_2_Step1");
-
-        //     manualBtn = GetManualButton(planId);
-        //     manualBtn.Click();
-        //     Thread.Sleep(1000);
-        //     ManageAlert(true, false, null);
-        //     Thread.Sleep(1000);
-        //     SendManualCoordinates(TEST_LAT_1, TEST_LON_1, TEST_SPEED);
-        //     sm.Screenshot("Path_2_Step2");
-
-        //     var resumeBtn = GetResumeButton(planId);
-        //     resumeBtn.Click();
-        //     Thread.Sleep(1000);
-        //     ManageAlert(true, false, null);
-        //     Thread.Sleep(3000);
-        //     sm.Screenshot("Path_2_Step4");
-
-        //     sm.Screenshot("Path_2_Final");
-        // }
-
-        // Path: 1,2,4,5,1,2,3
+        // Path: 7,8,1,2,4,6
         [TestMethod()]
-        public void TestManualRouteCompletedWithRestartResumeAndStop()
+        public void TestAutoRouteCompletedWithManualOverrideStopAndRestart()
         {
             int planId = CreateTestFlightPlan(state: 2);
             NavigateToDashboard();
-            sm.Screenshot("Path_3_Initial");
-
-            var restartBtn = GetRestartButton(planId);
-            restartBtn.Click();
-            Thread.Sleep(1000);
-            ManageAlert(true, false, null);
-            ManageAlert(true, false, null);
-            Thread.Sleep(3000);
-            sm.Screenshot("Path_3_Launch_Drone_Auto");
+            sm.Screenshot("Path_2_Initial");
 
             var manualBtn = GetManualButton(planId);
             manualBtn.Click();
             Thread.Sleep(1000);
             ManageAlert(true, false, null);
             Thread.Sleep(1000);
-            SendManualCoordinates(TEST_LAT_2, TEST_LON_2, TEST_SPEED);
+            SendManualCoordinates(TEST_LAT_3, TEST_LON_2, TEST_SPEED);
             ManageAlert(true, false, null);
-            sm.Screenshot("Path_3_Launch_Drone_Manual");
-
-            var resumeBtn = GetResumeButton(planId);
-            resumeBtn.Click();
-            Thread.Sleep(1000);
-            ManageAlert(true, false, null);
-            ManageAlert(true, false, null);
-            Thread.Sleep(3000);
-            sm.Screenshot("Path_3_Make_Dron_Resume_Auto_Mode");
+            WaitForFlightPlanState(planId, 3, timeoutSeconds: 30);
+            Thread.Sleep(5000);
+            sm.Screenshot("Path_2_Launch_Drone_Manual");
 
             var stopBtn = GetStopButton(planId);
             stopBtn.Click();
@@ -440,33 +373,110 @@ namespace TestWeb
             ManageAlert(true, false, null);
             ManageAlert(true, false, null);
             Thread.Sleep(3000);
-            sm.Screenshot("Path_3_Stop_Drone");
+            sm.Screenshot("Path_2_Stop_Drone");
 
-            restartBtn = GetRestartButton(planId);
+            var restartBtn = GetRestartButton(planId);
             restartBtn.Click();
             Thread.Sleep(1000);
             ManageAlert(true, false, null);
             ManageAlert(true, false, null);
             Thread.Sleep(3000);
-            sm.Screenshot("Path_3_Launch_Drone_Auto_Again");
+            sm.Screenshot("Path_2_Launch_Drone_Manual");
 
             manualBtn = GetManualButton(planId);
             manualBtn.Click();
             Thread.Sleep(1000);
             ManageAlert(true, false, null);
             Thread.Sleep(1000);
-            SendManualCoordinates(TEST_LAT_3, TEST_LON_1, TEST_SPEED);
+            SendManualCoordinates(TEST_LAT_1, TEST_LON_1, TEST_SPEED);
             ManageAlert(true, false, null);
-            sm.Screenshot("Path_3_Send_Manual_Coords_Again");
+            WaitForFlightPlanState(planId, 3, timeoutSeconds: 30);
+            Thread.Sleep(5000);
+            sm.Screenshot("Path_2_Launch_Drone_Manual_Again");
+
+            var resumeBtn = GetResumeButton(planId);
+            resumeBtn.Click();
+            Thread.Sleep(1000);
+            ManageAlert(true, false, null);
+            ManageAlert(true, false, null);
+            Thread.Sleep(3000);
+            sm.Screenshot("Path_2_Make_Dron_Resume_Auto_Mode");
 
             var liveMapBtn = GetLiveMapButton();
             liveMapBtn.Click();
             WaitForDroneState(TEST_DRONE_ID, 2, timeoutSeconds: 120);
-            sm.Screenshot("Path_3_Drone_Landed");
+            sm.Screenshot("Path_2_Drone_Landed");
 
             AssertDroneState(TEST_DRONE_ID, 2);
-            sm.Screenshot("Path_3_Make_Sure_Drone_Landed");
+            sm.Screenshot("Path_2_Make_Sure_Drone_Landed");
         }
+
+        // Path: 1,2,4,5,1,2,3
+        // [TestMethod()]
+        // public void TestManualRouteCompletedWithRestartResumeAndStop()
+        // {
+        //     int planId = CreateTestFlightPlan(state: 2);
+        //     NavigateToDashboard();
+        //     sm.Screenshot("Path_3_Initial");
+
+        //     var restartBtn = GetRestartButton(planId);
+        //     restartBtn.Click();
+        //     Thread.Sleep(1000);
+        //     ManageAlert(true, false, null);
+        //     ManageAlert(true, false, null);
+        //     Thread.Sleep(3000);
+        //     sm.Screenshot("Path_3_Launch_Drone_Auto");
+
+        //     var manualBtn = GetManualButton(planId);
+        //     manualBtn.Click();
+        //     Thread.Sleep(1000);
+        //     ManageAlert(true, false, null);
+        //     Thread.Sleep(1000);
+        //     SendManualCoordinates(TEST_LAT_2, TEST_LON_2, TEST_SPEED);
+        //     ManageAlert(true, false, null);
+        //     sm.Screenshot("Path_3_Launch_Drone_Manual");
+
+        //     var resumeBtn = GetResumeButton(planId);
+        //     resumeBtn.Click();
+        //     Thread.Sleep(1000);
+        //     ManageAlert(true, false, null);
+        //     ManageAlert(true, false, null);
+        //     Thread.Sleep(3000);
+        //     sm.Screenshot("Path_3_Make_Dron_Resume_Auto_Mode");
+
+        //     var stopBtn = GetStopButton(planId);
+        //     stopBtn.Click();
+        //     Thread.Sleep(1000);
+        //     ManageAlert(true, false, null);
+        //     ManageAlert(true, false, null);
+        //     Thread.Sleep(3000);
+        //     sm.Screenshot("Path_3_Stop_Drone");
+
+        //     restartBtn = GetRestartButton(planId);
+        //     restartBtn.Click();
+        //     Thread.Sleep(1000);
+        //     ManageAlert(true, false, null);
+        //     ManageAlert(true, false, null);
+        //     Thread.Sleep(3000);
+        //     sm.Screenshot("Path_3_Launch_Drone_Auto_Again");
+
+        //     manualBtn = GetManualButton(planId);
+        //     manualBtn.Click();
+        //     Thread.Sleep(1000);
+        //     ManageAlert(true, false, null);
+        //     Thread.Sleep(1000);
+        //     SendManualCoordinates(TEST_LAT_3, TEST_LON_1, TEST_SPEED);
+        //     ManageAlert(true, false, null);
+        //     sm.Screenshot("Path_3_Send_Manual_Coords_Again");
+
+        //     var liveMapBtn = GetLiveMapButton();
+        //     liveMapBtn.Click();
+        //     WaitForDroneState(TEST_DRONE_ID, 2, timeoutSeconds: 120);
+        //     sm.Screenshot("Path_3_Drone_Landed");
+
+        //     AssertDroneState(TEST_DRONE_ID, 2);
+        //     sm.Screenshot("Path_3_Make_Sure_Drone_Landed");
+        // }
 
         // Path: 1,6
         // [TestMethod()]
