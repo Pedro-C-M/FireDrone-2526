@@ -177,11 +177,14 @@ public class FlightPlanServiceTests
 
     // CP05
     [TestMethod]
-    public async Task SwitchToManualModeAsync_CancelledState_ShouldThrowException()
+    public async Task SwitchToManualModeAsync_CancelledState_ShouldSwitchToManual()
     {
         var flightPlan = await CreateFlightPlanWithState(FlightStatus.Cancelled, dronId: 5);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => _service.SwitchToManualModeAsync(flightPlan.Id));
+        var result = await _service.SwitchToManualModeAsync(flightPlan.Id);
+
+        Assert.IsNotNull(result);
+        Assert.AreEqual(FlightStatus.Manual, result.State);
     }
 
     // CP06
