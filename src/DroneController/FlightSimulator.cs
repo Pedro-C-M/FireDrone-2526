@@ -67,13 +67,15 @@ namespace DroneController
             {
                 if (_isPeriodic)
                 {
-                    _indexCurrentWaypoint = 0; // 🔁 REINICIO - wrap back to beginning
+                    _indexCurrentWaypoint = 0; // REINICIO - wrap back to beginning
+                    Console.WriteLine($"[FlightSimulator] Reached end of periodic route, wrapping to start");
                 }
                 else
                 {
                     // For simple routes, we've finished
                     _indexCurrentWaypoint = _waypoints.Length - 1;
                     _currentWaypoint = _waypoints[_indexCurrentWaypoint];
+                    Console.WriteLine($"[FlightSimulator] ✓ Reached end of simple route - ARRIVED (waypoint {_indexCurrentWaypoint}/{_waypoints.Length})");
                     return true; // ruta simple terminada
                 }
             }
@@ -94,16 +96,19 @@ namespace DroneController
                 if (_isPeriodic)
                 {
                     nextIndex = 0; // Wrap back to first waypoint for periodic routes
+                    Console.WriteLine($"[FlightSimulator] At last waypoint of periodic route, will wrap to start");
                 }
                 else
                 {
                     // For simple routes, we're done after this waypoint
+                    Console.WriteLine($"[FlightSimulator] ✓ At final waypoint of simple route - ARRIVED (waypoint {_indexCurrentWaypoint}/{_waypoints.Length})");
                     return true;
                 }
             }
             else
             {
                 nextIndex = _indexCurrentWaypoint + 1;
+                Console.WriteLine($"[FlightSimulator] Moving to waypoint {_indexCurrentWaypoint}/{_waypoints.Length - 1}, next={nextIndex}");
             }
 
             // Set rate of change
@@ -131,6 +136,7 @@ namespace DroneController
                 _numSteps = (int)Math.Floor(deltaSeconds);
                 _currentStep = 0;
 
+                Console.WriteLine($"[FlightSimulator] Distance to next waypoint: {deltaDist:F3}km, Speed: {_waypoints[_indexCurrentWaypoint].Speed}km/h, Steps: {_numSteps}");
 
             return false;
         }
@@ -147,6 +153,14 @@ namespace DroneController
             }
             else
             {
+                // Ensure we're exactly at the target waypoint before considering arrival
+                int nextIndex = _indexCurrentWaypoint + 1;
+                if (nextIndex < _waypoints.Length)
+                {
+                    _currentWaypoint.Latitude = _waypoints[nextIndex].Latitude;
+                    _currentWaypoint.Longitude = _waypoints[nextIndex].Longitude;
+                }
+                
                 arrived = NextCoordinate();
             }
 

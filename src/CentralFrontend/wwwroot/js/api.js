@@ -4,6 +4,7 @@ import * as FlightPlanService from './services/FlightPlanService.js';
 import * as RealTimeService from './services/RealTimeService.js';
 
 let flightplans = [];
+let openManualRows = new Set(); // Track which flight plans have manual input open
 
 // === INICIALIZACI�N ===
 document.addEventListener('DOMContentLoaded', async () => {
@@ -286,7 +287,8 @@ function _displayFlightPlans(data) {
 
         //Fila manual
         const manualRow = document.createElement('tr');
-        manualRow.style.display = 'none';
+        // Restore open state if this row was previously open
+        manualRow.style.display = openManualRows.has(flightplan.id) ? 'table-row' : 'none';
 
         manualRow.innerHTML = `
         <td colspan="8">
@@ -395,14 +397,21 @@ function _displayFlightPlans(data) {
         // Manual button
         const manualBtn = clone.querySelector('.btn-manual');
         if (manualBtn) {
-            if (flightplan.state === 0 || flightplan.state === 2) {
+            if (flightplan.state === 0 || flightplan.state === 2 || flightplan.state === 3) {
                 manualBtn.addEventListener('click', (e) => {
                     e.preventDefault();
                     alert(`Manual mode selected for FlightPlan #${flightplan.id}.\n\n` +
                         `The current route will be paused.\n` +
                         `Enter coordinates and press SEND to confirm the change.`);
-                    manualRow.style.display =
-                        manualRow.style.display === 'none' ? 'table-row' : 'none';
+                    
+                    // Toggle display and track state
+                    if (manualRow.style.display === 'none') {
+                        manualRow.style.display = 'table-row';
+                        openManualRows.add(flightplan.id);
+                    } else {
+                        manualRow.style.display = 'none';
+                        openManualRows.delete(flightplan.id);
+                    }
                 });
             } else {
                 manualBtn.disabled = true;
@@ -473,6 +482,7 @@ function _displayFlightPlans(data) {
 
                 alert(`FlightPlan #${flightplan.id} is now in MANUAL mode. Drone heading to coordinates.`);
                 manualRow.style.display = 'none';
+                openManualRows.delete(flightplan.id); // Remove from tracked set
                 await getFlightPlans();
 
             } catch (error) {
@@ -482,6 +492,7 @@ function _displayFlightPlans(data) {
         });
         cancelBtn.addEventListener('click', () => {
             manualRow.style.display = 'none';
+            openManualRows.delete(flightplan.id); // Remove from tracked set
         });
     });
 
