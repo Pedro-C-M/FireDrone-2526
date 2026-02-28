@@ -522,6 +522,7 @@ namespace TestWeb
             
             ManageAlert(true, false, null);
             ManageAlert(true, false, null);
+            Thread.Sleep(3000);
             
             var liveMapBtn = GetLiveMapButton();
             liveMapBtn.Click();
