@@ -4,8 +4,9 @@ import * as FlightPlanService from './services/FlightPlanService.js';
 import * as RealTimeService from './services/RealTimeService.js';
 
 let flightplans = [];
+let openManualRows = new Set(); // Track which flight plans have manual input open
 
-// === INICIALIZACIÓN ===
+// === INICIALIZACIï¿½N ===
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('Page loaded...');
 
@@ -34,7 +35,7 @@ async function refreshDashboard() {
     }
 }
 
-// === LÓGICA DE UI PARA DRONES ===
+// === Lï¿½GICA DE UI PARA DRONES ===
 async function loadDronesToDropdowns() {
     try {
         const drones = await DroneService.getAllDrones();
@@ -63,7 +64,7 @@ async function loadDronesToDropdowns() {
     }
 }
 
-// === LÓGICA DE FLIGHT PLANS ===
+// === Lï¿½GICA DE FLIGHT PLANS ===
 async function getFlightPlans() {
     try {
         const data = await FlightPlanService.getAllFlightPlans();
@@ -124,7 +125,7 @@ async function stopFlightPlan(id) {
     }
 }
 
-// === LÓGICA DE ACTUALIZACIÓN Y EDICIÓN ===
+// === Lï¿½GICA DE ACTUALIZACIï¿½N Y EDICIï¿½N ===
 function displayEditForm(id) {
     console.log('displayEditForm called with id:', id);
 
@@ -231,17 +232,17 @@ async function startFlightPlanRoute(planId, droneId, restartFromBeginning = fals
     }
 }
 
-// === FUNCIÓN DE VISUALIZACIÓN CORREGIDA ===
+// === FUNCIï¿½N DE VISUALIZACIï¿½N CORREGIDA ===
 function _displayFlightPlans(data) {
     const tBody = document.getElementById('flightplans_tbody');
 
-    // 1. Protección inicial: Si no hay tabla, no hacemos nada
+    // 1. Protecciï¿½n inicial: Si no hay tabla, no hacemos nada
     if (!tBody) return;
 
     tBody.innerHTML = '';
     _displayCount(data.length);
 
-    // 2. Protección de template: Aseguramos que el template existe
+    // 2. Protecciï¿½n de template: Aseguramos que el template existe
     const template = document.getElementById('flightplan_row');
     if (!template) {
         console.error("Error: No se encuentra el template 'flightplan_row' en el HTML");
@@ -252,7 +253,7 @@ function _displayFlightPlans(data) {
         const clone = template.content.cloneNode(true);
         const td = clone.querySelectorAll('td');
 
-        // Rellenar celdas básicas
+        // Rellenar celdas bï¿½sicas
         td[0].textContent = flightplan.id;
         td[1].textContent = flightplan.dronId || 'Not assigned';
 
@@ -286,7 +287,8 @@ function _displayFlightPlans(data) {
 
         //Fila manual
         const manualRow = document.createElement('tr');
-        manualRow.style.display = 'none';
+        // Restore open state if this row was previously open
+        manualRow.style.display = openManualRows.has(flightplan.id) ? 'table-row' : 'none';
 
         manualRow.innerHTML = `
         <td colspan="8">
@@ -304,7 +306,7 @@ function _displayFlightPlans(data) {
 
         // === ZONA DE BOTONES SEGURA ===
 
-        // Función auxiliar: Intenta buscar el botón y añadir el evento.
+        // Funciï¿½n auxiliar: Intenta buscar el botï¿½n y aï¿½adir el evento.
         const safeAddClick = (selector, action) => {
             const btn = clone.querySelector(selector);
             if (btn) {
@@ -395,14 +397,21 @@ function _displayFlightPlans(data) {
         // Manual button
         const manualBtn = clone.querySelector('.btn-manual');
         if (manualBtn) {
-            if (flightplan.state === 0) {
+            if (flightplan.state === 0 || flightplan.state === 2 || flightplan.state === 3) {
                 manualBtn.addEventListener('click', (e) => {
                     e.preventDefault();
                     alert(`Manual mode selected for FlightPlan #${flightplan.id}.\n\n` +
                         `The current route will be paused.\n` +
                         `Enter coordinates and press SEND to confirm the change.`);
-                    manualRow.style.display =
-                        manualRow.style.display === 'none' ? 'table-row' : 'none';
+                    
+                    // Toggle display and track state
+                    if (manualRow.style.display === 'none') {
+                        manualRow.style.display = 'table-row';
+                        openManualRows.add(flightplan.id);
+                    } else {
+                        manualRow.style.display = 'none';
+                        openManualRows.delete(flightplan.id);
+                    }
                 });
             } else {
                 manualBtn.disabled = true;
@@ -415,7 +424,7 @@ function _displayFlightPlans(data) {
         // Stop button
         const stopBtn = clone.querySelector('.btn-stop');
         if (stopBtn) {
-            if (flightplan.state === 0) {
+            if (flightplan.state === 0 || flightplan.state === 3) {
                 stopBtn.addEventListener('click', (e) => {
                     e.preventDefault();
                     stopFlightPlan(flightplan.id);
@@ -446,12 +455,12 @@ function _displayFlightPlans(data) {
             latStr = latStr.replace(',', '.');
             speedStr = speedStr.replace(',', '.');
 
-            // 3. Convertimos a número
+            // 3. Convertimos a nï¿½mero
             const longitude = parseFloat(lonStr);
             const latitude = parseFloat(latStr);
             const speed = isNaN(speedStr) ? 10 : parseFloat(speedStr); //REVISAR
 
-            // 4. VALIDACIÓN ESTRICTA
+            // 4. VALIDACIï¿½N ESTRICTA
             if (isNaN(longitude) || isNaN(latitude) ||
                 Math.abs(latitude) > 90 || Math.abs(longitude) > 180) {
 
@@ -473,6 +482,7 @@ function _displayFlightPlans(data) {
 
                 alert(`FlightPlan #${flightplan.id} is now in MANUAL mode. Drone heading to coordinates.`);
                 manualRow.style.display = 'none';
+                openManualRows.delete(flightplan.id); // Remove from tracked set
                 await getFlightPlans();
 
             } catch (error) {
@@ -482,6 +492,7 @@ function _displayFlightPlans(data) {
         });
         cancelBtn.addEventListener('click', () => {
             manualRow.style.display = 'none';
+            openManualRows.delete(flightplan.id); // Remove from tracked set
         });
     });
 
@@ -502,7 +513,7 @@ function getStatusText(state) {
     const s = ['On Course', 'Completed', 'Cancelled', 'Manual'];
     return s[state] || 'Unknown';
 }
-// === EXPOSICIÓN GLOBAL ===
+// === EXPOSICIï¿½N GLOBAL ===
 window.addFlightPlan = addFlightPlan;
 window.updateFlightPlan = updateFlightPlan;
 window.startFlightPlanRoute = startFlightPlanRoute;

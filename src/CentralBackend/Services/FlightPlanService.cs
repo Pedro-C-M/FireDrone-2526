@@ -430,11 +430,11 @@ namespace CentralBackend.Services
             if (existing == null)
                 throw new NotFoundException($"FlightPlan with ID {id} does not exist.");
 
-            // Only allow switching to manual mode if the flight plan is OnCourse
-            if (existing.State != FlightStatus.OnCourse)
+            // Only allow switching to manual mode if the flight plan is OnCourse or Cancelled
+            if (existing.State != FlightStatus.OnCourse && existing.State != FlightStatus.Cancelled)
             {
                 Console.WriteLine($"[FlightPlanService] FlightPlan {id} is in {existing.State} state, cannot switch to manual mode");
-                throw new InvalidOperationException($"Cannot switch to manual mode: FlightPlan {id} is in {existing.State} state. Only flight plans with OnCourse status can be switched to manual mode.");
+                throw new InvalidOperationException($"Cannot switch to manual mode: FlightPlan {id} is in {existing.State} state. Only flight plans with OnCourse or Cancelled status can be switched to manual mode.");
             }
 
             // Check if drone is assigned (DronId must be a valid non-zero value)
