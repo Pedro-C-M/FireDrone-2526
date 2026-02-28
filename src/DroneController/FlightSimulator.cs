@@ -100,8 +100,9 @@ namespace DroneController
                 }
                 else
                 {
-                    // For simple routes, we're done after this waypoint
-                    Console.WriteLine($"[FlightSimulator] ✓ At final waypoint of simple route - ARRIVED (waypoint {_indexCurrentWaypoint}/{_waypoints.Length})");
+                    // For non-periodic routes, we've arrived at the final destination
+                    // StepSimulation already placed us at this position before calling NextCoordinate
+                    Console.WriteLine($"[FlightSimulator] ✓ Arrived at final waypoint of simple route (waypoint {_indexCurrentWaypoint}/{_waypoints.Length})");
                     return true;
                 }
             }
@@ -159,9 +160,19 @@ namespace DroneController
                 {
                     _currentWaypoint.Latitude = _waypoints[nextIndex].Latitude;
                     _currentWaypoint.Longitude = _waypoints[nextIndex].Longitude;
+                    _currentWaypoint.Altitude = _waypoints[nextIndex].Altitude;
                 }
                 
                 arrived = NextCoordinate();
+                
+                // For non-periodic routes at the last waypoint, ensure we're exactly at that position
+                if (arrived && !_isPeriodic && _indexCurrentWaypoint < _waypoints.Length)
+                {
+                    _currentWaypoint.Latitude = _waypoints[_indexCurrentWaypoint].Latitude;
+                    _currentWaypoint.Longitude = _waypoints[_indexCurrentWaypoint].Longitude;
+                    _currentWaypoint.Altitude = _waypoints[_indexCurrentWaypoint].Altitude;
+                    Console.WriteLine($"[FlightSimulator] Final position correction: Lat={_currentWaypoint.Latitude}, Lon={_currentWaypoint.Longitude}");
+                }
             }
 
             return arrived;
