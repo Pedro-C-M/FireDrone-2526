@@ -138,10 +138,12 @@ namespace CentralBackend
         private static List<Dron> SeedDrones(FireDrone db, int nDrones)
         {
             var drones = new List<Dron>();
+            var baseStationsList = db.BaseStations.ToList();
 
             for (int i = 1; i <= nDrones; i++)
             {
-                var drone = CreateSpecificDrone(i);
+                var assignedStation = baseStationsList.Any() ? baseStationsList[i % baseStationsList.Count] : null;
+                var drone = CreateSpecificDrone(i, assignedStation);
                 drones.Add(drone);
                 db.Drones.Add(drone);
             }
@@ -150,7 +152,7 @@ namespace CentralBackend
             return drones;
         }
 
-        private static Dron CreateSpecificDrone(int i)
+        private static Dron CreateSpecificDrone(int i, BaseStation station)
         {
             // Lógica de batería y estado extraída para reducir anidamiento
             int battery = i switch
@@ -162,10 +164,16 @@ namespace CentralBackend
 
             var state = (i == 1 || i == 2) ? (DroneState)1 : (DroneState)0;
 
+            float randomLat = BASE_LAT + (float)(NextSecureDouble() * 0.02 - 0.01);
+            float randomLon = BASE_LON + (float)(NextSecureDouble() * 0.02 - 0.01);
+
             var newDrone = new Dron
             {
                 Battery = battery,
-                State = state
+                State = state,
+                BaseStationId = station.Id,
+                Lat = randomLat,
+                Lon = randomLon
             };
             var dronChar = new DronCharacteristics();
             newDrone.DronCharacteristics= dronChar;
