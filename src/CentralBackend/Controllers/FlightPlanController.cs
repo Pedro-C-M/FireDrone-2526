@@ -38,7 +38,7 @@ namespace CentralBackend.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, "Error interno del servidor.");
+                return StatusCode(500, $"Error interno del servidor: {ex}.");
             }
         }
 
@@ -87,7 +87,7 @@ namespace CentralBackend.Controllers
 
         public class AssignDronDto
         {
-            public int DronId { get; set; }
+            public required int DronId { get; set; }
             public bool RestartFromBeginning { get; set; } = false;
         }
     }
