@@ -29,7 +29,6 @@ COPY src/CentralBackend/libman.json ./
 COPY src/Models/ ./src/Models/
 COPY src/CentralBackend/ ./src/CentralBackend/
 COPY src/ControlBackend/ ./src/ControlBackend/
-COPY FireDrone.sln ./
 
 # Build the project
 WORKDIR "/src/src/CentralBackend"
@@ -44,8 +43,9 @@ COPY --from=publish /app/publish .
 
 USER root
 # Create directory for SQLite database
-RUN mkdir -p /app/data && chown -R app:app /app/data
+RUN mkdir -p /app/data && chown -R app:app /app/data && chmod 775 /app/data
 USER app
-ENV DATABASE_PATH=/app/data/FireDrone.db
+
+ENV ConnectionStrings__DefaultConnection="Data Source=/app/data/FireDrone.db"
 
 ENTRYPOINT ["dotnet", "CentralBackend.dll"]
