@@ -162,7 +162,7 @@ namespace CentralBackend
                 _ => RandomNumberGenerator.GetInt32(300, 1001)
             };
 
-            var state = (i == 1 || i == 2) ? (DroneState)1 : (DroneState)0;
+            var state = DroneState.Stopped;
 
             float randomLat = BASE_LAT + (float)(NextSecureDouble() * 0.02 - 0.01);
             float randomLon = BASE_LON + (float)(NextSecureDouble() * 0.02 - 0.01);
