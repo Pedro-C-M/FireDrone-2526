@@ -12,10 +12,12 @@
      */
     public class RabbitMqOptions
     {
-        //public string Hostname { get; set; } = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
-        public string Hostname { get; set; } = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "156.35.163.122";//IP de la maquina virtual
-        public string Username { get; set; } = Environment.GetEnvironmentVariable("RABBITMQ_USER") ?? "equipo3-777";
-        public string Password { get; set; } = Environment.GetEnvironmentVariable("RABBITMQ_PASSWORD") ?? "shhh-777";
+        public string Hostname { get; set; } = Environment.GetEnvironmentVariable("RABBITMQ_HOST") 
+            ?? throw new InvalidOperationException("RABBITMQ_HOST environment variable is required");
+        public string Username { get; set; } = Environment.GetEnvironmentVariable("RABBITMQ_USER") 
+            ?? throw new InvalidOperationException("RABBITMQ_USER environment variable is required");
+        public string Password { get; set; } = Environment.GetEnvironmentVariable("RABBITMQ_PASSWORD") 
+            ?? throw new InvalidOperationException("RABBITMQ_PASSWORD environment variable is required");
         public string Exchange { get; set; } = Environment.GetEnvironmentVariable("RABBITMQ_EXCHANGE") ?? "drone_exchange";
         public string Topic { get; set; } = Environment.GetEnvironmentVariable("RABBITMQ_TOPIC") ?? "drone.#";
     }

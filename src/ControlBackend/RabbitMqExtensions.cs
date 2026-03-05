@@ -14,7 +14,7 @@ namespace ControlBackend
             };
 
             // Una sola conexión compartida por toda la app
-            var connection = factory.CreateConnectionAsync().Result;
+            var connection = await factory.CreateConnectionAsync();
             services.AddSingleton<IConnection>(connection);
 
             // Crear un canal temporal para declarar el exchange
