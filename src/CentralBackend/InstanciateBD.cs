@@ -53,7 +53,7 @@ namespace CentralBackend
             // Usamos ExecuteSqlRaw para vaciar los datos sin corromper el archivo .db en Docker
             db.Database.ExecuteSqlRaw("DELETE FROM Samples");
             db.Database.ExecuteSqlRaw("DELETE FROM FlightPlans");
-            db.Database.ExecuteSqlRaw("DELETE FROM Drons"); // Usamos el nombre real de tu tabla
+            db.Database.ExecuteSqlRaw("DELETE FROM Drones"); // Usamos el nombre real de tu tabla
             db.Database.ExecuteSqlRaw("DELETE FROM DronCharacteristics");
             db.Database.ExecuteSqlRaw("DELETE FROM RoutePoints");
             db.Database.ExecuteSqlRaw("DELETE FROM Routes");
