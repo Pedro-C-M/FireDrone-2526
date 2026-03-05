@@ -5,7 +5,14 @@ namespace CentralBackend.Controllers
     [Route("api/[controller]")]
     public class DatabaseController : ControllerBase
     {
+        /**
+         * Método usado para limpiar y resetear la base de datos a su estado inicial. 
+         * Esto es útil para pruebas o para reiniciar el sistema sin tener que 
+         * eliminar manualmente los datos.
+         */
         [HttpPost("clean")]
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public IActionResult CleanDatabase([FromQuery] int? drones)
         {
             try

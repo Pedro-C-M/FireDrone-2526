@@ -48,7 +48,7 @@ namespace CentralBackend.Middleware
                 await context.Response.WriteAsync(JsonSerializer.Serialize(new
                 {
                     error = "InvalidData",
-                    message = "Los datos enviados violan las restricciones de la base de datos."
+                    message = $"Los datos enviados violan las restricciones de la base de datos {ex}."
                 }));
             }
             catch (Exception ex)

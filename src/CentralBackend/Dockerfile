@@ -14,7 +14,21 @@ COPY ["src/CentralBackend/CentralBackend.csproj", "src/CentralBackend/"]
 RUN dotnet restore "src/CentralBackend/CentralBackend.csproj"
 
 # Copy all source files
-COPY . .
+COPY src/CentralBackend/Controllers/ ./Controllers/
+COPY src/CentralBackend/Services/ ./Services/
+COPY src/CentralBackend/Middleware/ ./Middleware/
+COPY src/CentralBackend/Exceptions/ ./Exceptions/
+COPY src/CentralBackend/Hubs/ ./Hubs/
+COPY src/CentralBackend/Migrations/ ./Migrations/
+COPY src/CentralBackend/Properties/ ./Properties/
+
+COPY src/CentralBackend/*.cs ./
+COPY src/CentralBackend/appsettings.json ./
+COPY src/CentralBackend/libman.json ./
+
+COPY src/Models/ ./src/Models/
+COPY src/CentralBackend/ ./src/CentralBackend/
+COPY src/ControlBackend/ ./src/ControlBackend/
 
 # Build the project
 WORKDIR "/src/src/CentralBackend"

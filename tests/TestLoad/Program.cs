@@ -1,17 +1,18 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 
 namespace TestLoad
 {
-    class Program
+    static class Program
     {
         const int DEFAULT_DRONES = 50;
         private static readonly HttpClient client = new HttpClient();
-        private const string BackendUrl = "http://localhost:5306";
-
+        private static string? _backendUrl;
         // Este programa es un menú simple para poblar o limpiar la base de datos antes o después de las pruebas de carga.
         static async Task Main(string[] args)
         {
+            ReadURLFromJson();
             while (true)
             {
                 Console.Clear();
@@ -53,7 +54,7 @@ namespace TestLoad
         static int AskForNumber(string message)
         {
             Console.Write(message);
-            string input = Console.ReadLine();
+            string? input = Console.ReadLine();
             if (int.TryParse(input, out int result) && result > 0)
             {
                 return result;
@@ -73,7 +74,7 @@ namespace TestLoad
             Console.WriteLine($"Iniciando limpieza de base de datos{(nDrones.HasValue ? $" con {nDrones} drones" : "")}...");
             try
             {
-                string url = $"{BackendUrl}/api/database/clean";
+                string url = $"{_backendUrl}/api/database/clean";
                 if (nDrones.HasValue)
                 {
                     url += $"?drones={nDrones.Value}";
@@ -94,11 +95,32 @@ namespace TestLoad
             catch (HttpRequestException e)
             {
                 Console.WriteLine($"Error de conexión: {e.Message}");
-                Console.WriteLine($"Asegúrese de que el backend esté ejecutándose en {BackendUrl}");
+                Console.WriteLine($"Asegúrese de que el backend esté ejecutándose en {_backendUrl}");
             }
             catch (Exception e)
             {
                 Console.WriteLine($"Error inesperado: {e.Message}");
+            }
+        }
+        /**
+         * Configura el lector de JSON para cargar la URL del backend desde el archivo appsettings.json
+         */
+        private static void ReadURLFromJson()
+        {
+            // 1. Configurar el lector de JSON
+            var builder = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+
+            IConfiguration configuration = builder.Build();
+
+            // 2. Leer la URL (y usar la variable de entorno como prioridad si existe)
+            _backendUrl = configuration["UrlConfig:BaseUrl"];
+
+            // 3. Validar que se ha cargado la URL correctamente y notificar al usuario si no es así
+            if (string.IsNullOrEmpty(_backendUrl))
+            {
+                Console.WriteLine("Error: No se ha podido cargar la URL del Backend.");
             }
         }
     }
