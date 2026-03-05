@@ -26,6 +26,11 @@ COPY src/CentralBackend/*.cs ./
 COPY src/CentralBackend/appsettings.json ./
 COPY src/CentralBackend/libman.json ./
 
+COPY src/Models/ ./src/Models/
+COPY src/CentralBackend/ ./src/CentralBackend/
+COPY src/ControlBackend/ ./src/ControlBackend/
+COPY FireDrone.sln ./
+
 # Build the project
 WORKDIR "/src/src/CentralBackend"
 RUN dotnet build "CentralBackend.csproj" -c Release -o /app/build
