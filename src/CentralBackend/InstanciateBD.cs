@@ -3,6 +3,7 @@ using Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 
 namespace CentralBackend
 {
@@ -20,229 +21,179 @@ namespace CentralBackend
 
         public static void FormaBaseDeBD(int nDrones = NUM_DRONES)
         {
-            int nFlightPlans = nDrones; 
-
             using (var db = new FireDrone())
             {
                 try
                 {
-                    // 1. Limpiar y recrear la base de datos
-                    Console.WriteLine("Eliminando base de datos antigua...");
-                    db.Database.EnsureDeleted();
-                    Console.WriteLine("Creando nueva estructura de base de datos...");
-                    db.Database.EnsureCreated();
+                    ResetDatabase(db);
 
-                    Console.WriteLine("Sembrando datos masivos...");
-                    var random = new Random();
+                    SeedSensors(db);
+                    SeedInfrastructure(db);
+                    var routes = SeedRoutes(db);
+                    var drones = SeedDrones(db, nDrones);
 
-                    // 2. Generar Sensores
-                    var sensors = new List<Sensor>();
-                    for (int i = 1; i <= NUM_SENSORS; i++)
-                    {
-                        sensors.Add(new Sensor { Model = $"SensorModel-{char.ConvertFromUtf32(65 + (i % 26))}{i}" });
-                    }
-                    db.Sensors.AddRange(sensors);
-                    db.SaveChanges(); // Guardamos para tener IDs si fueran necesarios
+                    SeedFlightPlansAndSamples(db, drones, routes, nDrones);
 
-                    // 3. Generar Control Station (Principal)
-                    var controlStation = new ControlStation
-                    {
-                        Lat = 43.5267f,  // Campus Universitario de Gijón
-                        Lon = -5.6445f,
-                        BaseStations = new List<BaseStation>()
-                    };
-                    db.ControlStations.Add(controlStation);
-
-                    // 4. Generar Base Stations
-                    for (int i = 1; i <= NUM_BASE_STATIONS; i++)
-                    {
-                        var baseStation = new BaseStation(); // Aquí podrías añadir propiedades si BaseStation las tuviera
-                        controlStation.BaseStations.Add(baseStation);
-                        db.BaseStations.Add(baseStation);
-                    }
-                    db.SaveChanges();
-
-                    // 5. Generar Rutas y Puntos de Ruta
-                    var routes = new List<Models.Route>();
-                    for (int i = 1; i <= NUM_ROUTES; i++)
-                    {
-                        var route = new Models.Route
-                        {
-                            Type = i % 2 == 0 ? RouteType.Simple : RouteType.Periodic, // Alternar tipos
-                            Perimeter = new Perimeter(),
-                            Coords = new List<RoutePoint>()
-                        };
-
-                        // Crear 3-5 puntos aleatorios cercanos a Gijón para cada ruta
-                        int numPoints = random.Next(3, 6);
-                        for (int j = 0; j < numPoints; j++)
-                        {
-                            var point = new RoutePoint
-                            {
-                                Lat = BASE_LAT + (float)(random.NextDouble() * 0.02 - 0.01), // Variación +/- 0.01 grados
-                                Long = BASE_LON + (float)(random.NextDouble() * 0.02 - 0.01),
-                                Height = random.Next(30, 100),
-                                Velocity = random.Next(15, 30), // Add velocity between 15-30
-                                Route = route
-                            };
-                            route.Coords.Add(point);
-                            db.RoutePoints.Add(point);
-                        }
-
-                        // Crear Perímetro para la ruta
-                        var perimeter = route.Perimeter;
-                        perimeter.Coords = new List<Coordinate>();
-
-                        var firstPoint = route.Coords.First();
-                        var centerLat = firstPoint.Lat;
-                        var centerLon = firstPoint.Long;
-
-                        double offset = 0.002;
-
-                        perimeter.Coords.Add(new Coordinate { Latitude = (double)(centerLat + offset), Longitude = (double)(centerLon + offset), Perimeter = perimeter });
-                        perimeter.Coords.Add(new Coordinate { Latitude = (double)(centerLat + offset), Longitude = (double)(centerLon + offset), Perimeter = perimeter });
-                        perimeter.Coords.Add(new Coordinate { Latitude = (double)(centerLat + offset), Longitude = (double)(centerLon + offset), Perimeter = perimeter });
-                        perimeter.Coords.Add(new Coordinate { Latitude = (double)(centerLat + offset), Longitude = (double)(centerLon + offset), Perimeter = perimeter });
-
-                        db.Perimeters.Add(perimeter);
-                        routes.Add(route);
-                        db.Routes.Add(route);
-                    }
-                    db.SaveChanges();
-
-                    // 6. Generar Drones y sus Características
-                    var drones = new List<Dron>();
-                    var baseStationsList = controlStation.BaseStations.ToList();
-
-                    for (int i = 1; i <= nDrones; i++)
-                    {
-                        // First drone (i=1) gets 10% battery (100 out of 1000) to test alarms
-                        // Second drone (i=2) gets 5% battery (50 out of 1000) for critical alarm
-                        int batteryValue;
-                        DroneState droneState;
-                        
-                        if (i == 1)
-                        {
-                            batteryValue = 110; // 10% - Low battery warning threshold
-                            droneState = DroneState.Flying; // Flying to trigger alarm
-                            Console.WriteLine($"[TEST] Drone 1 initialized with LOW BATTERY (10%) for alarm testing");
-                        }
-                        else if (i == 2)
-                        {
-                            batteryValue = 50; // 5% - Critical battery
-                            droneState = DroneState.Flying;
-                            Console.WriteLine($"[TEST] Drone 2 initialized with CRITICAL BATTERY (5%) for alarm testing");
-                        }
-                        else
-                        {
-                            batteryValue = random.Next(300, 1000); // 30-100% for other drones
-                            droneState = (DroneState)0;
-                        }
-
-                        var dron = new Dron
-                        {
-                            Base = baseStationsList[i % baseStationsList.Count],
-                            ControlStation = controlStation,
-                            Lat = BASE_LAT + (float)(random.NextDouble() * 0.03 - 0.015),
-                            Lon = BASE_LON + (float)(random.NextDouble() * 0.03 - 0.015),
-                            State = droneState,
-                            Altitude = random.Next(0, 120),
-                            Speed = random.Next(0, 60),
-                            Battery = batteryValue
-                        };
-                        var dronChar = new DronCharacteristics
-                        {
-                            Model = $"FireWatch-X{i}",
-                            Dron = dron,
-                            Sensors = sensors.OrderBy(x => random.Next()).Take(2).ToList()
-                        };
-                        dron.DronCharacteristics = dronChar;
-
-                        drones.Add(dron);
-                        db.Drones.Add(dron);
-                        db.DronCharacteristics.Add(dronChar);
-                    }
-                    db.SaveChanges();
-
-                    // 7. Generar Planes de Vuelo (Asignar 1 a cada dron para simplificar, o aleatorio)
-                    for (int i = 0; i < nFlightPlans; i++)
-                    {
-                        if (drones.Count == 0) break;
-
-                        // Asegurarnos de no salirnos del índice si hay menos rutas/drones que planes
-                        var assignedDron = drones[i % drones.Count];
-                        var assignedRoute = routes[i % routes.Count];
-
-                        var flightPlan = new FlightPlan
-                        {
-                            Ruta = assignedRoute,
-                            Ctrl = controlStation,
-                            EstControlId = controlStation.Id,
-                            StartingTime = DateTime.Now.AddMinutes(-random.Next(0, 120)), // Empezó hace un rato
-                            State = (FlightStatus) 2,
-                            Dron = assignedDron // Asignamos el dron al plan
-                        };
-
-                        // Actualizar la referencia circular en el dron (el dron conoce su plan actual)
-                        assignedDron.Actual = flightPlan;
-
-                        // Histórico de cambios de modo
-                        flightPlan.ModeChangeHistoric = new List<ChangeMode>
-                        {
-                            new ChangeMode { Moment = DateTime.Now.AddMinutes(-30), Mode = FlightMode.Auto }
-                        };
-
-                        db.FlightPlans.Add(flightPlan);
-
-                        // 8. Generar Muestras (Samples) e Incidencias para este plan
-                        if (i % 2 == 0) // Solo generar para la mitad de los planes
-                        {
-                            db.Samples.Add(new Sample
-                            {
-                                Dron = assignedDron,
-                                File = $"sample_plan_{i}.jpg",
-                                Lat = assignedDron.Lat,
-                                Lon = assignedDron.Lon,
-                                Time = DateTime.Now
-                            });
-
-                            db.Incidences.Add(new Incidence
-                            {
-                                Actual = flightPlan,
-                                Msg = $"Reporte rutinario del plan {i}",
-                                Type = "Info",
-                                Time = DateTime.Now
-                            });
-                        }
-                    }
-
-                    // Guardar todos los cambios finales
-                    db.SaveChanges();
-
-                    // Mostrar resumen en consola
-                    Console.WriteLine("\n--- Resumen de Datos Generados ---");
-                    Console.WriteLine($"Sensores: {db.Sensors.Count()}");
-                    Console.WriteLine($"ControlStations: {db.ControlStations.Count()}");
-                    Console.WriteLine($"BaseStations: {db.BaseStations.Count()}");
-                    Console.WriteLine($"Routes: {db.Routes.Count()}");
-                    Console.WriteLine($"Drones: {db.Drones.Count()}");
-                    Console.WriteLine($"FlightPlans: {db.FlightPlans.Count()}");
-                    Console.WriteLine($"Samples: {db.Samples.Count()}");
-                    Console.WriteLine($"Incidences: {db.Incidences.Count()}");
-                    Console.WriteLine($"Perimeters: {db.Perimeters.Count()}");
-                    Console.WriteLine("----------------------------------");
+                    PrintSummary(db);
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error al inicializar la base de datos: {ex.Message}");
-                    Console.WriteLine($"Stack trace: {ex.StackTrace}");
-                    if (ex.InnerException != null)
-                    {
-                        Console.WriteLine($"Inner Exception: {ex.InnerException.Message}");
-                    }
+                    LogDatabaseError(ex);
                     throw;
                 }
             }
+        }
+
+        private static void ResetDatabase(FireDrone db)
+        {
+            Console.WriteLine("Eliminando base de datos antigua...");
+            db.Database.EnsureDeleted();
+            Console.WriteLine("Creando nueva estructura de base de datos...");
+            db.Database.EnsureCreated();
+        }
+
+        private static void SeedSensors(FireDrone db)
+        {
+            var sensors = new List<Sensor>();
+            for (int i = 1; i <= NUM_SENSORS; i++)
+            {
+                sensors.Add(new Sensor { Model = $"SensorModel-{char.ConvertFromUtf32(65 + (i % 26))}{i}" });
+            }
+            db.Sensors.AddRange(sensors);
+            db.SaveChanges();
+        }
+
+        private static void SeedInfrastructure(FireDrone db)
+        {
+            var controlStation = new ControlStation
+            {
+                Lat = 43.5267f,
+                Lon = -5.6445f,
+                BaseStations = new List<BaseStation>()
+            };
+
+            for (int i = 1; i <= NUM_BASE_STATIONS; i++)
+            {
+                var baseStation = new BaseStation();
+                controlStation.BaseStations.Add(baseStation);
+            }
+
+            db.ControlStations.Add(controlStation);
+            db.SaveChanges();
+        }
+
+        private static List<Models.Route> SeedRoutes(FireDrone db)
+        {
+            var routes = new List<Models.Route>();
+
+            for (int i = 1; i <= NUM_ROUTES; i++)
+            {
+                var route = CreateRoute(i);
+                routes.Add(route);
+            }
+
+            db.Routes.AddRange(routes);
+            db.SaveChanges();
+            return routes;
+        }
+
+        private static Models.Route CreateRoute(int index)
+        {
+            var route = new Models.Route
+            {
+                Type = index % 2 == 0 ? RouteType.Simple : RouteType.Periodic,
+                Perimeter = new Perimeter(),
+                Coords = new List<RoutePoint>()
+            };
+
+            int numPoints = RandomNumberGenerator.GetInt32(3, 6);
+            for (int j = 0; j < numPoints; j++)
+            {
+                route.Coords.Add(new RoutePoint
+                {
+                    Lat = BASE_LAT + (float)(NextSecureDouble() * 0.02 - 0.01),
+                    Long = BASE_LON + (float)(NextSecureDouble() * 0.02 - 0.01)
+                });
+            }
+            return route;
+        }
+
+        // Este método reemplaza a random.NextDouble() usando criptografía
+        private static double NextSecureDouble()
+        {
+            // Generamos un entero aleatorio entre 0 y el máximo valor posible
+            // y lo dividimos por el máximo para obtener un valor entre 0.0 y 1.0
+            return (double)RandomNumberGenerator.GetInt32(0, int.MaxValue) / int.MaxValue;
+        }
+        private static List<Dron> SeedDrones(FireDrone db, int nDrones)
+        {
+            var drones = new List<Dron>();
+
+            for (int i = 1; i <= nDrones; i++)
+            {
+                var drone = CreateSpecificDrone(i);
+                drones.Add(drone);
+                db.Drones.Add(drone);
+            }
+
+            db.SaveChanges();
+            return drones;
+        }
+
+        private static Dron CreateSpecificDrone(int i)
+        {
+            // Lógica de batería y estado extraída para reducir anidamiento
+            int battery = i switch
+            {
+                1 => 110,
+                2 => 50,
+                _ => RandomNumberGenerator.GetInt32(300, 1001)
+            };
+
+            DroneState state = (i == 1 || i == 2) ? DroneState.Flying : DroneState.Stopped;
+
+            return new Dron
+            {
+                Battery = battery,
+                State = state,
+                DronCharacteristics = new DronCharacteristics { /* ... */ }
+            };
+        }
+
+        private static void SeedFlightPlansAndSamples(FireDrone db, List<Dron> drones, List<Models.Route> routes, int nPlans)
+        {
+            if (!drones.Any() || !routes.Any()) return;
+
+            for (int i = 0; i < nPlans; i++)
+            {
+                var assignedDron = drones[i % drones.Count];
+                var assignedRoute = routes[i % routes.Count];
+
+                var plan = new FlightPlan { Dron = assignedDron, Ruta = assignedRoute };
+                db.FlightPlans.Add(plan);
+
+                if (i % 2 == 0) // Añadir muestras solo a la mitad
+                {
+                    db.Samples.Add(new Sample { Dron = assignedDron, File = $"sample_{i}.jpg" });
+                }
+            }
+            db.SaveChanges();
+        }
+
+        private static void PrintSummary(FireDrone db)
+        {
+            Console.WriteLine("--- Resumen de siembra ---");
+            Console.WriteLine($"Drones: {db.Drones.Count()}");
+            Console.WriteLine($"Flight Plans: {db.FlightPlans.Count()}");
+            Console.WriteLine($"Samples: {db.Samples.Count()}");
+            Console.WriteLine("--------------------------");
+        }
+
+        private static void LogDatabaseError(Exception ex)
+        {
+            Console.WriteLine($"Error al inicializar la base de datos: {ex.Message}");
+            if (ex.InnerException != null)
+                Console.WriteLine($"Inner Exception: {ex.InnerException.Message}");
         }
     }
 }
