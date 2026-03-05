@@ -41,11 +41,7 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 
-USER root
 # Create directory for SQLite database
-RUN mkdir -p /app/data && chown -R app:app /app/data && chmod 775 /app/data
-USER app
-
-ENV ConnectionStrings__DefaultConnection="Data Source=/app/data/FireDrone.db"
+RUN mkdir -p /app/data
 
 ENTRYPOINT ["dotnet", "CentralBackend.dll"]
