@@ -14,7 +14,17 @@ COPY ["src/CentralBackend/CentralBackend.csproj", "src/CentralBackend/"]
 RUN dotnet restore "src/CentralBackend/CentralBackend.csproj"
 
 # Copy all source files
-COPY . .
+COPY Controllers/ ./Controllers/
+COPY Services/ ./Services/
+COPY Middleware/ ./Middleware/
+COPY Exceptions/ ./Exceptions/
+COPY Hubs/ ./Hubs/
+COPY Migrations/ ./Migrations/
+COPY Properties/ ./Properties/
+
+COPY *.cs ./
+COPY appsettings.json ./
+COPY libman.json ./
 
 # Build the project
 WORKDIR "/src/src/CentralBackend"
@@ -27,7 +37,10 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 
+USER root
 # Create directory for SQLite database
-RUN mkdir -p /app/data
+RUN mkdir -p /app/data && chown -R app:app /app/data
+USER app
+ENV DATABASE_PATH=/app/data/FireDrone.db
 
 ENTRYPOINT ["dotnet", "CentralBackend.dll"]
