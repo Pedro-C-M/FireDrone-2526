@@ -46,10 +46,20 @@ namespace CentralBackend
 
         private static void ResetDatabase(FireDrone db)
         {
-            Console.WriteLine("Eliminando base de datos antigua...");
-            db.Database.EnsureDeleted();
-            Console.WriteLine("Creando nueva estructura de base de datos...");
+            Console.WriteLine("Asegurando estructura de base de datos...");
             db.Database.EnsureCreated();
+            Console.WriteLine("Limpiando datos antiguos...");
+
+            // Usamos ExecuteSqlRaw para vaciar los datos sin corromper el archivo .db en Docker
+            db.Database.ExecuteSqlRaw("DELETE FROM Samples");
+            db.Database.ExecuteSqlRaw("DELETE FROM FlightPlans");
+            db.Database.ExecuteSqlRaw("DELETE FROM Drons"); // Usamos el nombre real de tu tabla
+            db.Database.ExecuteSqlRaw("DELETE FROM DronCharacteristics");
+            db.Database.ExecuteSqlRaw("DELETE FROM RoutePoints");
+            db.Database.ExecuteSqlRaw("DELETE FROM Routes");
+            db.Database.ExecuteSqlRaw("DELETE FROM BaseStations");
+            db.Database.ExecuteSqlRaw("DELETE FROM ControlStations");
+            db.Database.ExecuteSqlRaw("DELETE FROM Sensors");
         }
 
         private static void SeedSensors(FireDrone db)
@@ -150,14 +160,17 @@ namespace CentralBackend
                 _ => RandomNumberGenerator.GetInt32(300, 1001)
             };
 
-            DroneState state = (i == 1 || i == 2) ? DroneState.Flying : DroneState.Stopped;
+            var state = (i == 1 || i == 2) ? (DroneState)1 : (DroneState)0;
 
-            return new Dron
+            var newDrone = new Dron
             {
                 Battery = battery,
-                State = state,
-                DronCharacteristics = new DronCharacteristics { /* ... */ }
+                State = state
             };
+            var dronChar = new DronCharacteristics();
+            newDrone.DronCharacteristics= dronChar;
+
+            return newDrone;
         }
 
         private static void SeedFlightPlansAndSamples(FireDrone db, List<Dron> drones, List<Models.Route> routes, int nPlans)
