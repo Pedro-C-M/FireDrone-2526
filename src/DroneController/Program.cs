@@ -12,7 +12,7 @@ namespace DroneController
 	 *	- Identificador del dron (necesario para crear la cola que lo comunica con el backend)
 	 *	- Driver que se usa para controlar el dron
 	 */
-    class Program
+    static class Program
     {
         // Para gestionar la terminación
         private static readonly AutoResetEvent _closing = new AutoResetEvent(false);

@@ -17,7 +17,7 @@ namespace DroneController.Drone
             string statusJson = JsonConvert.SerializeObject(status);
 
             // Enviar por RabbitMQ
-            _controller.SendStatus(statusJson);
+            _controller.SendStatusAsync(statusJson).GetAwaiter().GetResult();
         }
 
         public void OnAlarm(DroneStatus status, AlarmType alarmType)
@@ -45,7 +45,7 @@ namespace DroneController.Drone
             string alarmJson = JsonConvert.SerializeObject(alarmData);
 
             // Send alarm via RabbitMQ (same channel as status, but could use dedicated alarm queue)
-            _controller.SendStatus(alarmJson);
+            _controller.SendStatusAsync(alarmJson).GetAwaiter().GetResult();
         }
     }
 }
