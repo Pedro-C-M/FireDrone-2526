@@ -3,6 +3,8 @@ namespace ControlBackend;
 
 public class Program
 {
+    protected Program() { }
+
     public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
@@ -39,6 +41,6 @@ public class Program
         app.UseAuthorization();
         app.MapControllers();
 
-        app.Run();
+        await app.RunAsync();
     }
 }

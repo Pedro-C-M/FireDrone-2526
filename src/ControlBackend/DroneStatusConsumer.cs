@@ -52,21 +52,20 @@ namespace ControlBackend
                     }
                 };
 
-                await channel.BasicConsumeAsync(queue: queueName, autoAck: true, consumer: consumer);
+                await channel.BasicConsumeAsync(queue: queueName, autoAck: true, consumer: consumer, cancellationToken: stoppingToken);
 
                 _logger.LogInformation("DroneStatusConsumer started listening on queue {QueueName}", queueName);
 
                 // Keep the background service alive until a cancellation is requested
                 await Task.Delay(Timeout.Infinite, stoppingToken);
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException ex)
             {
-                _logger.LogInformation("DroneStatusConsumer stopped");
+                _logger.LogInformation(ex, "DroneStatusConsumer stopped");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to initialize DroneStatusConsumer");
-                throw;
+                throw new InvalidOperationException("Failed to initialize DroneStatusConsumer", ex);
             }
         }
     }
