@@ -8,7 +8,7 @@ using Models;
 using StackExchange.Redis;
 using System.Text.Json.Serialization;
 
-public class Program
+public static class Program
 {
     public static async Task Main(string[] args)
     {
@@ -107,9 +107,6 @@ public class Program
             Console.WriteLine($"[Redis] WARNING: Cache service not available: {ex.Message}");
         }
 
-        //Descomentar para generar una vez luego volveer a comentar
-        //InstanciateBD.FormaBaseDeBD();
-
         // Initialize database with seed data on startup (only if database doesn't exist or is empty)
         try
         {
@@ -118,7 +115,7 @@ public class Program
                 var db = scope.ServiceProvider.GetRequiredService<FireDrone>();
 
                 // Check if database needs initialization
-                var databaseExists = db.Database.CanConnect();
+                var databaseExists = await db.Database.CanConnectAsync();
                 var hasDrones = databaseExists && db.Drones.Any();
 
                 if (!hasDrones)
@@ -163,6 +160,6 @@ public class Program
         Console.WriteLine("[Program] Redis caching enabled for improved performance");
         Console.WriteLine("[Program] CORS Policy 'AllowAll' active for External IPs");
 
-        app.Run();
+        await app.RunAsync();
     }
 }
