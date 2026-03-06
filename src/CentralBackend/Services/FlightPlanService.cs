@@ -1,10 +1,8 @@
 ﻿using System.Net.Http.Json;
 using CentralBackend.Exceptions;
-//NUEVOv2
 using ControlBackend.DTOs;
 using Microsoft.EntityFrameworkCore;
 using Models;
-//FIN NUEVOv2
 
 namespace CentralBackend.Services
 {
@@ -13,6 +11,7 @@ namespace CentralBackend.Services
         private readonly FireDrone _context;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConfiguration _configuration;
+        private const string ControlBackendUrlKey = "ControlBackend:Url";
 
         public FlightPlanService(FireDrone context, IHttpClientFactory httpClientFactory, IConfiguration configuration)
         {
@@ -136,7 +135,7 @@ namespace CentralBackend.Services
         */
         private async Task SendStartRequestAsync(int? dronId, object waypoints, bool isPeriodic)
         {
-            var url = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://jenkins-slave-xmi2:5307";
+            var url = _configuration.GetValue<string>(ControlBackendUrlKey) ?? throw new InvalidOperationException($"Falta configurar '{ControlBackendUrlKey}'");
             var httpClient = _httpClientFactory.CreateClient();
 
             Console.WriteLine($"[FlightPlanService] Calling ControlBackend at {url}/api/drone/{dronId}/start with waypoints");
@@ -281,7 +280,7 @@ namespace CentralBackend.Services
          * Mertodo auxiliar que calcula la lista final de waypoints a enviar al backend de control,
          * Reduce complejidad de AssignDronAsync
          */
-        private List<object> CalculateFinalRoute(FlightPlan existing, Dron? currentDrone, List<dynamic> allWaypoints, bool restartFromBeginning)
+        private static List<object> CalculateFinalRoute(FlightPlan existing, Dron? currentDrone, List<dynamic> allWaypoints, bool restartFromBeginning)
         {
             if (restartFromBeginning || currentDrone?.Lat == null || currentDrone?.Lon == null)
             {
@@ -373,7 +372,7 @@ namespace CentralBackend.Services
          */
         private async Task SendStartCommandAsync(int? dronId, List<object> waypoints, bool isPeriodic)
         {
-            var url = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://jenkins-slave-xmi2:5307";
+            var url = _configuration.GetValue<string>(ControlBackendUrlKey) ?? throw new InvalidOperationException($"Falta configurar '{ControlBackendUrlKey}'");
             var httpClient = _httpClientFactory.CreateClient();
 
             var response = await httpClient.PostAsJsonAsync($"{url}/api/drone/{dronId}/start",
@@ -440,7 +439,7 @@ namespace CentralBackend.Services
             // Call ControlBackend to stop the flight
             try
             {
-                var controlBackendUrl = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://localhost:5307";
+                var controlBackendUrl = _configuration.GetValue<string>(ControlBackendUrlKey) ?? throw new InvalidOperationException($"Falta configurar '{ControlBackendUrlKey}'");
                 var httpClient = _httpClientFactory.CreateClient();
 
                 Console.WriteLine($"[FlightPlanService] Calling ControlBackend at {controlBackendUrl}/api/drone/{existing.DronId}/stop");
@@ -545,7 +544,7 @@ namespace CentralBackend.Services
             // Llamada al ControlBackend
             try
             {
-                var controlBackendUrl = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://localhost:5307";
+                var controlBackendUrl = _configuration.GetValue<string>(ControlBackendUrlKey) ?? throw new InvalidOperationException($"Falta configurar '{ControlBackendUrlKey}'");
                 var httpClient = _httpClientFactory.CreateClient();
 
                 var payload = new
