@@ -130,7 +130,7 @@ namespace CentralBackend.Services
 
             string nombre = values[0].Trim();
             if (string.IsNullOrEmpty(nombre))
-                throw new ArgumentException($"Error en linea {lineNum}: El 'Nombre' no puede estar vacio.");
+                throw new ArgumentException($"Error en linea {lineNum}: El 'Nombre' de la ruta no puede estar vacio.");
 
             if (!int.TryParse(values[1], out int tipo) || (tipo != 0 && tipo != 1))
                 throw new ArgumentException($"Error en linea {lineNum}: El 'Tipo' debe ser 0 o 1.");
@@ -215,7 +215,7 @@ namespace CentralBackend.Services
 
             if (route == null)
             {
-                throw new Exception($"La ruta con ID {id} no existe.");
+                throw new ArgumentException($"La ruta con ID {id} no existe.");
             }
 
             var sb = new StringBuilder(); //Esto escribe el CSV
@@ -225,7 +225,7 @@ namespace CentralBackend.Services
             string routeName = $"Ruta_{route.Id}";
 
             // 4. Iterar sobre los puntos de ESA ruta
-            foreach (var point in route.Coords)
+            foreach (var point in route.Coords ?? Enumerable.Empty<RoutePoint>())
             {
                 var line = string.Format(CultureInfo.InvariantCulture, "{0};{1};{2:F6};{3:F6};{4:F2};{5:F2}",
                     routeName,           
