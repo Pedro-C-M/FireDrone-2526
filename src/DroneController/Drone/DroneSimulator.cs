@@ -240,9 +240,17 @@ namespace DroneController.Drone
         {
             Console.WriteLine($"[DroneSimulator] *** StartFlightPlan called with {plan.Length} waypoints, isPeriodic={isPeriodic} ***");
 
-            StopCurrentFlightIfRunning();
+            //StopCurrentFlightIfRunning();
 
             _status.State = DroneState.Flying;
+            
+            // Notify callback immediately that drone state changed to Flying
+            if (_updateCallback != null)
+            {
+                Console.WriteLine($"[DroneSimulator] Notifying callback: Drone state changed to Flying");
+                _updateCallback.Update(_status);
+            }
+            
             _tokenSource = new CancellationTokenSource();
             CancellationToken token = _tokenSource.Token;
 
@@ -325,7 +333,7 @@ namespace DroneController.Drone
     		}
 
             // Stop any existing flight before starting manual movement
-            StopCurrentFlightIfRunning();
+            //StopCurrentFlightIfRunning();
 
             // Get current position
             DroneStatus currentStatus = GetStatus();
