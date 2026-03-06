@@ -27,8 +27,8 @@ namespace ControlBackend
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to publish message to exchange {Exchange} with routing key {RoutingKey}", _options.Exchange, topic);
-                throw;
+                throw new InvalidOperationException(
+                    $"Failed to publish message to exchange {_options.Exchange} with routing key {topic}", ex);
             }
         }
     }

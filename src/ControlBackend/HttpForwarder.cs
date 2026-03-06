@@ -16,7 +16,7 @@ namespace ControlBackend
             _logger = logger;
         }
 
-        public async Task SendStatusUpstreamAsync(string statusJson, string dronId)
+        public async Task SendStatusUpstreamAsync(string statusJson, string droneId)
         {
             var content = new StringContent(statusJson, Encoding.UTF8, "application/json");
 
@@ -27,10 +27,10 @@ namespace ControlBackend
                 _logger.LogError("CentralBackend:BaseUrl configuration is missing");
                 return;
             }
-            
-            var centralBackendUrl = $"{centralBackendBaseUrl}/api/Drone/{dronId}/status";
 
-            _logger.LogInformation("Sending drone {DroneId} status to {Url}", dronId, centralBackendUrl);
+            var centralBackendUrl = $"{centralBackendBaseUrl}/api/Drone/{droneId}/status";
+
+            _logger.LogInformation("Sending drone {DroneId} status to {Url}", droneId, centralBackendUrl);
 
             try
             {
@@ -38,16 +38,16 @@ namespace ControlBackend
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    _logger.LogWarning("Error sending HTTP for drone {DroneId}: {StatusCode}", dronId, response.StatusCode);
+                    _logger.LogWarning("Error sending HTTP for drone {DroneId}: {StatusCode}", droneId, response.StatusCode);
                 }
                 else
                 {
-                    _logger.LogInformation("Drone {DroneId} status sent successfully", dronId);
+                    _logger.LogInformation("Drone {DroneId} status sent successfully", droneId);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to send status for drone {DroneId} to {Url}", dronId, centralBackendUrl);
+                _logger.LogError(ex, "Failed to send status for drone {DroneId} to {Url}", droneId, centralBackendUrl);
             }
         }
     }

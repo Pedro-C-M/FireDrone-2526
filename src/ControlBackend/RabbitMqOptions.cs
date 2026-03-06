@@ -4,11 +4,9 @@
      * Clase de configuración para la conexión con RabbitMQ.
      * Permite definir los parámetros del broker (host, credenciales, exchange y topic)
      * mediante variables de entorno, usando valores por defecto si no están definidas.
-     * 
+     *
      * Esto facilita desplegar el sistema en distintos entornos (local, servidor, nube)
      * sin necesidad de modificar el código fuente usando variables de entorno.
-     *
-     * http://156.35.163.122:15672/ - RabbitMQ Management UI de la MV contraseña y usuario son admin admin
      */
     public class RabbitMqOptions
     {

@@ -26,12 +26,12 @@ namespace ControlBackend
 
             try
             {
-                var channel = await _connection.CreateChannelAsync();
+                using var channel = await _connection.CreateChannelAsync(cancellationToken: stoppingToken);
 
-                await channel.QueueDeclareAsync(queue: queueName, durable: true, exclusive: false, autoDelete: false);
+                await channel.QueueDeclareAsync(queue: queueName, durable: true, exclusive: false, autoDelete: false, cancellationToken: stoppingToken);
 
                 // Recibirá los status de cualquier dron porque usamos drone.*.status
-                await channel.QueueBindAsync(queueName, _options.Exchange, routingKey: routingKeyPattern);
+                await channel.QueueBindAsync(queueName, _options.Exchange, routingKey: routingKeyPattern, cancellationToken: stoppingToken);
 
                 var consumer = new AsyncEventingBasicConsumer(channel);
                 consumer.ReceivedAsync += async (model, ea) =>
@@ -53,8 +53,15 @@ namespace ControlBackend
                 };
 
                 await channel.BasicConsumeAsync(queue: queueName, autoAck: true, consumer: consumer);
-                
+
                 _logger.LogInformation("DroneStatusConsumer started listening on queue {QueueName}", queueName);
+
+                // Keep the background service alive until a cancellation is requested
+                await Task.Delay(Timeout.Infinite, stoppingToken);
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.LogInformation("DroneStatusConsumer stopped");
             }
             catch (Exception ex)
             {
