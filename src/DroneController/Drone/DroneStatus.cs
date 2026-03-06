@@ -17,17 +17,17 @@
 
 	public class DroneStatus
 	{
-		public double Latitude;
-		public double Longitude;
-		public double Altitude;
-		public double Speed; // km/h
-		public double Battery;
-		public DroneState State;
+		public double Latitude { get; set; }
+		public double Longitude { get; set; }
+		public double Altitude { get; set; }
+		public double Speed { get; set; } // km/h
+		public double Battery { get; set; }
+		public DroneState State { get; set; }
 
 		/// Indicates if an alarm condition is active
-		public bool IsAlarm;
+		public bool IsAlarm { get; set; }
 
 		/// The type of alarm if IsAlarm is true
-		public AlarmType AlarmType;
+		public AlarmType AlarmType { get; set; }
 	}
 }

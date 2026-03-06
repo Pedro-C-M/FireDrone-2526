@@ -29,10 +29,10 @@ namespace DroneController
             if (args.Length != 2)
                 throw new ArgumentException("Invalid number of arguments");
             // Ejemplo: 124af46
-            string DroneID = args[0];
+            string droneId = args[0];
 
             // Ejemplo: DroneSimulator
-            string DroneDriver = args[1];
+            string droneDriver = args[1];
 
             var options = new RabbitMqOptions();
 
@@ -51,7 +51,7 @@ namespace DroneController
                 services.AddSingleton(options);           // Configuración
                 services.AddSingleton(connection);        // Conexión singleton
                 services.AddHostedService(provider =>     // Registrar dron como BackgroundService
-                    new Drone.DroneController(DroneID, DroneDriver, connection, options));
+                    new Drone.DroneController(droneId, droneDriver, connection, options));
             }).Build();
             await host.RunAsync();
         }

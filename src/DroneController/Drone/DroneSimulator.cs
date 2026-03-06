@@ -257,7 +257,7 @@ namespace DroneController.Drone
                         token.ThrowIfCancellationRequested();
                     }
 
-                    Task.Delay(UpdateIntervalMs).Wait();
+                    Thread.Sleep(UpdateIntervalMs);
                 }
                 Console.WriteLine($"[DroneSimulator] *** FLIGHT TASK COMPLETED after {stepCount} steps ***");
                 Console.WriteLine($"[DroneSimulator] Final state: {_status.State}, Position: Lat={_status.Latitude}, Lon={_status.Longitude}");
@@ -276,7 +276,13 @@ namespace DroneController.Drone
 
         // Detiene la tarea de simulación
         public void StopFlightPlan()
-        {//Si peta aqui es que se intenta parar sin start antes
+        {
+            if (_tokenSource == null || _task == null)
+            {
+                Console.WriteLine("[DroneSimulator] StopFlightPlan called before StartFlightPlan, ignoring.");
+                return;
+            }
+
             _tokenSource.Cancel();
             try
             {

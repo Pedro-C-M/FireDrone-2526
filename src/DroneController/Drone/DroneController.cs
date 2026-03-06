@@ -24,6 +24,10 @@ namespace DroneController.Drone
         private readonly RabbitMqOptions _options;
         private IChannel _channel = null!;
 
+        // Whitelist of allowed driver names to prevent reflection injection
+        private static readonly System.Collections.Generic.HashSet<string> AllowedDrivers =
+            new System.Collections.Generic.HashSet<string> { "DroneSimulator", "MavLinkSEUDriver" };
+
         public DroneController(string droneID, string droneDriver, IConnection connection, RabbitMqOptions options)
         {
             _droneID = droneID;
@@ -33,31 +37,24 @@ namespace DroneController.Drone
 
             Log.Debug($"Drone controller {_droneID}-{_droneDriver} starting");
 
-
             // Instanciar driver de forma dinámica
             _drone = CreateDroneDriver(_droneDriver);
         }
 
-        public async void Stop()
+        // Se instancia el driver de forma dinámica.
+        private IDroneDriver CreateDroneDriver(string droneDriver)
         {
-            if (_channel != null)
+            // Security: validate against whitelist before using reflection (prevents injection)
+            if (!AllowedDrivers.Contains(droneDriver))
             {
-                await _channel.CloseAsync();
-                _channel.Dispose();
+                throw new ArgumentException($"Unknown drone driver: {droneDriver}");
             }
 
-            Log.Debug("Drone controller stopped.");
-        }
+            Type type = Type.GetType(GetType().Namespace + "." + droneDriver)
+                ?? throw new ArgumentException($"Error unable to find drone driver {droneDriver}");
 
-        // Se instancia el driver de forma dinámica. 
-        private IDroneDriver CreateDroneDriver(string DroneDriver)
-        {
-            Type type = Type.GetType(GetType().Namespace + "." + DroneDriver);
-            if (type == null)
-            {
-                throw new ArgumentException($"Error unable to find drone driver {DroneDriver}");
-            }
-            IDroneDriver drone = (IDroneDriver)Activator.CreateInstance(type);
+            IDroneDriver drone = (IDroneDriver)(Activator.CreateInstance(type)
+                ?? throw new InvalidOperationException($"Failed to create instance of {droneDriver}"));
 
             // Sería necesario publicar la información
             drone.SetUpdateCallback(new StatusUpdateCallback(this));
@@ -118,7 +115,7 @@ namespace DroneController.Drone
                 exchange: _options.Exchange,
                 routingKey: $"drone.{_droneID}.status",
                 body: body
-            );
+            ).GetAwaiter().GetResult();
 
             Log.Debug($"[STATUS] {message}");
         }
@@ -129,6 +126,12 @@ namespace DroneController.Drone
         {
             // Decodificar el mensaje
             DroneCommand command = JsonConvert.DeserializeObject<DroneCommand>(commandtext);
+
+            if (command == null)
+            {
+                Console.WriteLine("[DroneController] Received null or invalid command, ignoring.");
+                return;
+            }
 
             Log.Debug($"Executing drone command {command.Command}");
 
