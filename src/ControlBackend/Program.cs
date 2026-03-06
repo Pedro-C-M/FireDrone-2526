@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 
 namespace ControlBackend;
 
@@ -17,7 +18,11 @@ public class Program
             options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
         });
 
+        // Bind RabbitMQ configuration
         var rabbitOptions = new RabbitMqOptions();
+        builder.Configuration.GetSection("RabbitMQ").Bind(rabbitOptions);
+        rabbitOptions.Validate();
+
         builder.Services.AddSingleton(rabbitOptions);
         await builder.Services.AddRabbitMq(rabbitOptions);
         builder.Services.AddSingleton<IPublisher, RabbitMqPublisher>();

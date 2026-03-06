@@ -1,4 +1,5 @@
 ﻿using ControlBackend;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
@@ -34,7 +35,12 @@ namespace DroneController
             // Ejemplo: DroneSimulator
             string droneDriver = args[1];
 
+            var config = new ConfigurationBuilder()
+                .AddJsonFile("appsettings.json", optional: false)
+                .Build();
+
             var options = new RabbitMqOptions();
+            config.GetSection("RabbitMq").Bind(options);
 
             // Crear la conexión
             var factory = new RabbitMQ.Client.ConnectionFactory
