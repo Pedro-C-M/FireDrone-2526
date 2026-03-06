@@ -74,11 +74,11 @@ namespace DroneController.Drone
                 cancellationToken: cancellationToken
         );
 
-            await _channel.QueueDeclareAsync(queue: queueName, durable: true, exclusive: false, autoDelete: false, arguments: null);
+            await _channel.QueueDeclareAsync(queue: queueName, durable: true, exclusive: false, autoDelete: false, arguments: null, cancellationToken: cancellationToken);
 
             // Bind to specific routing key for this drone
             string routingKey = $"drone.{_droneID}.commands";
-            await _channel.QueueBindAsync(queue: queueName, exchange: _options.Exchange, routingKey: routingKey);
+            await _channel.QueueBindAsync(queue: queueName, exchange: _options.Exchange, routingKey: routingKey, cancellationToken: cancellationToken);
 
             Console.WriteLine($"[DroneController] Queue '{queueName}' bound to exchange '{_options.Exchange}' with routing key '{routingKey}'");
 
