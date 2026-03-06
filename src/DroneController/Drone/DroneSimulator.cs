@@ -240,7 +240,7 @@ namespace DroneController.Drone
         {
             Console.WriteLine($"[DroneSimulator] *** StartFlightPlan called with {plan.Length} waypoints, isPeriodic={isPeriodic} ***");
 
-            //StopCurrentFlightIfRunning();
+            StopCurrentFlightIfRunning();
 
             _status.State = DroneState.Flying;
             
@@ -333,7 +333,7 @@ namespace DroneController.Drone
     		}
 
             // Stop any existing flight before starting manual movement
-            //StopCurrentFlightIfRunning();
+            StopCurrentFlightIfRunning();
 
             // Get current position
             DroneStatus currentStatus = GetStatus();
