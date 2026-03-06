@@ -92,14 +92,14 @@ namespace DroneController.Drone
                 await HandleDroneCommand(message);
             };
 
-            await _channel.BasicConsumeAsync(queueName, autoAck: true, consumer: consumer);
+            await _channel.BasicConsumeAsync(queueName, autoAck: true, consumer: consumer, cancellationToken: cancellationToken);
 
             await base.StartAsync(cancellationToken);
         }
 
         public override async Task StopAsync(CancellationToken cancellationToken)
         {
-            await _channel.CloseAsync();
+            await _channel.CloseAsync(cancellationToken);
             await base.StopAsync(cancellationToken);
         }
         protected override Task ExecuteAsync(CancellationToken stoppingToken) => Task.CompletedTask;
