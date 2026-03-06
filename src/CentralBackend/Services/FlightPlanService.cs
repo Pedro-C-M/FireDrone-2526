@@ -25,7 +25,7 @@ namespace CentralBackend.Services
         {
             return await _context.FlightPlans
                 .Include(fp => fp.Ruta)
-                .ThenInclude(r => r.Coords)
+                .ThenInclude(r => r != null ? r.Coords : null)
                 .ToListAsync();
         }
 
@@ -38,94 +38,21 @@ namespace CentralBackend.Services
         {
             Console.WriteLine($"[FlightPlanService] CreateAsync called: DronId={plan.DronId}, RutaId={plan.RutaId}, State={plan.State}");
 
-            if (plan.DronId != null)
-            {
-                // Buscamos si hay algún plan 'OnCourse' (0) o 'Active' para este dron
-                // Ajusta 'FlightStatus.OnCourse' según tus enums reales
-                bool isBusy = await _context.FlightPlans
-                    .AnyAsync(fp => fp.DronId == plan.DronId);//Puede q en futuro querramos borrar automatico si no esta corriendo el plan
+            // 1. Validar disponibilidad del dron
+            await EnsureDronIsAvailableAsync(plan.DronId);
 
-                if (isBusy)
-                {
-                    // Lanzamos una excepción controlada con el mensaje que quieres ver en el Front
-                    throw new InvalidOperationException($"Dron {plan.DronId} already in a flight plan, delete it before creating another one.");
-                }
-            }
-
+            // 2. Guardar el plan
             _context.FlightPlans.Add(plan);
             await _context.SaveChangesAsync();
-
             Console.WriteLine($"[FlightPlanService] FlightPlan {plan.Id} created in database");
-            //Actualizar dron
-            if (plan.DronId != null)
-            {
-                var drone = await _context.Drones.FindAsync(plan.DronId);
-                if (drone != null)
-                {
-                    // Asignamos el ID del plan recién creado al Dron
-                    drone.FlightPlanId = plan.Id;
-                    _context.Drones.Update(drone);
-                    await _context.SaveChangesAsync();
-                }
-            }
 
-            // Only start the flight automatically if the plan is created with OnCourse status
+            // 3. Vincular con el dron
+            await UpdateDronFlightPlanAsync(plan.DronId, plan.Id);
+
+            // 4. Iniciar vuelo si procede
             if (plan.State == FlightStatus.OnCourse)
             {
-                try
-                {
-                    // Load the route with coordinates
-                    var flightPlanWithRoute = await _context.FlightPlans
-                        .Include(fp => fp.Ruta)
-                        .ThenInclude(r => r.Coords)
-                        .FirstOrDefaultAsync(fp => fp.Id == plan.Id);
-
-                    var controlBackendUrl = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://localhost:5307";
-                    var httpClient = _httpClientFactory.CreateClient();
-
-                    // Convert RoutePoints to Waypoints
-                    var waypoints = flightPlanWithRoute?.Ruta?.Coords?
-                        .Where(rp => rp.Lat.HasValue && rp.Long.HasValue)
-                        .Select(rp => new
-                        {
-                            latitude = rp.Lat,
-                            longitude = rp.Long,
-                            altitude = rp.Height ?? 50,
-                            speed = rp.Velocity ?? 20
-                        }).ToList();
-
-                    if (waypoints == null || !waypoints.Any())
-                    {
-                        Console.WriteLine($"[FlightPlanService] ERROR: No valid waypoints in CreateAsync for route {plan.RutaId}!");
-                        return plan;
-                    }
-
-                    Console.WriteLine($"[FlightPlanService] Calling ControlBackend at {controlBackendUrl}/api/drone/{plan.DronId}/start with {waypoints?.Count ?? 0} waypoints");
-
-                    bool isPeriodic = flightPlanWithRoute?.Ruta?.Type == RouteType.Periodic;
-                    //1 periodica y 0 simple
-                    var response = await httpClient.PostAsJsonAsync(
-                        $"{controlBackendUrl}/api/drone/{plan.DronId}/start",
-                        new
-                        {
-                            Waypoints = waypoints,
-                            IsPeriodic = isPeriodic
-                        }
-                    );
-
-                    if (!response.IsSuccessStatusCode)
-                    {
-                        Console.WriteLine($"[FlightPlanService] Failed to start flight for drone {plan.DronId}: {response.StatusCode}");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"[FlightPlanService] Successfully called ControlBackend StartFlight for drone {plan.DronId}");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"[FlightPlanService] Error calling ControlBackend StartFlight: {ex.Message}");
-                }
+                await TryStartFlightInBackendAsync(plan);
             }
             else
             {
@@ -134,7 +61,98 @@ namespace CentralBackend.Services
 
             return plan;
         }
+        /**
+         * Metodo auxiliar que verifica si el dron asignado al plan de vuelo
+         * ya esta en otro plan activo. Si el dronId es null, se asume que no hay dron asignado 
+         * y se permite crear el plan sin restricciones.
+         * Ayuda a reducir complejidad cognitiva de CreateAsync
+         */
+        private async Task EnsureDronIsAvailableAsync(int? dronId)
+        {
+            if (dronId == null) return;
 
+            bool isBusy = await _context.FlightPlans.AnyAsync(fp => fp.DronId == dronId);
+            if (isBusy)
+            {
+                throw new InvalidOperationException($"Dron {dronId} already in a flight plan, delete it before creating another one.");
+            }
+        }
+        /**
+        * Metodo auxiliar que actualiza la referencia del dron al plan de vuelo creado. Si el dronId es null, se asume que no hay dron asignado
+        * Ayuda a reducir complejidad cognitiva de CreateAsync
+        */
+        private async Task UpdateDronFlightPlanAsync(int? dronId, int planId)
+        {
+            if (dronId == null) return;
+
+            var drone = await _context.Drones.FindAsync(dronId);
+            if (drone != null)
+            {
+                drone.FlightPlanId = planId;
+                _context.Drones.Update(drone);
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        /**
+        * Metodo auxiliar que intenta iniciar el vuelo en el backend de control 
+        * si el plan de vuelo se creó con estado OnCourse. 
+        * Si el plan no tiene un dron asignado, se omite la llamada al backend.
+        * Ayuda a reducir complejidad cognitiva de CreateAsync
+        */
+        private async Task TryStartFlightInBackendAsync(FlightPlan plan)
+        {
+            try
+            {
+                var flightWithRoute = await _context.FlightPlans
+                    .Include(fp => fp.Ruta).ThenInclude(r => r!.Coords)
+                    .FirstOrDefaultAsync(fp => fp.Id == plan.Id);
+
+                var waypoints = flightWithRoute?.Ruta?.Coords?
+                    .Where(rp => rp.Lat.HasValue && rp.Long.HasValue)
+                    .Select(rp => new {
+                        latitude = rp.Lat,
+                        longitude = rp.Long,
+                        altitude = rp.Height ?? 50,
+                        speed = rp.Velocity ?? 20
+                    }).ToList();
+
+                if (waypoints == null || !waypoints.Any())
+                {
+                    Console.WriteLine($"[FlightPlanService] ERROR: No valid waypoints in CreateAsync for route {plan.RutaId}!");
+                    return;
+                }
+
+                await SendStartRequestAsync(plan.DronId, waypoints, flightWithRoute?.Ruta?.Type == RouteType.Periodic);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[FlightPlanService] Error calling ControlBackend StartFlight: {ex.Message}");
+            }
+        }
+        /**
+        * Metodo auxiliar que envía la solicitud de inicio de vuelo al backend de control con los waypoints formateados. 
+        * Ayuda a reducir complejidad cognitiva de CreateAsync
+        */
+        private async Task SendStartRequestAsync(int? dronId, object waypoints, bool isPeriodic)
+        {
+            var url = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://jenkins-slave-xmi2:5307";
+            var httpClient = _httpClientFactory.CreateClient();
+
+            Console.WriteLine($"[FlightPlanService] Calling ControlBackend at {url}/api/drone/{dronId}/start with waypoints");
+
+            var response = await httpClient.PostAsJsonAsync($"{url}/api/drone/{dronId}/start",
+                new { Waypoints = waypoints, IsPeriodic = isPeriodic });
+
+            if (!response.IsSuccessStatusCode)
+            {
+                Console.WriteLine($"[FlightPlanService] Failed to start flight for drone {dronId}: {response.StatusCode}");
+            }
+            else
+            {
+                Console.WriteLine($"[FlightPlanService] Successfully called ControlBackend StartFlight for drone {dronId}");
+            }
+        }
         public async Task<FlightPlan> UpdateAsync(int id, FlightPlan plan)
         {
             var existing = await _context.FlightPlans.FindAsync(id);

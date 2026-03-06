@@ -149,7 +149,7 @@ namespace CentralBackend.Services
          * y agregar los puntos a las rutas correspondientes en el diccionario.
          * Ayuda en la refactorizacion de ImportFromCsvAsync 
          */
-        private void ProcessRouteData(Dictionary<string, Models.Route> rutasDict,
+        private static void ProcessRouteData(Dictionary<string, Models.Route> rutasDict,
         (string Nombre, int Tipo, float Lat, float Lon, float Alt, float Vel) data, int lineNum)
         {
             if (!rutasDict.TryGetValue(data.Nombre, out var rutaExistente))
@@ -167,6 +167,12 @@ namespace CentralBackend.Services
                 throw new InvalidOperationException($"Error en linea {lineNum}: La ruta '{data.Nombre}' se definio antes con otro TIPO.");
             }
 
+            // Antes de añadir el punto, nos aseguramos de que la lista no sea nula
+            if (rutaExistente.Coords == null)
+            {
+                rutaExistente.Coords = new List<RoutePoint>();
+            }
+
             rutaExistente.Coords.Add(new RoutePoint
             {
                 Lat = data.Lat,
@@ -182,7 +188,7 @@ namespace CentralBackend.Services
          */
         private async Task<int> SaveImportedRoutesAsync(List<Models.Route> rutasParaGuardar)
         {
-            if (!rutasParaGuardar.Any()) return 0;
+            if (rutasParaGuardar.Count == 0) return 0;
 
             _context.Routes.AddRange(rutasParaGuardar);
             await _context.SaveChangesAsync();
