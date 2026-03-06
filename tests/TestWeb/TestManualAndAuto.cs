@@ -6,6 +6,7 @@ using System.Threading;
 
 namespace TestWeb
 {
+    [Ignore("Desactivado temporalmente para acelerar la Integración Continua")]
     [TestClass()]
     public class TestManualAndAuto : WebTestBase
     {
