@@ -239,7 +239,7 @@ namespace CentralBackend.Services
             try
             {
                 var allWaypoints = ExtractValidWaypoints(existing);
-                if (!allWaypoints.Any())
+                if (allWaypoints.Count == 0)
                 {
                     LogWaypointError(existing);
                     return;
@@ -264,7 +264,7 @@ namespace CentralBackend.Services
          * filtrando aquellos sin coordenadas y formateándolos para el backend de control.
          * Reduce complejidad de AssignDronAsync
          */
-        private List<dynamic> ExtractValidWaypoints(FlightPlan existing)
+        private static List<dynamic> ExtractValidWaypoints(FlightPlan existing)
         {
             return existing.Ruta?.Coords?
                 .Where(rp => rp.Lat.HasValue && rp.Long.HasValue)
@@ -333,7 +333,7 @@ namespace CentralBackend.Services
          * comenzando con la posición actual del dron
          * Reduce complejidad de AssignDronAsync
          */
-        private List<object> BuildResumedRoute(Dron currentDrone, List<dynamic> allWaypoints, int closestIndex, int resumeIndex, bool isPeriodic)
+        private static List<object> BuildResumedRoute(Dron currentDrone, List<dynamic> allWaypoints, int closestIndex, int resumeIndex, bool isPeriodic)
         {
             var waypoints = new List<object>();
 
@@ -396,7 +396,7 @@ namespace CentralBackend.Services
             Console.WriteLine($"[FlightPlanService] Route Coords exists: {existing.Ruta?.Coords != null}");
             Console.WriteLine($"[FlightPlanService] Route Coords count: {existing.Ruta?.Coords?.Count ?? 0}");
 
-            if (existing.Ruta?.Coords != null && existing.Ruta.Coords.Any())
+            if (existing.Ruta?.Coords != null && existing.Ruta.Coords.Count == 0)
             {
                 var coordSample = existing.Ruta.Coords.First();
                 Console.WriteLine($"[FlightPlanService] Sample coord: Lat={coordSample.Lat}, Lon={coordSample.Long}, Alt={coordSample.Height}, Speed={coordSample.Velocity}");
