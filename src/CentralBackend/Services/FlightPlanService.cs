@@ -117,7 +117,7 @@ namespace CentralBackend.Services
                         speed = rp.Velocity ?? 20
                     }).ToList();
 
-                if (waypoints == null || !waypoints.Any())
+                if (waypoints == null || waypoints.Count == 0)
                 {
                     Console.WriteLine($"[FlightPlanService] ERROR: No valid waypoints in CreateAsync for route {plan.RutaId}!");
                     return;
@@ -162,12 +162,9 @@ namespace CentralBackend.Services
             existing.DronId = plan.DronId;
             existing.RutaId = plan.RutaId;
             existing.EstControlId = plan.EstControlId;
-            //existing.StartingPointId = plan.StartingPointId;
             existing.StartingTime = plan.StartingTime;
             existing.EndingTime = plan.EndingTime;
             existing.State = plan.State;
-
-            //existing.ModeChangeHistoric = plan.ModeChangeHistoric;
 
             await _context.SaveChangesAsync();
             return existing;
@@ -177,25 +174,49 @@ namespace CentralBackend.Services
         {
             Console.WriteLine($"[FlightPlanService] AssignDronAsync called: FlightPlanId={id}, DronId={dronId}, RestartFromBeginning={restartFromBeginning}");
 
+            // 1. Cargar datos de base de datos
+            var existing = await GetFlightPlanWithRouteAsync(id);
+            Dron? currentDrone = await GetCurrentDroneAsync(dronId, restartFromBeginning);
+
+            // 2. Actualizar estado
+            UpdateFlightPlanState(existing, dronId, restartFromBeginning);
+            await _context.SaveChangesAsync();
+
+            Console.WriteLine($"[FlightPlanService] Drone {dronId} assigned to FlightPlan {id} in database, state set to OnCourse");
+
+            // 3. Iniciar el vuelo
+            await StartFlightInControlBackendAsync(existing, currentDrone, restartFromBeginning);
+
+            return existing;
+        }
+
+        // --- 1. MÉTODOS DE BASE DE DATOS Y ESTADO ---
+        /**
+         * Metodo auxiliar que carga el plan de vuelo con su ruta y puntos asociados. Si el plan no existe, lanza una excepción.
+         * Reduce complejidad de AssignDronAsync
+         */
+        private async Task<FlightPlan> GetFlightPlanWithRouteAsync(int id)
+        {
             var existing = await _context.FlightPlans
-            .Include(fp => fp.Ruta)
-              .ThenInclude(r => r.Coords)
+                .Include(fp => fp.Ruta).ThenInclude(r => r!.Coords)
                 .FirstOrDefaultAsync(fp => fp.Id == id);
 
             if (existing == null)
                 throw new NotFoundException($"FlightPlan with ID {id} does not exist.");
 
-            // Get current drone position if resuming
-            Dron? currentDrone = null;
-            if (!restartFromBeginning)
-            {
-                currentDrone = await _context.Drones.FindAsync(dronId);
-            }
+            return existing;
+        }
 
+        private async Task<Dron?> GetCurrentDroneAsync(int dronId, bool restartFromBeginning)
+        {
+            return restartFromBeginning ? null : await _context.Drones.FindAsync(dronId);
+        }
+
+        private static void UpdateFlightPlanState(FlightPlan existing, int dronId, bool restartFromBeginning)
+        {
             existing.DronId = dronId;
             existing.State = FlightStatus.OnCourse;
 
-            // Only reset starting time if restarting from beginning
             if (restartFromBeginning)
             {
                 existing.StartingTime = DateTime.Now;
@@ -205,191 +226,200 @@ namespace CentralBackend.Services
             {
                 Console.WriteLine($"[FlightPlanService] Resuming from last position");
             }
+        }
 
-            await _context.SaveChangesAsync();
-
-            Console.WriteLine($"[FlightPlanService] Drone {dronId} assigned to FlightPlan {id} in database, state set to OnCourse");
-
-            // Call ControlBackend to start the flight with waypoints from the route
+        // --- 2. COMUNICACIÓN Y PREPARACIÓN DE RUTA ---
+        /**
+         * Metodo auxiar que prepara los waypoints y llama al backend de control para iniciar el vuelo.
+         * Si no hay waypoints válidos, se loguea un error y no se llama al backend.
+         * Reduce complejidad de AssignDronAsync
+         */
+        private async Task StartFlightInControlBackendAsync(FlightPlan existing, Dron? currentDrone, bool restartFromBeginning)
+        {
             try
             {
-                var controlBackendUrl = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://localhost:5307";
-                var httpClient = _httpClientFactory.CreateClient();
-
-                // Convert RoutePoints to Waypoints
-                var allWaypoints = existing.Ruta?.Coords?
-               .Where(rp => rp.Lat.HasValue && rp.Long.HasValue)  // Filter out null coordinates
-                        .OrderBy(rp => rp.Id)
-               .Select(rp => new
-               {
-                   latitude = rp.Lat,
-                   longitude = rp.Long,
-                   altitude = rp.Height ?? 50,  // Default altitude if null
-                   speed = rp.Velocity ?? 20    // Default speed if null
-               }).ToList();
-
-                if (allWaypoints == null || !allWaypoints.Any())
+                var allWaypoints = ExtractValidWaypoints(existing);
+                if (!allWaypoints.Any())
                 {
-                    Console.WriteLine($"[FlightPlanService] ERROR: No valid waypoints found for route {existing.RutaId}!");
-                    Console.WriteLine($"[FlightPlanService] Route exists: {existing.Ruta != null}");
-                    Console.WriteLine($"[FlightPlanService] Route Coords exists: {existing.Ruta?.Coords != null}");
-                    Console.WriteLine($"[FlightPlanService] Route Coords count: {existing.Ruta?.Coords?.Count ?? 0}");
-
-                    // Check if coords exist but have null values
-                    if (existing.Ruta?.Coords != null && existing.Ruta.Coords.Any())
-                    {
-                        var coordSample = existing.Ruta.Coords.First();
-                        Console.WriteLine($"[FlightPlanService] Sample coord: Lat={coordSample.Lat}, Lon={coordSample.Long}, Alt={coordSample.Height}, Speed={coordSample.Velocity}");
-                    }
-
-                    return existing;
+                    LogWaypointError(existing);
+                    return;
                 }
 
                 Console.WriteLine($"[FlightPlanService] Loaded {allWaypoints.Count} valid waypoints from route {existing.RutaId}");
 
-                // Prepare waypoints - either full route or resumed from current position
-                var waypoints = new List<object>();
-                bool isPeriodicRoute = existing?.Ruta?.Type == RouteType.Periodic;
+                var finalWaypoints = CalculateFinalRoute(existing, currentDrone, allWaypoints, restartFromBeginning);
+                LogRoutePreview(finalWaypoints, existing.DronId);
 
-                if (!restartFromBeginning && currentDrone != null && currentDrone.Lat.HasValue && currentDrone.Lon.HasValue)
-                {
-                    Console.WriteLine($"[FlightPlanService] Current drone position: Lat={currentDrone.Lat}, Lon={currentDrone.Lon}");
-
-                    // Find the closest waypoint to current position
-                    var currentPos = (lat: (double)currentDrone.Lat.Value, lon: (double)currentDrone.Lon.Value);
-                    int closestIndex = 0;
-                    double minDistance = double.MaxValue;
-
-                    for (int i = 0; i < allWaypoints.Count; i++)
-                    {
-                        var wp = allWaypoints[i];
-                        if (wp.latitude.HasValue && wp.longitude.HasValue)
-                        {
-                            var distance = Math.Sqrt(
-                            Math.Pow((double)wp.latitude.Value - currentPos.lat, 2) +
-                            Math.Pow((double)wp.longitude.Value - currentPos.lon, 2)
-                            );
-
-                            if (distance < minDistance)
-                            {
-                                minDistance = distance;
-                                closestIndex = i;
-                            }
-                        }
-                    }
-
-                    // Resume from the next waypoint after current position
-                    var resumeIndex = Math.Min(closestIndex + 1, allWaypoints.Count - 1);
-                    Console.WriteLine($"[FlightPlanService] Resuming from waypoint index {resumeIndex} (closest was {closestIndex})");
-
-                    // Add current position as first waypoint
-                    waypoints.Add(new
-                    {
-                        latitude = currentDrone.Lat,
-                        longitude = currentDrone.Lon,
-                        altitude = currentDrone.Altitude ?? allWaypoints[closestIndex].altitude,
-                        speed = allWaypoints[closestIndex].speed
-                    });
-
-                    if (isPeriodicRoute)
-                    {
-                        // For periodic routes: send the FULL ORIGINAL route starting from resume point
-                        // This allows FlightSimulator to handle the periodic looping correctly
-
-                        // Add waypoints from resume point to end
-                        for (int i = resumeIndex; i < allWaypoints.Count; i++)
-                        {
-                            waypoints.Add(new
-                            {
-                                latitude = allWaypoints[i].latitude,
-                                longitude = allWaypoints[i].longitude,
-                                altitude = allWaypoints[i].altitude,
-                                speed = allWaypoints[i].speed
-                            });
-                        }
-
-                        // Add waypoints from beginning to complete the original route structure
-                        for (int i = 0; i < allWaypoints.Count; i++)
-                        {
-                            waypoints.Add(new
-                            {
-                                latitude = allWaypoints[i].latitude,
-                                longitude = allWaypoints[i].longitude,
-                                altitude = allWaypoints[i].altitude,
-                                speed = allWaypoints[i].speed
-                            });
-                        }
-
-                        Console.WriteLine($"[FlightPlanService] Periodic route: sent full route structure with {waypoints.Count - 1} waypoints for continuous looping");
-                    }
-                    else
-                    {
-                        // For simple routes: only add remaining waypoints from resume point to end
-                        for (int i = resumeIndex; i < allWaypoints.Count; i++)
-                        {
-                            waypoints.Add(new
-                            {
-                                latitude = allWaypoints[i].latitude,
-                                longitude = allWaypoints[i].longitude,
-                                altitude = allWaypoints[i].altitude,
-                                speed = allWaypoints[i].speed
-                            });
-                        }
-                        Console.WriteLine($"[FlightPlanService] Simple route: added {waypoints.Count - 1} remaining waypoints");
-                    }
-                }
-                else
-                {
-                    // Use full route from beginning
-                    foreach (var wp in allWaypoints)
-                    {
-                        waypoints.Add(new
-                        {
-                            latitude = wp.latitude,
-                            longitude = wp.longitude,
-                            altitude = wp.altitude,
-                            speed = wp.speed
-                        });
-                    }
-                }
-
-                Console.WriteLine($"[FlightPlanService] Sending {waypoints?.Count ?? 0} waypoints to ControlBackend for drone {dronId}");
-
-                // Log the first waypoint to verify data
-                if (waypoints != null && waypoints.Count > 0)
-                {
-                    dynamic first = waypoints[0];
-                    Console.WriteLine($"[FlightPlanService] First waypoint: lat={first.latitude}, lon={first.longitude}, alt={first.altitude}, speed={first.speed}");
-                    if (waypoints.Count > 1)
-                    {
-                        dynamic last = waypoints[waypoints.Count - 1];
-                        Console.WriteLine($"[FlightPlanService] Last waypoint: lat={last.latitude}, lon={last.longitude}, alt={last.altitude}, speed={last.speed}");
-                    }
-                }
-
-                var response = await httpClient.PostAsJsonAsync(
-            $"{controlBackendUrl}/api/drone/{dronId}/start",
-                new
-                {
-                    Waypoints = waypoints,
-                    IsPeriodic = isPeriodicRoute
-                });
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    Console.WriteLine($"[FlightPlanService] Failed to start flight for drone {dronId}: {response.StatusCode}");
-                }
-                else
-                {
-                    Console.WriteLine($"[FlightPlanService] Successfully called ControlBackend StartFlight for drone {dronId}");
-                }
+                await SendStartCommandAsync(existing.DronId, finalWaypoints, existing.Ruta?.Type == RouteType.Periodic);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"[FlightPlanService] Error calling ControlBackend StartFlight: {ex.Message}");
             }
+        }
 
-            return existing;
+        // --- 3. LÓGICA DE RUTAS Y MATEMÁTICAS ---
+        /**
+         * Metodo auxiliar que extrae los waypoints válidos de la ruta del plan de vuelo, 
+         * filtrando aquellos sin coordenadas y formateándolos para el backend de control.
+         * Reduce complejidad de AssignDronAsync
+         */
+        private List<dynamic> ExtractValidWaypoints(FlightPlan existing)
+        {
+            return existing.Ruta?.Coords?
+                .Where(rp => rp.Lat.HasValue && rp.Long.HasValue)
+                .OrderBy(rp => rp.Id)
+                .Select(rp => (dynamic)new
+                {
+                    latitude = rp.Lat,
+                    longitude = rp.Long,
+                    altitude = rp.Height ?? 50,
+                    speed = rp.Velocity ?? 20
+                }).ToList() ?? new List<dynamic>();
+        }
+        /**
+         * Mertodo auxiliar que calcula la lista final de waypoints a enviar al backend de control,
+         * Reduce complejidad de AssignDronAsync
+         */
+        private List<object> CalculateFinalRoute(FlightPlan existing, Dron? currentDrone, List<dynamic> allWaypoints, bool restartFromBeginning)
+        {
+            if (restartFromBeginning || currentDrone?.Lat == null || currentDrone?.Lon == null)
+            {
+                return allWaypoints.Select(wp => (object)new { wp.latitude, wp.longitude, wp.altitude, wp.speed }).ToList();
+            }
+
+            Console.WriteLine($"[FlightPlanService] Current drone position: Lat={currentDrone.Lat}, Lon={currentDrone.Lon}");
+
+            int closestIndex = FindClosestWaypointIndex(currentDrone, allWaypoints);
+            int resumeIndex = Math.Min(closestIndex + 1, allWaypoints.Count - 1);
+
+            Console.WriteLine($"[FlightPlanService] Resuming from waypoint index {resumeIndex} (closest was {closestIndex})");
+
+            return BuildResumedRoute(currentDrone, allWaypoints, closestIndex, resumeIndex, existing.Ruta?.Type == RouteType.Periodic);
+        }
+        /**
+         * Metodo auxiliar que encuentra el índice del waypoint más cercano a la posición actual del dron utilizando 
+         * la distancia euclidiana simple.
+         * Reduce complejidad de AssignDronAsync
+         */
+        private static int FindClosestWaypointIndex(Dron currentDrone, List<dynamic> allWaypoints)
+        {
+            double currentLat = 0, currentLon = 0;
+            if (currentDrone.Lat != null)
+                currentLat = (double)currentDrone.Lat.Value;
+            if (currentDrone.Lon != null)
+                currentLon = (double)currentDrone.Lon.Value;
+
+            int closestIndex = 0;
+            double minDistance = double.MaxValue;
+
+            for (int i = 0; i < allWaypoints.Count; i++)
+            {
+                var wp = allWaypoints[i];
+                if (wp.latitude.HasValue && wp.longitude.HasValue)
+                {
+                    double distance = Math.Sqrt(Math.Pow((double)wp.latitude.Value - currentLat, 2) + Math.Pow((double)wp.longitude.Value - currentLon, 2));
+                    if (distance < minDistance)
+                    {
+                        minDistance = distance;
+                        closestIndex = i;
+                    }
+                }
+            }
+            return closestIndex;
+        }
+        /**
+         * Metodo auxiliar que construye la lista final de waypoints a enviar al backend de control, 
+         * comenzando con la posición actual del dron
+         * Reduce complejidad de AssignDronAsync
+         */
+        private List<object> BuildResumedRoute(Dron currentDrone, List<dynamic> allWaypoints, int closestIndex, int resumeIndex, bool isPeriodic)
+        {
+            var waypoints = new List<object>();
+
+            // Añadir posición actual
+            waypoints.Add(new
+            {
+                latitude = currentDrone.Lat,
+                longitude = currentDrone.Lon,
+                altitude = currentDrone.Altitude ?? allWaypoints[closestIndex].altitude,
+                speed = allWaypoints[closestIndex].speed
+            });
+
+            // Puntos restantes
+            for (int i = resumeIndex; i < allWaypoints.Count; i++)
+                waypoints.Add(new { allWaypoints[i].latitude, allWaypoints[i].longitude, allWaypoints[i].altitude, allWaypoints[i].speed });
+
+            if (isPeriodic)
+            {
+                // Añadir puntos desde el inicio para completar el ciclo
+                for (int i = 0; i < allWaypoints.Count; i++)
+                    waypoints.Add(new { allWaypoints[i].latitude, allWaypoints[i].longitude, allWaypoints[i].altitude, allWaypoints[i].speed });
+
+                Console.WriteLine($"[FlightPlanService] Periodic route: sent full route structure with {waypoints.Count - 1} waypoints for continuous looping");
+            }
+            else
+            {
+                Console.WriteLine($"[FlightPlanService] Simple route: added {waypoints.Count - 1} remaining waypoints");
+            }
+
+            return waypoints;
+        }
+
+        // --- 4. RED Y LOGS ---
+        /**
+         * Metodo auxiliar que envía la solicitud de inicio de vuelo al backend de control con los waypoints formateados.
+         * Reduce complejidad de AssignDronAsync
+         */
+        private async Task SendStartCommandAsync(int? dronId, List<object> waypoints, bool isPeriodic)
+        {
+            var url = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://jenkins-slave-xmi2:5307";
+            var httpClient = _httpClientFactory.CreateClient();
+
+            var response = await httpClient.PostAsJsonAsync($"{url}/api/drone/{dronId}/start",
+                new { Waypoints = waypoints, IsPeriodic = isPeriodic });
+
+            if (!response.IsSuccessStatusCode)
+                Console.WriteLine($"[FlightPlanService] Failed to start flight for drone {dronId}: {response.StatusCode}");
+            else
+                Console.WriteLine($"[FlightPlanService] Successfully called ControlBackend StartFlight for drone {dronId}");
+        }
+        /**
+         * Metodo auxiliar que loguea información detallada sobre la falta de waypoints válidos en la ruta del plan de vuelo, 
+         * incluyendo un ejemplo de waypoint si es posible.
+         * Reduce complejidad de AssignDronAsync
+         */
+        private static void LogWaypointError(FlightPlan existing)
+        {
+            Console.WriteLine($"[FlightPlanService] ERROR: No valid waypoints found for route {existing.RutaId}!");
+            Console.WriteLine($"[FlightPlanService] Route exists: {existing.Ruta != null}");
+            Console.WriteLine($"[FlightPlanService] Route Coords exists: {existing.Ruta?.Coords != null}");
+            Console.WriteLine($"[FlightPlanService] Route Coords count: {existing.Ruta?.Coords?.Count ?? 0}");
+
+            if (existing.Ruta?.Coords != null && existing.Ruta.Coords.Any())
+            {
+                var coordSample = existing.Ruta.Coords.First();
+                Console.WriteLine($"[FlightPlanService] Sample coord: Lat={coordSample.Lat}, Lon={coordSample.Long}, Alt={coordSample.Height}, Speed={coordSample.Velocity}");
+            }
+        }
+        /**
+         * Metodo auxiliar que carga el plan de vuelo con su ruta y puntos asociados. 
+         * Si el plan no existe, lanza una excepción.
+         * Reduce complejidad de AssignDronAsync
+         */
+        private static void LogRoutePreview(List<object> waypoints, int? dronId)
+        {
+            Console.WriteLine($"[FlightPlanService] Sending {waypoints?.Count ?? 0} waypoints to ControlBackend for drone {dronId}");
+            if (waypoints != null && waypoints.Count > 0)
+            {
+                dynamic first = waypoints[0];
+                Console.WriteLine($"[FlightPlanService] First waypoint: lat={first.latitude}, lon={first.longitude}, alt={first.altitude}, speed={first.speed}");
+                if (waypoints.Count > 1)
+                {
+                    dynamic last = waypoints[waypoints.Count - 1];
+                    Console.WriteLine($"[FlightPlanService] Last waypoint: lat={last.latitude}, lon={last.longitude}, alt={last.altitude}, speed={last.speed}");
+                }
+            }
         }
 
         public async Task<FlightPlan> StopFlightPlanAsync(int id)
@@ -456,7 +486,7 @@ namespace CentralBackend.Services
             }
 
             // Check if drone is assigned (DronId must be a valid non-zero value)
-            if (existing.DronId == null || existing.DronId == 0)
+            if (existing.DronId == 0)
             {
                 Console.WriteLine($"[FlightPlanService] FlightPlan {id} has no drone assigned, cannot switch to manual mode");
                 throw new InvalidOperationException($"Cannot switch to manual mode: FlightPlan {id} has no drone assigned.");
@@ -480,9 +510,6 @@ namespace CentralBackend.Services
             // Call ControlBackend to notify the mode change
             try
             {
-                var controlBackendUrl = _configuration.GetValue<string>("ControlBackend:Url") ?? "http://localhost:5307";
-                var httpClient = _httpClientFactory.CreateClient();
-
                 Console.WriteLine($"[FlightPlanService] Notifying ControlBackend of manual mode for drone {existing.DronId}");
                 Console.WriteLine($"[FlightPlanService] Manual mode activated for FlightPlan {id}, Drone {existing.DronId}");
             }
@@ -537,7 +564,7 @@ namespace CentralBackend.Services
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    throw new Exception($"ControlBackend returned {response.StatusCode}");
+                    throw new InvalidOperationException($"ControlBackend returned {response.StatusCode}");
                 }
 
                 Console.WriteLine($"[FlightPlanService] Manual destination sent successfully");
@@ -575,14 +602,14 @@ namespace CentralBackend.Services
             .Where(i => i.FlightPlanId == id)
             .ToListAsync();
 
-            if (incidences.Any())
+            if (incidences.Count != 0)
             {
                 Console.WriteLine($"[FlightPlanService] Removing {incidences.Count} incidences");
                 _context.Incidences.RemoveRange(incidences);
             }
 
             // Clear RoutePoints collection (they belong to the route, not the flight plan)
-            if (existing.RoutePoints != null && existing.RoutePoints.Any())
+            if (existing.RoutePoints != null && existing.RoutePoints.Count != 0)
             {
                 Console.WriteLine($"[FlightPlanService] Clearing {existing.RoutePoints.Count} route point references");
                 existing.RoutePoints.Clear();
