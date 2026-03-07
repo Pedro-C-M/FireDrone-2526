@@ -42,6 +42,9 @@ namespace DroneController
 
             var options = new RabbitMqOptions();
             config.GetSection("RabbitMq").Bind(options);
+            
+            // Load credentials from environment variables if available (production override)
+            options.LoadFromEnvironment();
 
             // Crear la conexión
             var factory = new RabbitMQ.Client.ConnectionFactory

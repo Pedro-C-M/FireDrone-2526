@@ -21,6 +21,10 @@ public class Program
         // Bind RabbitMQ configuration
         var rabbitOptions = new RabbitMqOptions();
         builder.Configuration.GetSection("RabbitMQ").Bind(rabbitOptions);
+        
+        // Load credentials from environment variables if available (production override)
+        rabbitOptions.LoadFromEnvironment();
+        
         rabbitOptions.Validate();
 
         builder.Services.AddSingleton(rabbitOptions);
