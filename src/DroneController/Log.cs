@@ -2,7 +2,7 @@
 
 namespace DroneController
 {
-	class Log
+	static class Log
 	{
 		static public void Debug(string message)
 		{

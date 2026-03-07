@@ -7,32 +7,47 @@ namespace ControlBackend
     {
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
+        private readonly ILogger<HttpForwarder> _logger;
 
-        public HttpForwarder(HttpClient httpClient, IConfiguration configuration)
+        public HttpForwarder(HttpClient httpClient, IConfiguration configuration, ILogger<HttpForwarder> logger)
         {
             _httpClient = httpClient;
             _configuration = configuration;
+            _logger = logger;
         }
 
-        public async Task SendStatusUpstreamAsync(string statusJson, string dronId)
+        public async Task SendStatusUpstreamAsync(string statusJson, string droneId)
         {
             var content = new StringContent(statusJson, Encoding.UTF8, "application/json");
 
             // Get CentralBackend URL from configuration
-            var centralBackendBaseUrl = _configuration["CentralBackend:BaseUrl"] ?? "http://localhost:5306";
-            var centralBackendUrl = $"{centralBackendBaseUrl}/api/Drone/{dronId}/status";
-
-            Console.WriteLine($"[HttpForwarder] Sending drone {dronId} status to {centralBackendUrl}");
-
-            var response = await _httpClient.PostAsync(centralBackendUrl, content);
-
-            if (!response.IsSuccessStatusCode)
+            var centralBackendBaseUrl = _configuration["CentralBackend:BaseUrl"];
+            if (string.IsNullOrEmpty(centralBackendBaseUrl))
             {
-                Console.WriteLine($"[HttpForwarder] Error sending HTTP: {response.StatusCode}");
+                _logger.LogError("CentralBackend:BaseUrl configuration is missing");
+                return;
             }
-            else
+
+            var centralBackendUrl = $"{centralBackendBaseUrl}/api/Drone/{droneId}/status";
+
+            _logger.LogInformation("Sending drone {DroneId} status to {Url}", droneId, centralBackendUrl);
+
+            try
             {
-                Console.WriteLine($"[HttpForwarder] {DateTime.Now:dd-MM-yyyy HH:mm:ss} - Drone {dronId} status sent successfully");
+                var response = await _httpClient.PostAsync(centralBackendUrl, content);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogWarning("Error sending HTTP for drone {DroneId}: {StatusCode}", droneId, response.StatusCode);
+                }
+                else
+                {
+                    _logger.LogInformation("Drone {DroneId} status sent successfully", droneId);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send status for drone {DroneId} to {Url}", droneId, centralBackendUrl);
             }
         }
     }

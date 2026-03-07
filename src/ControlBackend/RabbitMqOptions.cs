@@ -2,22 +2,28 @@
 {
     /*
      * Clase de configuración para la conexión con RabbitMQ.
-     * Permite definir los parámetros del broker (host, credenciales, exchange y topic)
-     * mediante variables de entorno, usando valores por defecto si no están definidas.
-     * 
-     * Esto facilita desplegar el sistema en distintos entornos (local, servidor, nube)
-     * sin necesidad de modificar el código fuente usando variables de entorno.
-     *
-     * http://156.35.163.122:15672/ - RabbitMQ Management UI de la MV contraseña y usuario son admin admin
+     * Ahora los valores se cargarán desde la sección "RabbitMQ" en appsettings.
      */
     public class RabbitMqOptions
     {
-        //public string Hostname { get; set; } = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
-        public string Hostname { get; set; } = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "156.35.163.122";//IP de la maquina virtual
-        public string Username { get; set; } = Environment.GetEnvironmentVariable("RABBITMQ_USER") ?? "equipo3-777";
-        public string Password { get; set; } = Environment.GetEnvironmentVariable("RABBITMQ_PASSWORD") ?? "shhh-777";
-        public string Exchange { get; set; } = Environment.GetEnvironmentVariable("RABBITMQ_EXCHANGE") ?? "drone_exchange";
-        public string Topic { get; set; } = Environment.GetEnvironmentVariable("RABBITMQ_TOPIC") ?? "drone.#";
+        // Estos valores se establecerán desde la configuración (appsettings.json)
+        public string Hostname { get; set; } = null!;
+        public string Username { get; set; } = null!;
+        public string Password { get; set; } = null!;
+
+        // Valores por defecto si no están presentes en la configuración
+        public string Exchange { get; set; } = "drone_exchange";
+        public string Topic { get; set; } = "drone.#";
+
+        public void Validate()
+        {
+            if (string.IsNullOrWhiteSpace(Hostname))
+                throw new InvalidOperationException("RabbitMQ:Hostname configuration is required");
+            if (string.IsNullOrWhiteSpace(Username))
+                throw new InvalidOperationException("RabbitMQ:Username configuration is required");
+            if (string.IsNullOrWhiteSpace(Password))
+                throw new InvalidOperationException("RabbitMQ:Password configuration is required");
+        }
     }
 
     public interface IPublisher

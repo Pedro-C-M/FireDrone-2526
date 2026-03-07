@@ -10,17 +10,25 @@ namespace ControlBackend.Controllers
     public class DroneController : ControllerBase
     {
         private readonly IPublisher _publisher;
+        private readonly ILogger<DroneController> _logger;
+        private const string CommandRoutingKeyPattern = "drone.{0}.commands";
 
-        public DroneController(IPublisher publisher)
+        public DroneController(IPublisher publisher, ILogger<DroneController> logger)
         {
             _publisher = publisher;
+            _logger = logger;
         }
 
         // 1) Comenzar vuelo: POST /api/drone/{id}/start
         [HttpPost("{id}/start")]
         public async Task<IActionResult> StartFlight(int id, [FromBody] StartFlightDto? dto)
         {
-            Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] StartFlight called for Drone ID: {id}");
+            if (id <= 0)
+            {
+                return BadRequest(new { error = "Invalid drone ID" });
+            }
+
+            _logger.LogInformation("StartFlight called for Drone ID: {DroneId}", id);
 
             // Prepare the command message with waypoints if provided
             var msg = new
@@ -32,13 +40,14 @@ namespace ControlBackend.Controllers
             };
 
             var jsonMessage = JsonSerializer.Serialize(msg);
-            Console.WriteLine($"[ControlBackend] Sending message to drone: {jsonMessage}");
+            _logger.LogDebug("Sending message to drone: {Message}", jsonMessage);
 
             var body = Encoding.UTF8.GetBytes(jsonMessage);
 
-            await _publisher.PublishAsync($"drone.{id}.commands", body);
+            await _publisher.PublishAsync(string.Format(CommandRoutingKeyPattern, id), body);
 
-            Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] Start command sent to RabbitMQ for Drone ID: {id} with {dto?.Waypoints?.Count ?? 0} waypoints");
+            _logger.LogInformation("Start command sent to RabbitMQ for Drone ID: {DroneId} with {WaypointCount} waypoints", 
+                id, dto?.Waypoints?.Count ?? 0);
 
             return Ok(new { status = "sent", action = "start", droneId = id, waypointCount = dto?.Waypoints?.Count ?? 0 });
         }
@@ -47,10 +56,20 @@ namespace ControlBackend.Controllers
         [HttpPost("{id}/stop")]
         public async Task<IActionResult> StopFlight(int id)
         {
+            if (id <= 0)
+            {
+                return BadRequest(new { error = "Invalid drone ID" });
+            }
+
+            _logger.LogInformation("StopFlight called for Drone ID: {DroneId}", id);
+
             var msg = new { command = "stop", droneId = id };
             var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(msg));
 
-            await _publisher.PublishAsync($"drone.{id}.commands", body);
+            await _publisher.PublishAsync(string.Format(CommandRoutingKeyPattern, id), body);
+            
+            _logger.LogInformation("Stop command sent to RabbitMQ for Drone ID: {DroneId}", id);
+            
             return Ok(new { status = "sent", action = "stop", droneId = id });
         }
 
@@ -58,7 +77,18 @@ namespace ControlBackend.Controllers
         [HttpPost("{id}/goto")]
         public async Task<IActionResult> GoToCoordinate(int id, [FromBody] GoToDto dto)
         {
-            Console.WriteLine($"[DroneController] GoToCoordinate called for Drone ID: {id}, Latitude: {dto.Latitude}, Longitude: {dto.Longitude}");
+            if (id <= 0)
+            {
+                return BadRequest(new { error = "Invalid drone ID" });
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            _logger.LogInformation("GoToCoordinate called for Drone ID: {DroneId}, Latitude: {Latitude}, Longitude: {Longitude}", 
+                id, dto.Latitude, dto.Longitude);
 
             var msg = new
             {
@@ -70,9 +100,9 @@ namespace ControlBackend.Controllers
             };
 
             var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(msg));
-            await _publisher.PublishAsync($"drone.{id}.commands", body);
+            await _publisher.PublishAsync(string.Format(CommandRoutingKeyPattern, id), body);
 
-            Console.WriteLine($"[DroneController] Goto command published to RabbitMQ for Drone ID: {id}");
+            _logger.LogInformation("Goto command published to RabbitMQ for Drone ID: {DroneId}", id);
 
             return Ok(new { status = "sent", action = "goto", droneId = id });
         }

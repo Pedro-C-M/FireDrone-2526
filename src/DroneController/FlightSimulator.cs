@@ -22,8 +22,8 @@ namespace DroneController
         const double KM_IN_DEGREE = 110.562;
         const int SECONDS_IN_HOUR = 3600;
 
-        int _updateInterval;
-        Waypoint[] _waypoints;
+        readonly int _updateInterval;
+        readonly Waypoint[] _waypoints;
         int _indexCurrentWaypoint;
         Waypoint _currentWaypoint;
         double _currentRateLatitude;
@@ -31,7 +31,7 @@ namespace DroneController
 
         int _numSteps;
         int _currentStep;
-        bool _isPeriodic;
+        readonly bool _isPeriodic;
 
         public double GetCurrentLatitude() { return _currentWaypoint.Latitude; }
         public double GetCurrentLongitude() { return _currentWaypoint.Longitude; }

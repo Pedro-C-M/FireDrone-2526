@@ -1,4 +1,5 @@
 ﻿using ControlBackend;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
@@ -12,7 +13,7 @@ namespace DroneController
 	 *	- Identificador del dron (necesario para crear la cola que lo comunica con el backend)
 	 *	- Driver que se usa para controlar el dron
 	 */
-    class Program
+    static class Program
     {
         // Para gestionar la terminación
         private static readonly AutoResetEvent _closing = new AutoResetEvent(false);
@@ -29,12 +30,17 @@ namespace DroneController
             if (args.Length != 2)
                 throw new ArgumentException("Invalid number of arguments");
             // Ejemplo: 124af46
-            string DroneID = args[0];
+            string droneId = args[0];
 
             // Ejemplo: DroneSimulator
-            string DroneDriver = args[1];
+            string droneDriver = args[1];
+
+            var config = new ConfigurationBuilder()
+                .AddJsonFile("appsettings.json", optional: false)
+                .Build();
 
             var options = new RabbitMqOptions();
+            config.GetSection("RabbitMq").Bind(options);
 
             // Crear la conexión
             var factory = new RabbitMQ.Client.ConnectionFactory
@@ -51,7 +57,7 @@ namespace DroneController
                 services.AddSingleton(options);           // Configuración
                 services.AddSingleton(connection);        // Conexión singleton
                 services.AddHostedService(provider =>     // Registrar dron como BackgroundService
-                    new Drone.DroneController(DroneID, DroneDriver, connection, options));
+                    new Drone.DroneController(droneId, droneDriver, connection, options));
             }).Build();
             await host.RunAsync();
         }

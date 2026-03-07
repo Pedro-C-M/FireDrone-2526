@@ -9,12 +9,12 @@ namespace DroneController.Drone
         public const string GOTO_MANUAL = "goto";
 
         [JsonProperty("command")]
-        public string Command;
+        public string Command { get; set; }
 
         [JsonProperty("arguments")]
-        public string Arguments;
+        public string Arguments { get; set; }
 
         [JsonProperty("droneId")]
-        public int? DroneId;
+        public int? DroneId { get; set; }
     }
 }

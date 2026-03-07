@@ -33,8 +33,8 @@ namespace DroneController.Drone
 
         private FlightSimulator _flightSimulator;
 
-        private object _statusLock = new object();
-        private DroneStatus _status;
+        private readonly object _statusLock = new object();
+        private readonly DroneStatus _status;
         private bool _lowBatteryAlarmTriggered = false; // Track if low battery alarm was already sent
 
         public DroneSimulator()
@@ -202,12 +202,8 @@ namespace DroneController.Drone
 	        _lowBatteryAlarmTriggered = false; // Reset low battery alarm flag
         }
 
-        // Ejecuta una tarea para simular el plan de vuelo entre la lista de coordenadas
-        public void StartFlightPlan(Waypoint[] waypoints, bool isPeriodic = false)
+        private void StopCurrentFlightIfRunning()
         {
-            Console.WriteLine($"[DroneSimulator] *** StartFlightPlan called with {waypoints.Length} waypoints, isPeriodic={isPeriodic} ***");
-            
-            // Stop any existing flight before starting new flight plan
             if (_task != null && !_task.IsCompleted)
             {
                 Console.WriteLine($"[DroneSimulator] *** STOPPING EXISTING FLIGHT before starting new flight plan ***");
@@ -237,15 +233,31 @@ namespace DroneController.Drone
             {
                 Console.WriteLine($"[DroneSimulator] No existing flight to stop (task is null or completed)");
             }
-            
+        }
+
+        // Ejecuta una tarea para simular el plan de vuelo entre la lista de coordenadas
+        public void StartFlightPlan(Waypoint[] plan, bool isPeriodic = false)
+        {
+            Console.WriteLine($"[DroneSimulator] *** StartFlightPlan called with {plan.Length} waypoints, isPeriodic={isPeriodic} ***");
+
+            StopCurrentFlightIfRunning();
+
             _status.State = DroneState.Flying;
+            
+            // Notify callback immediately that drone state changed to Flying
+            if (_updateCallback != null)
+            {
+                Console.WriteLine($"[DroneSimulator] Notifying callback: Drone state changed to Flying");
+                _updateCallback.Update(_status);
+            }
+            
             _tokenSource = new CancellationTokenSource();
             CancellationToken token = _tokenSource.Token;
 
             _task = Task.Factory.StartNew(() =>
             {
-                Console.WriteLine($"[DroneSimulator] Flight task started for {waypoints.Length} waypoints");
-                StartSimulation(waypoints, isPeriodic);
+                Console.WriteLine($"[DroneSimulator] Flight task started for {plan.Length} waypoints");
+                StartSimulation(plan, isPeriodic);
 
                 int stepCount = 0;
                 while (StepSimulation())
@@ -257,7 +269,7 @@ namespace DroneController.Drone
                         token.ThrowIfCancellationRequested();
                     }
 
-                    Task.Delay(UpdateIntervalMs).Wait();
+                    Thread.Sleep(UpdateIntervalMs);
                 }
                 Console.WriteLine($"[DroneSimulator] *** FLIGHT TASK COMPLETED after {stepCount} steps ***");
                 Console.WriteLine($"[DroneSimulator] Final state: {_status.State}, Position: Lat={_status.Latitude}, Lon={_status.Longitude}");
@@ -276,7 +288,13 @@ namespace DroneController.Drone
 
         // Detiene la tarea de simulación
         public void StopFlightPlan()
-        {//Si peta aqui es que se intenta parar sin start antes
+        {
+            if (_tokenSource == null || _task == null)
+            {
+                Console.WriteLine("[DroneSimulator] StopFlightPlan called before StartFlightPlan, ignoring.");
+                return;
+            }
+
             _tokenSource.Cancel();
             try
             {
@@ -315,35 +333,7 @@ namespace DroneController.Drone
     		}
 
             // Stop any existing flight before starting manual movement
-            if (_task != null && !_task.IsCompleted)
-            {
-                Console.WriteLine($"[DroneSimulator] *** STOPPING EXISTING FLIGHT before manual GoTo ***");
-                Console.WriteLine($"[DroneSimulator] Task status: {_task.Status}");
-                try
-                {
-                    _tokenSource?.Cancel();
-                    _task.Wait(TimeSpan.FromSeconds(2)); // Wait with timeout
-                    Console.WriteLine($"[DroneSimulator] Existing flight stopped successfully");
-                }
-                catch (AggregateException ex)
-                {
-                    // Expected after cancellation
-                    Console.WriteLine($"[DroneSimulator] AggregateException during cancel (expected): {ex.Message}");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"[DroneSimulator] Unexpected exception during cancel: {ex.Message}");
-                }
-                finally
-                {
-                    _tokenSource?.Dispose();
-                    Console.WriteLine($"[DroneSimulator] Token source disposed");
-                }
-            }
-            else
-            {
-                Console.WriteLine($"[DroneSimulator] No existing flight to stop (task is null or completed)");
-            }
+            StopCurrentFlightIfRunning();
 
             // Get current position
             DroneStatus currentStatus = GetStatus();

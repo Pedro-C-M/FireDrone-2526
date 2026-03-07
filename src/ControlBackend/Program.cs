@@ -1,31 +1,35 @@
+using Microsoft.Extensions.Configuration;
 
 namespace ControlBackend;
 
 public class Program
 {
-    public static void Main(string[] args)
+    protected Program() { }
+
+    public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        // Add services to the container.
-        builder.Services.AddControllers();
         builder.Services.AddAuthorization();
 
-        //Esto inyecta en el programa el publisher de RabbitMQ 
+        // Single AddControllers() call with JSON options configured
+        builder.Services.AddControllers().AddJsonOptions(options =>
+        {
+            options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+        });
+
+        // Bind RabbitMQ configuration
         var rabbitOptions = new RabbitMqOptions();
+        builder.Configuration.GetSection("RabbitMQ").Bind(rabbitOptions);
+        rabbitOptions.Validate();
+
         builder.Services.AddSingleton(rabbitOptions);
-        builder.Services.AddRabbitMq(rabbitOptions);
+        await builder.Services.AddRabbitMq(rabbitOptions);
         builder.Services.AddSingleton<IPublisher, RabbitMqPublisher>();
 
         builder.Services.AddSingleton<HttpForwarder>();
         builder.Services.AddHostedService<DroneStatusConsumer>();
         builder.Services.AddHttpClient<HttpForwarder>(); // HttpClient Registration
-
-	builder.Services.AddControllers().AddJsonOptions(options =>
-	{
-    		options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
-	});
-
 
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddEndpointsApiExplorer();
@@ -42,6 +46,6 @@ public class Program
         app.UseAuthorization();
         app.MapControllers();
 
-        app.Run();
+        await app.RunAsync();
     }
 }
