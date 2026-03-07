@@ -142,7 +142,7 @@ namespace CentralBackend
 
             for (int i = 1; i <= nDrones; i++)
             {
-                var assignedStation = baseStationsList.Any() ? baseStationsList[i % baseStationsList.Count] : null;
+                var assignedStation = (baseStationsList.Count != 0)? baseStationsList[i % baseStationsList.Count] : null;
                 var drone = CreateSpecificDrone(i, assignedStation);
                 drones.Add(drone);
                 db.Drones.Add(drone);
@@ -152,7 +152,7 @@ namespace CentralBackend
             return drones;
         }
 
-        private static Dron CreateSpecificDrone(int i, BaseStation station)
+        private static Dron CreateSpecificDrone(int i, BaseStation? station)
         {
             // Lógica de batería y estado extraída para reducir anidamiento
             int battery = i switch
@@ -171,7 +171,7 @@ namespace CentralBackend
             {
                 Battery = battery,
                 State = state,
-                BaseStationId = station.Id,
+                BaseStationId = (station == null)?1:station.Id,
                 Lat = randomLat,
                 Lon = randomLon
             };
@@ -183,14 +183,14 @@ namespace CentralBackend
 
         private static void SeedFlightPlansAndSamples(FireDrone db, List<Dron> drones, List<Models.Route> routes, int nPlans)
         {
-            if (!drones.Any() || !routes.Any()) return;
+            if (drones.Count == 0 || routes.Count == 0) return;
 
             for (int i = 0; i < nPlans; i++)
             {
                 var assignedDron = drones[i % drones.Count];
                 var assignedRoute = routes[i % routes.Count];
 
-                var plan = new FlightPlan { Dron = assignedDron, Ruta = assignedRoute };
+                var plan = new FlightPlan { Dron = assignedDron, Ruta = assignedRoute , State = FlightStatus.Cancelled};
                 db.FlightPlans.Add(plan);
 
                 if (i % 2 == 0) // Añadir muestras solo a la mitad

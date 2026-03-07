@@ -18,7 +18,6 @@ namespace CentralBackend.Services
 
         // Cache configuration constants
         private const string ROUTES_CACHE_KEY = "routes:all";
-        private const string ROUTE_CACHE_KEY_PREFIX = "route:";
         private static readonly TimeSpan CacheExpiration = TimeSpan.FromMinutes(10);
 
         public RouteService(FireDrone context, RedisCacheService cache, ILogger<RouteService> logger)
@@ -48,7 +47,7 @@ namespace CentralBackend.Services
                 .ToListAsync();
 
             // Guardar en caché
-            if (routes.Any())
+            if (routes.Count != 0)
             {
                 await _cache.SetAsync(ROUTES_CACHE_KEY, routes, CacheExpiration);
                 _logger.LogInformation("✅ [RouteService] Routes stored in Redis Cache ({Count} routes, expires in {Minutes}min)",
@@ -63,10 +62,10 @@ namespace CentralBackend.Services
         public async Task<bool> DeleteAsync(int id)
         {
             // 1. Comprobar si algún Plan de Vuelo usa esta ruta
-            var routeInUse = await _context.FlightPlans.AnyAsync(fp => fp.Ruta.Id == id);
+            var routeInUse = await _context.FlightPlans.AnyAsync(fp => fp.Ruta != null && fp.Ruta.Id == id);
             if (routeInUse)
             {
-                throw new Exception("No se puede borrar la ruta porque está asignada a un Plan de Vuelo activo.");
+                throw new ArgumentException("No se puede borrar la ruta porque está asignada a un Plan de Vuelo activo.");
             }
 
             var route = await _context.Routes
@@ -89,11 +88,8 @@ namespace CentralBackend.Services
         public async Task<int> ImportFromCsvAsync(Stream fileStream, string fileName)
         {
             if (!fileName.EndsWith(".csv", StringComparison.OrdinalIgnoreCase))
-            {
-                throw new Exception($"Formato no valido. El archivo '{fileName}' no es un CSV.");
-            }
+                throw new ArgumentException($"Formato no valido. El archivo '{fileName}' no es un CSV.");
 
-            var puntosTemp = new Dictionary<int, Models.RoutePoint>();
             var rutasDict = new Dictionary<string, Models.Route>();
             int numeroLinea = 1; // Para decirle al usuario dónde falló
 
@@ -101,106 +97,121 @@ namespace CentralBackend.Services
             {
                 // Leer cabecera
                 var header = await reader.ReadLineAsync();
-                if (header == null) throw new Exception("El archivo CSV esta vacio.");
+                if (header == null) throw new ArgumentException("El archivo CSV esta vacio.");
 
-                string line;
+                string? line;
                 while ((line = await reader.ReadLineAsync()) != null)
                 {
                     numeroLinea++; // Empezamos contando desde la línea 2 (datos)
-
-                    // Ignorar líneas vacías
-                    if (string.IsNullOrWhiteSpace(line)) continue;
-
-                    var values = line.Split(';');
-
-                    // 1. VALIDACIÓN DE COLUMNAS
-                    if (values.Length != 6)
-                    {
-                        throw new ArgumentException($"Error en linea {numeroLinea}: Faltan columnas. Se esperaban 6 valores (Nombre;Tipo;Lat;Lon;Altura;Velocidad).");
-                    }
-
-                    // 2. PARSEO Y VALIDACIÓN DE TIPOS
-                    string nombre = values[0].Trim();
-                    if (string.IsNullOrEmpty(nombre)) throw new Exception($"Error en linea {numeroLinea}: El 'Nombre' de la ruta no puede estar vacio.");
-
-                    // Validar Tipo (0 o 1)
-                    if (!int.TryParse(values[1], out int tipoInt) || (tipoInt != 0 && tipoInt != 1))
-                    {
-                        throw new ArgumentException($"Error en linea {numeroLinea}: El 'Tipo' debe ser 0 (Simple) o 1 (Periodica). Valor encontrado: '{values[1]}'");
-                    }
-
-                    // Validar Floats (Lat, Lon, Alt, Vel) con CultureInfo.InvariantCulture
-                    if (!float.TryParse(values[2], NumberStyles.Float, CultureInfo.InvariantCulture, out float lat) || lat < -90 || lat > 90)
-                    {
-                        throw new ArgumentException($"Error en linea {numeroLinea}: 'Latitud' invalida ({values[2]}). Debe estar entre -90 y 90.");
-                    }
-
-                    if (!float.TryParse(values[3], NumberStyles.Float, CultureInfo.InvariantCulture, out float lon) || lon < -180 || lon > 180)
-                    {
-                        throw new ArgumentException($"Error en linea {numeroLinea}: 'Longitud' invalida ({values[3]}). Debe estar entre -180 y 180.");
-                    }
-
-                    if (!float.TryParse(values[4], NumberStyles.Float, CultureInfo.InvariantCulture, out float altura) || altura < 0)
-                    {
-                        throw new ArgumentException($"Error en linea {numeroLinea}: 'Altura' invalida ({values[4]}).");
-                    }
-
-                    if (!float.TryParse(values[5], NumberStyles.Float, CultureInfo.InvariantCulture, out float velocidad) || velocidad < 0)
-                    {
-                        throw new ArgumentException($"Error en linea {numeroLinea}: 'Velocidad' invalida ({values[5]}). No puede ser negativa.");
-                    }
-
-                    // 3. LOGICA DE NEGOCIO (Agrupar)
-                    if (!rutasDict.ContainsKey(nombre))
-                    {
-                        var nuevaRuta = new Models.Route
-                        {
-                            // Name = nombre, // Descomenta si añadiste la propiedad Name
-                            Type = (RouteType)tipoInt,
-                            Coords = new List<RoutePoint>(),
-                            Perimeter = new Perimeter()
-                        };
-                        rutasDict.Add(nombre, nuevaRuta);
-                    }
-                    else
-                    {
-                        // Validación extra: Si la ruta ya existe, ¿el tipo coincide?
-                        if ((int)rutasDict[nombre].Type != tipoInt)
-                        {
-                            throw new Exception($"Error en linea {numeroLinea}: La ruta '{nombre}' se definio antes con otro TIPO. Todas las filas de una misma ruta deben tener el mismo tipo.");
-                        }
-                    }
-
-                    rutasDict[nombre].Coords.Add(new RoutePoint
-                    {
-                        Lat = lat,
-                        Long = lon,
-                        Height = altura,
-                        Velocity = velocidad,
-                        Route = rutasDict[nombre]
-                    });
+                    if (string.IsNullOrWhiteSpace(line)) continue;// Ignorar líneas vacías
+                    // 1. Extraemos validación y parseo
+                    var data = ParseCsvLine(line, numeroLinea);
+                    // 2. Extraemos la lógica de negocio a otro método
+                    ProcessRouteData(rutasDict, data, numeroLinea);
                 }
             }
 
-            if (numeroLinea <= 1)
+            if (numeroLinea <= 1) throw new InvalidOperationException("No hay puntos en la ruta.");
+
+            // 3. Extraemos el guardado final
+            return await SaveImportedRoutesAsync(rutasDict.Values.ToList());
+
+        }
+        /**
+         * Metodo auxiliar para parsear y validar una línea del CSV, 
+         * devolviendo una tupla con los datos ya convertidos.
+         * Ayuda en la refactorizacion de ImportFromCsvAsync 
+         */
+        private static  (string Nombre, int Tipo, float Lat, float Lon, float Alt, float Vel)  ParseCsvLine(string line, int lineNum)
+        {
+            var values = line.Split(';');
+            if (values.Length != 6)
+                throw new ArgumentException($"Error en linea {lineNum}: Faltan columnas. Se esperaban 6 valores.");
+
+            string nombre = values[0].Trim();
+            if (string.IsNullOrEmpty(nombre))
+                throw new ArgumentException($"Error en linea {lineNum}: El 'Nombre' de la ruta no puede estar vacio.");
+
+            if (!int.TryParse(values[1], out int tipo) || (tipo != 0 && tipo != 1))
+                throw new ArgumentException($"Error en linea {lineNum}: El 'Tipo' debe ser 0 o 1.");
+
+            // Usamos un helper para no repetir el TryParse 4 veces
+            float lat = ParseFloat(values[2], -90, 90, "Latitud", lineNum);
+            float lon = ParseFloat(values[3], -180, 180, "Longitud", lineNum);
+            float alt = ParseFloat(values[4], 0, float.MaxValue, "Altura", lineNum);
+            float vel = ParseFloat(values[5], 0, float.MaxValue, "Velocidad", lineNum);
+
+            return (nombre, tipo, lat, lon, alt, vel);
+        }
+
+        /**
+         * Metodo helper para procesar cada línea del CSV 
+         * y agregar los puntos a las rutas correspondientes en el diccionario.
+         * Ayuda en la refactorizacion de ImportFromCsvAsync 
+         */
+        private static void ProcessRouteData(Dictionary<string, Models.Route> rutasDict,
+        (string Nombre, int Tipo, float Lat, float Lon, float Alt, float Vel) data, int lineNum)
+        {
+            if (!rutasDict.TryGetValue(data.Nombre, out var rutaExistente))
             {
-                throw new Exception("No hay puntos en la ruta.");
+                rutaExistente = new Models.Route
+                {
+                    Type = (RouteType)data.Tipo,
+                    Coords = new List<RoutePoint>(),
+                    Perimeter = new Perimeter()
+                };
+                rutasDict.Add(data.Nombre, rutaExistente);
+            }
+            else if ((int)rutaExistente.Type != data.Tipo)
+            {
+                throw new InvalidOperationException($"Error en linea {lineNum}: La ruta '{data.Nombre}' se definio antes con otro TIPO.");
             }
 
-            // 4. GUARDADO FINAL
-            var rutasParaGuardar = rutasDict.Values.ToList();
-            if (rutasParaGuardar.Any())
+            // Antes de añadir el punto, nos aseguramos de que la lista no sea nula
+            if (rutaExistente.Coords == null)
             {
-                _context.Routes.AddRange(rutasParaGuardar);
-                await _context.SaveChangesAsync();
-
-                // Invalidar caché tras importar
-                await InvalidateRoutesCache($"Imported {rutasParaGuardar.Count} routes from CSV");
-                _logger.LogInformation("{Count} routes imported from CSV and cache invalidated", rutasParaGuardar.Count);
+                rutaExistente.Coords = new List<RoutePoint>();
             }
+
+            rutaExistente.Coords.Add(new RoutePoint
+            {
+                Lat = data.Lat,
+                Long = data.Lon,
+                Height = data.Alt,
+                Velocity = data.Vel,
+                Route = rutaExistente
+            });
+        }
+        /**
+         * Metodo helper para guardar rutas en la base de datos e invalidar caché después.
+         * Ayuda en la refactorizacion de ImportFromCsvAsync 
+         */
+        private async Task<int> SaveImportedRoutesAsync(List<Models.Route> rutasParaGuardar)
+        {
+            if (rutasParaGuardar.Count == 0) return 0;
+
+            _context.Routes.AddRange(rutasParaGuardar);
+            await _context.SaveChangesAsync();
+
+            await InvalidateRoutesCache($"Imported {rutasParaGuardar.Count} routes from CSV");
+            _logger.LogInformation("{Count} routes imported from CSV and cache invalidated", rutasParaGuardar.Count);
 
             return rutasParaGuardar.Count;
         }
+
+        /**
+         * Método helper para parsear y validar un float con un rango específico. 
+         * Lanza una excepción con mensaje claro si el valor no es válido.
+         * Ayuda en la refactorizacion de ImportFromCsvAsync 
+         */
+        private static float ParseFloat(string value, float min, float max, string fieldName, int lineNum)
+        {
+            if (!float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out float result) || result < min || result > max)
+                throw new ArgumentException($"Error en linea {lineNum}: '{fieldName}' invalida ({value}). Rango permitido: [{min}, {max}].");
+
+            return result;
+        }
+
 
         public async Task<byte[]> ExportRouteToCsvAsync(int id)
         {
@@ -210,7 +221,7 @@ namespace CentralBackend.Services
 
             if (route == null)
             {
-                throw new Exception($"La ruta con ID {id} no existe.");
+                throw new ArgumentException($"La ruta con ID {id} no existe.");
             }
 
             var sb = new StringBuilder(); //Esto escribe el CSV
@@ -220,7 +231,7 @@ namespace CentralBackend.Services
             string routeName = $"Ruta_{route.Id}";
 
             // 4. Iterar sobre los puntos de ESA ruta
-            foreach (var point in route.Coords)
+            foreach (var point in route.Coords ?? Enumerable.Empty<RoutePoint>())
             {
                 var line = string.Format(CultureInfo.InvariantCulture, "{0};{1};{2:F6};{3:F6};{4:F2};{5:F2}",
                     routeName,           
