@@ -178,9 +178,9 @@ services:
     networks:
       - firedrone-network
     environment:
-      RABBITMQ_HOST: 156.35.163.122
-      RABBITMQ_USER: equipo3-777
-      RABBITMQ_PASSWORD: shhh-777
+      RABBITMQ_HOST: ${RABBITMQ_HOST}
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
       RABBITMQ_EXCHANGE: drone_exchange
     command: ["7", "DroneSimulator"]
     restart: unless-stopped
@@ -194,9 +194,9 @@ services:
     networks:
       - firedrone-network
     environment:
-      RABBITMQ_HOST: 156.35.163.122
-      RABBITMQ_USER: equipo3-777
-      RABBITMQ_PASSWORD: shhh-777
+      RABBITMQ_HOST: ${RABBITMQ_HOST}
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
       RABBITMQ_EXCHANGE: drone_exchange
     command: ["8", "DroneSimulator"]
     restart: unless-stopped
@@ -210,9 +210,9 @@ services:
     networks:
       - firedrone-network
     environment:
-      RABBITMQ_HOST: 156.35.163.122
-      RABBITMQ_USER: equipo3-777
-      RABBITMQ_PASSWORD: shhh-777
+      RABBITMQ_HOST: ${RABBITMQ_HOST}
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
       RABBITMQ_EXCHANGE: drone_exchange
     command: ["9", "DroneSimulator"]
     restart: unless-stopped
@@ -226,9 +226,9 @@ services:
     networks:
       - firedrone-network
     environment:
-      RABBITMQ_HOST: 156.35.163.122
-      RABBITMQ_USER: equipo3-777
-      RABBITMQ_PASSWORD: shhh-777
+      RABBITMQ_HOST: ${RABBITMQ_HOST}
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
       RABBITMQ_EXCHANGE: drone_exchange
     command: ["10", "DroneSimulator"]
     restart: unless-stopped
@@ -242,9 +242,9 @@ services:
     networks:
       - firedrone-network
     environment:
-      RABBITMQ_HOST: 156.35.163.122
-      RABBITMQ_USER: equipo3-777
-      RABBITMQ_PASSWORD: shhh-777
+      RABBITMQ_HOST: ${RABBITMQ_HOST}
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
       RABBITMQ_EXCHANGE: drone_exchange
     command: ["11", "DroneSimulator"]
     restart: unless-stopped

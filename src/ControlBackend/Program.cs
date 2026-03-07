@@ -8,7 +8,11 @@ public class Program
 
     public static async Task Main(string[] args)
     {
-        var builder = WebApplication.CreateBuilder(args);
+        var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+        {
+            Args = args,
+            ContentRootPath = AppContext.BaseDirectory
+        });
 
         builder.Services.AddAuthorization();
 
@@ -21,6 +25,10 @@ public class Program
         // Bind RabbitMQ configuration
         var rabbitOptions = new RabbitMqOptions();
         builder.Configuration.GetSection("RabbitMQ").Bind(rabbitOptions);
+        
+        // Load credentials from environment variables if available (production override)
+        rabbitOptions.LoadFromEnvironment();
+        
         rabbitOptions.Validate();
 
         builder.Services.AddSingleton(rabbitOptions);

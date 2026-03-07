@@ -36,11 +36,16 @@ namespace DroneController
             string droneDriver = args[1];
 
             var config = new ConfigurationBuilder()
+                .SetBasePath(AppContext.BaseDirectory)
                 .AddJsonFile("appsettings.json", optional: false)
+                .AddEnvironmentVariables()
                 .Build();
 
             var options = new RabbitMqOptions();
             config.GetSection("RabbitMq").Bind(options);
+            
+            // Load credentials from environment variables if available (production override)
+            options.LoadFromEnvironment();
 
             // Crear la conexión
             var factory = new RabbitMQ.Client.ConnectionFactory
