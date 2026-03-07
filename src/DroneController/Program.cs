@@ -37,6 +37,7 @@ namespace DroneController
 
             var config = new ConfigurationBuilder()
                 .AddJsonFile("appsettings.json", optional: false)
+                .AddEnvironmentVariables()
                 .Build();
 
             var options = new RabbitMqOptions();
