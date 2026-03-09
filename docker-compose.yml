@@ -32,7 +32,7 @@ services:
       ControlBackend__Url: http://firedrone-control-backend:5307
       ConnectionStrings__Redis: firedrone-redis:5308,abortConnect=false
     volumes:
-      - ./data:/app/data
+      - central_data:/app/data
     depends_on:
       - redis
     restart: unless-stopped
@@ -248,3 +248,5 @@ services:
       RABBITMQ_EXCHANGE: drone_exchange
     command: ["11", "DroneSimulator"]
     restart: unless-stopped
+volumes:
+  central_data:
