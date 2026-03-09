@@ -31,8 +31,9 @@ services:
       ASPNETCORE_URLS: http://+:5306
       ControlBackend__Url: http://firedrone-control-backend:5307
       ConnectionStrings__Redis: firedrone-redis:5308,abortConnect=false
+      ConnectionStrings__DefaultConnection: "Data Source=/app/data/FireDrone.db"
     volumes:
-      - ./data:/app/data
+      - central_data:/app/data
     depends_on:
       - redis
     restart: unless-stopped
