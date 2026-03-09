@@ -32,7 +32,7 @@ services:
       ControlBackend__Url: http://firedrone-control-backend:5307
       ConnectionStrings__Redis: firedrone-redis:5308,abortConnect=false
     volumes:
-      - central_data:/app/data
+      - ./data:/app/data
     depends_on:
       - redis
     restart: unless-stopped
