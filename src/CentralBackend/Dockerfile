@@ -44,4 +44,9 @@ COPY --from=publish /app/publish .
 # Create directory for SQLite database
 RUN mkdir -p /app/data
 
+RUN useradd -u 1001 -m dbuser
+RUN chown -R dbuser:dbuser /app
+
+USER 
+
 ENTRYPOINT ["dotnet", "CentralBackend.dll"]
