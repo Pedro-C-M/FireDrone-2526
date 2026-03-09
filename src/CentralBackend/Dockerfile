@@ -47,6 +47,6 @@ RUN mkdir -p /app/data
 RUN useradd -u 1001 -m dbuser
 RUN chown -R dbuser:dbuser /app
 
-USER 
+USER dbuser
 
 ENTRYPOINT ["dotnet", "CentralBackend.dll"]
