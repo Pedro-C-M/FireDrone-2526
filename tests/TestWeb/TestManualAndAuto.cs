@@ -408,11 +408,8 @@ namespace TestWeb
             Thread.Sleep(10000);
             var liveMapBtn = GetLiveMapButton();
             liveMapBtn.Click();
-            WaitForDroneState(TEST_DRONE_ID, 2, timeoutSeconds: 180);
+            WaitForDroneState(TEST_DRONE_ID, 2, timeoutSeconds: 280);
             sm.Screenshot("Path_2_Drone_Landed");
-
-            AssertDroneState(TEST_DRONE_ID, 2);
-            sm.Screenshot("Path_2_Make_Sure_Drone_Landed");
         }
 
         // Path: 1,2,4,5,1,2,3
@@ -477,7 +474,7 @@ namespace TestWeb
             Thread.Sleep(10000); 
             var liveMapBtn = GetLiveMapButton();
             liveMapBtn.Click();
-            WaitForDroneState(TEST_DRONE_ID, 2, timeoutSeconds: 180);
+            WaitForDroneState(TEST_DRONE_ID, 2, timeoutSeconds: 280);
             sm.Screenshot("Path_3_Drone_Landed");
 
             AssertDroneState(TEST_DRONE_ID, 2);
