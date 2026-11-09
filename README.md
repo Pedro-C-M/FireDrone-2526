@@ -1,4 +1,4 @@
-# 🚁 FireDrone
+# 🚁 FireDrone 🚁
 
 <div align="center">
   <img src="https://img.shields.io/badge/c%23-%23239120.svg?style=for-the-badge&logo=csharp&logoColor=white" alt="C#" />
@@ -16,22 +16,22 @@
 
 **Sistema avanzado de monitorización y control automatizado de flotas de drones**
 
-## 📖 Descripción del Proyecto
+## Descripción del Proyecto
 
 **FireDrone** es un prototipo operativo completo diseñado como proyecto coordinado del Máster en Ingeniería Informática. El sistema permite controlar automáticamente el vuelo de múltiples drones, facilitando la monitorización en tiempo real de telemetría de los drones (estado del dron, batería, posición 3D, alarmas) y la visualización gráfica de su ubicación en el espacio.
 
-## ✨ Características Principales
+## Características Principales
 
-* 🤖 **Vuelo Automático y Rutas Optimizadas:** Los drones siguen de forma automática planes de vuelo basados en rutas predefinidas en la base de datos. Estas rutas están diseñadas para optimizar la cobertura de vigilancia del área asignada, esto se ha hecho con algoritmos genéticos.
-* 🎮 **Control Manual y Override:** El operador puede interrumpir cualquier plan de vuelo en curso tomando el control manual del dron y ordenandole ir a una coordenada de forma inmediata. Al finalizar la intervención, el dron es capaz de retomar su plan original.
-* 📡 **Monitorización en Tiempo Real:** El sistema recopila y muestra telemetría constante, incluyendo: posición 3D (latitud, longitud, altitud), velocidad, nivel de batería, datos de sensores e incidencias.
-* 🔄 **Simulación y Entorno Real:** El proyecto soporta tanto la simulación de enjambres de drones como el control de drones reales, permitiendo escalar las pruebas de software de forma segura antes de los vuelos físicos que se han llevado a cabo en el master con un dron real comunicado con MavLink con el sistema.
-* 🏗️ **Arquitectura Distribuida y Estación Central:** Proporciona órdenes y planes de vuelo mediante una API REST.
-* 👨‍💻 **Estación de Control:** Recibe las órdenes y controla físicamente a los drones asignados comunicándose a través de colas de mensajes y protocolos específicos.
+*  **Vuelo Automático y Rutas Optimizadas:** Los drones siguen de forma automática planes de vuelo basados en rutas predefinidas en la base de datos. Estas rutas están diseñadas para optimizar la cobertura de vigilancia del área asignada, esto se ha hecho con algoritmos genéticos.
+*  **Control Manual y Override:** El operador puede interrumpir cualquier plan de vuelo en curso tomando el control manual del dron y ordenandole ir a una coordenada de forma inmediata. Al finalizar la intervención, el dron es capaz de retomar su plan original.
+*  **Monitorización en Tiempo Real:** El sistema recopila y muestra telemetría constante, incluyendo: posición 3D (latitud, longitud, altitud), velocidad, nivel de batería, datos de sensores e incidencias.
+*  **Simulación y Entorno Real:** El proyecto soporta tanto la simulación de enjambres de drones como el control de drones reales, permitiendo escalar las pruebas de software de forma segura antes de los vuelos físicos que se han llevado a cabo en el master con un dron real comunicado con MavLink con el sistema.
+*  **Arquitectura Distribuida y Estación Central:** Proporciona órdenes y planes de vuelo mediante una API REST.
+*  **Estación de Control:** Recibe las órdenes y controla físicamente a los drones asignados comunicándose a través de colas de mensajes y protocolos específicos.
 
 ---
 
-## 📸 Vistas del Sistema
+## Vistas del Sistema
 
 ### Dashboard de Operaciones y Planes de Vuelo
 Panel central para la gestión integral. Permite la monitorización del estado de todos los planes de vuelo, así como acciones rápidas para cancelar, reanudar o reiniciar operaciones en curso.
